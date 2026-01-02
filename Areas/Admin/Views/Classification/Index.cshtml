@@ -1,0 +1,655 @@
+﻿@model IEnumerable<eProtokoll.Models.Classification>
+
+@{
+    ViewData["Title"] = "Menaxhimi i Klasifikimeve";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Klasifikimet e Sigurisë</li>
+        </ol>
+    </nav>
+
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="mb-0">
+                <i class="bi bi-shield-lock-fill me-2"></i>
+                Menaxhimi i Klasifikimeve të Sigurisë
+            </h2>
+            <p class="text-muted mt-2">Menaxho nivelet e aksesit dhe sigurisë së dokumenteve</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a asp-area="Admin" asp-controller="Classification" asp-action="Create" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i>
+                Shto Klasifikim të Ri
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Total Klasifikime</h6>
+                            <h3 class="mb-0">@Model.Count()</h3>
+                        </div>
+                        <div class="text-primary">
+                            <i class="bi bi-shield-fill" style="font-size: 2rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Aktive</h6>
+                            <h3 class="mb-0 text-success">@Model.Count(c => c.IsActive)</h3>
+                        </div>
+                        <div class="text-success">
+                            <i class="bi bi-check-circle-fill" style="font-size: 2rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Me Miratim</h6>
+                            <h3 class="mb-0 text-warning">@Model.Count(c => c.RequiresApproval)</h3>
+                        </div>
+                        <div class="text-warning">
+                            <i class="bi bi-shield-check" style="font-size: 2rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Me Audit Log</h6>
+                            <h3 class="mb-0 text-info">@Model.Count(c => c.EnableAuditLog)</h3>
+                        </div>
+                        <div class="text-info">
+                            <i class="bi bi-journal-text" style="font-size: 2rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Access Level Distribution -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0">
+                        <i class="bi bi-bar-chart-fill me-2"></i>
+                        Shpërndarja sipas Nivelit të Aksesit
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        @{
+                            var publicCount = Model.Count(c => c.Level == eProtokoll.Models.AccessLevel.Public);
+                            var internalCount = Model.Count(c => c.Level == eProtokoll.Models.AccessLevel.Internal);
+                            var confidentialCount = Model.Count(c => c.Level == eProtokoll.Models.AccessLevel.Confidential);
+                            var secretCount = Model.Count(c => c.Level == eProtokoll.Models.AccessLevel.Secret);
+                            var topSecretCount = Model.Count(c => c.Level == eProtokoll.Models.AccessLevel.TopSecret);
+                        }
+                        <div class="col">
+                            <div class="p-3 border rounded">
+                                <i class="bi bi-unlock-fill text-success" style="font-size: 2rem;"></i>
+                                <h4 class="mt-2 mb-0">@publicCount</h4>
+                                <small class="text-muted">Publik</small>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="p-3 border rounded">
+                                <i class="bi bi-building text-info" style="font-size: 2rem;"></i>
+                                <h4 class="mt-2 mb-0">@internalCount</h4>
+                                <small class="text-muted">I Brendshëm</small>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="p-3 border rounded">
+                                <i class="bi bi-lock-fill text-warning" style="font-size: 2rem;"></i>
+                                <h4 class="mt-2 mb-0">@confidentialCount</h4>
+                                <small class="text-muted">Konfidencial</small>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="p-3 border rounded">
+                                <i class="bi bi-shield-fill-exclamation text-danger" style="font-size: 2rem;"></i>
+                                <h4 class="mt-2 mb-0">@secretCount</h4>
+                                <small class="text-muted">Sekret</small>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="p-3 border rounded">
+                                <i class="bi bi-shield-fill-x text-dark" style="font-size: 2rem;"></i>
+                                <h4 class="mt-2 mb-0">@topSecretCount</h4>
+                                <small class="text-muted">Tepër Sekret</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter Section -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" id="filterForm">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="searchTerm" class="form-label">Kërko</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white">
+                                <i class="bi bi-search"></i>
+                            </span>
+                            <input type="text" class="form-control" id="searchTerm" name="searchTerm"
+                                   placeholder="Emri i klasifikimit...">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="filterLevel" class="form-label">Niveli i Aksesit</label>
+                        <select class="form-select" id="filterLevel" name="level">
+                            <option value="">Të gjitha</option>
+                            <option value="1">Publik</option>
+                            <option value="2">I Brendshëm</option>
+                            <option value="3">Konfidencial</option>
+                            <option value="4">Sekret</option>
+                            <option value="5">Tepër Sekret</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="filterStatus" class="form-label">Statusi</label>
+                        <select class="form-select" id="filterStatus" name="status">
+                            <option value="">Të gjitha</option>
+                            <option value="active">Aktive</option>
+                            <option value="inactive">Joaktive</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label d-block">&nbsp;</label>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-funnel me-1"></i>
+                            Filtro
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Classifications Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h5 class="mb-0">Lista e Klasifikimeve</h5>
+                </div>
+                <div class="col-auto">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="exportBtn">
+                        <i class="bi bi-download me-1"></i>
+                        Eksporto
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            @if (Model != null && Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" id="classificationsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 5%;">
+                                    <input type="checkbox" class="form-check-input" id="selectAll">
+                                </th>
+                                <th style="width: 5%;"></th>
+                                <th style="width: 20%;">Emri</th>
+                                <th style="width: 15%;">Niveli i Aksesit</th>
+                                <th style="width: 10%;">Ruajtja</th>
+                                <th style="width: 15%;">Kontrolli i Aksesit</th>
+                                <th style="width: 15%;">Veprime të Lejuara</th>
+                                <th style="width: 8%;">Statusi</th>
+                                <th style="width: 7%;" class="text-end">Veprime</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var classification in Model.OrderBy(c => c.SortOrder).ThenBy(c => c.Level))
+                            {
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" class="form-check-input row-checkbox" value="@classification.ClassificationId">
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(classification.ColorCode))
+                                        {
+                                            <div style="width: 30px; height: 30px; background-color: @classification.ColorCode; border-radius: 4px; border: 2px solid #dee2e6;"></div>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-shield-fill text-muted" style="font-size: 1.5rem;"></i>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <strong>@classification.Name</strong>
+                                            @if (classification.IsDefault)
+                                            {
+                                                <span class="badge bg-primary ms-2">
+                                                    <i class="bi bi-star-fill"></i> Parazgjedhje
+                                                </span>
+                                            }
+                                            @if (!string.IsNullOrEmpty(classification.Description))
+                                            {
+                                                <br />
+                                                <small class="text-muted">@classification.Description</small>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @switch (classification.Level)
+                                        {
+                                            case eProtokoll.Models.AccessLevel.Public:
+                                                <span class="badge bg-success">
+                                                    <i class="bi bi-unlock-fill me-1"></i>
+                                                    Publik
+                                                </span>
+                                                break;
+                                            case eProtokoll.Models.AccessLevel.Internal:
+                                                <span class="badge bg-info">
+                                                    <i class="bi bi-building me-1"></i>
+                                                    I Brendshëm
+                                                </span>
+                                                break;
+                                            case eProtokoll.Models.AccessLevel.Confidential:
+                                                <span class="badge bg-warning text-dark">
+                                                    <i class="bi bi-lock-fill me-1"></i>
+                                                    Konfidencial
+                                                </span>
+                                                break;
+                                            case eProtokoll.Models.AccessLevel.Secret:
+                                                <span class="badge bg-danger">
+                                                    <i class="bi bi-shield-fill-exclamation me-1"></i>
+                                                    Sekret
+                                                </span>
+                                                break;
+                                            case eProtokoll.Models.AccessLevel.TopSecret:
+                                                <span class="badge bg-dark">
+                                                    <i class="bi bi-shield-fill-x me-1"></i>
+                                                    Tepër Sekret
+                                                </span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark">
+                                            <i class="bi bi-calendar-check me-1"></i>
+                                            @classification.RetentionYears vjet
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex flex-column gap-1">
+                                            @if (classification.RequiresApproval)
+                                            {
+                                                <small>
+                                                    <i class="bi bi-shield-check text-warning"></i>
+                                                    Kërkon Miratim
+                                                </small>
+                                            }
+                                            @if (!string.IsNullOrEmpty(classification.MinimumRoleRequired))
+                                            {
+                                                <small>
+                                                    <i class="bi bi-person-badge text-info"></i>
+                                                    @classification.MinimumRoleRequired
+                                                </small>
+                                            }
+                                            @if (classification.EnableAuditLog)
+                                            {
+                                                <small>
+                                                    <i class="bi bi-journal-text text-primary"></i>
+                                                    Audit Log
+                                                </small>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex gap-2">
+                                            @if (classification.AllowPrint)
+                                            {
+                                                <i class="bi bi-printer-fill text-success" title="Printohet"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-printer-fill text-muted" title="Nuk printohet"></i>
+                                            }
+
+                                            @if (classification.AllowDownload)
+                                            {
+                                                <i class="bi bi-download text-success" title="Shkarkohet"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-download text-muted" title="Nuk shkarkohet"></i>
+                                            }
+
+                                            @if (classification.AllowCopy)
+                                            {
+                                                <i class="bi bi-files text-success" title="Kopjohet"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-files text-muted" title="Nuk kopjohet"></i>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @if (classification.IsActive)
+                                        {
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-check-circle-fill me-1"></i>
+                                                Aktiv
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">
+                                                <i class="bi bi-x-circle-fill me-1"></i>
+                                                Joaktiv
+                                            </span>
+                                        }
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a asp-area="Admin" asp-controller="Classification" asp-action="Edit"
+                                               asp-route-id="@classification.ClassificationId"
+                                               class="btn btn-outline-primary"
+                                               title="Modifiko">
+                                                <i class="bi bi-pencil-fill"></i>
+                                            </a>
+                                            <button type="button"
+                                                    class="btn btn-outline-danger delete-classification"
+                                                    data-id="@classification.ClassificationId"
+                                                    data-name="@classification.Name"
+                                                    title="Fshij">
+                                                <i class="bi bi-trash-fill"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-shield-x text-muted" style="font-size: 4rem;"></i>
+                    <h4 class="mt-3 text-muted">Nuk ka klasifikime të regjistruara</h4>
+                    <p class="text-muted">Kliko butonin "Shto Klasifikim të Ri" për të filluar</p>
+                    <a asp-area="Admin" asp-controller="Classification" asp-action="Create" class="btn btn-primary mt-3">
+                        <i class="bi bi-plus-circle me-1"></i>
+                        Shto Klasifikim të Ri
+                    </a>
+                </div>
+            }
+        </div>
+        @if (Model != null && Model.Any())
+        {
+            <div class="card-footer bg-white">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <span class="text-muted">
+                            Duke shfaqur <strong>@Model.Count()</strong> klasifikime
+                        </span>
+                    </div>
+                    <div class="col-md-6">
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination pagination-sm justify-content-end mb-0">
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#" tabindex="-1">Mëparshëm</a>
+                                </li>
+                                <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                                <li class="page-item">
+                                    <a class="page-link" href="#">Tjetër</a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Bulk Actions (when items selected) -->
+    <div id="bulkActions" class="card border-0 shadow-sm mt-3" style="display: none;">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <span id="selectedCount" class="text-muted">0 klasifikime të zgjedhura</span>
+                </div>
+                <div class="col-md-6 text-end">
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-sm btn-success" id="activateSelected">
+                            <i class="bi bi-check-circle me-1"></i>
+                            Aktivizo
+                        </button>
+                        <button type="button" class="btn btn-sm btn-secondary" id="deactivateSelected">
+                            <i class="bi bi-x-circle me-1"></i>
+                            Çaktivizo
+                        </button>
+                        <button type="button" class="btn btn-sm btn-danger" id="deleteSelected">
+                            <i class="bi bi-trash me-1"></i>
+                            Fshij
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteModalLabel">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    Konfirmo Fshirjen
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>A jeni të sigurt që dëshironi të fshini klasifikimin:</p>
+                <p class="fw-bold text-center" id="deleteItemName"></p>
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <strong>Kujdes:</strong> Kjo veprim nuk mund të zhbëhet dhe do të ndikojë në të gjitha dokumentet që përdorin këtë klasifikim.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>
+                    Anulo
+                </button>
+                <form method="post" asp-area="Admin" asp-controller="Classification" asp-action="Delete" id="deleteForm" class="d-inline">
+                    <input type="hidden" name="id" id="deleteItemId">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash-fill me-1"></i>
+                        Fshij Klasifikimin
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Delete classification
+            $('.delete-classification').on('click', function() {
+                const id = $(this).data('id');
+                const name = $(this).data('name');
+
+                $('#deleteItemName').text(name);
+                $('#deleteItemId').val(id);
+
+                $('#deleteModal').modal('show');
+            });
+
+            // Select all checkboxes
+            $('#selectAll').on('change', function() {
+                $('.row-checkbox').prop('checked', $(this).prop('checked'));
+                updateBulkActions();
+            });
+
+            // Individual checkbox
+            $('.row-checkbox').on('change', function() {
+                updateBulkActions();
+            });
+
+            // Update bulk actions visibility
+            function updateBulkActions() {
+                const selectedCount = $('.row-checkbox:checked').length;
+                if (selectedCount > 0) {
+                    $('#bulkActions').show();
+                    $('#selectedCount').text(selectedCount + ' klasifikime të zgjedhura');
+                } else {
+                    $('#bulkActions').hide();
+                }
+            }
+
+            // Bulk activate
+            $('#activateSelected').on('click', function() {
+                const selectedIds = $('.row-checkbox:checked').map(function() {
+                    return $(this).val();
+                }).get();
+
+                if (confirm('A dëshironi të aktivizoni ' + selectedIds.length + ' klasifikime?')) {
+                    console.log('Activating:', selectedIds);
+                }
+            });
+
+            // Bulk deactivate
+            $('#deactivateSelected').on('click', function() {
+                const selectedIds = $('.row-checkbox:checked').map(function() {
+                    return $(this).val();
+                }).get();
+
+                if (confirm('A dëshironi të çaktivizoni ' + selectedIds.length + ' klasifikime?')) {
+                    console.log('Deactivating:', selectedIds);
+                }
+            });
+
+            // Bulk delete
+            $('#deleteSelected').on('click', function() {
+                const selectedIds = $('.row-checkbox:checked').map(function() {
+                    return $(this).val();
+                }).get();
+
+                if (confirm('KUJDES: A jeni të sigurt që dëshironi të fshini ' + selectedIds.length + ' klasifikime? Kjo veprim nuk mund të zhbëhet!')) {
+                    console.log('Deleting:', selectedIds);
+                }
+            });
+
+            // Export functionality
+            $('#exportBtn').on('click', function() {
+                alert('Funksionaliteti i eksportimit do të implementohet së shpejti');
+            });
+
+            // Search functionality
+            $('#searchTerm').on('keyup', function() {
+                const searchValue = $(this).val().toLowerCase();
+                $('#classificationsTable tbody tr').filter(function() {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(searchValue) > -1);
+                });
+            });
+
+            // Filter by level
+            $('#filterLevel').on('change', function() {
+                const levelValue = $(this).val();
+                if (levelValue === '') {
+                    $('#classificationsTable tbody tr').show();
+                } else {
+                    $('#classificationsTable tbody tr').each(function() {
+                        const row = $(this);
+                        const levelBadge = row.find('td:eq(3)').text().trim();
+                        row.toggle(levelBadge.includes(getLevelText(levelValue)));
+                    });
+                }
+            });
+
+            function getLevelText(value) {
+                switch(value) {
+                    case '1': return 'Publik';
+                    case '2': return 'I Brendshëm';
+                    case '3': return 'Konfidencial';
+                    case '4': return 'Sekret';
+                    case '5': return 'Tepër Sekret';
+                    default: return '';
+                }
+            }
+        });
+    </script>
+}
+
+@section Styles {
+    <style>
+        .table-hover tbody tr:hover {
+            background-color: rgba(0, 123, 255, 0.05);
+        }
+
+        .btn-group-sm .btn {
+            padding: 0.25rem 0.5rem;
+        }
+
+        .badge {
+            font-weight: 500;
+            padding: 0.35em 0.65em;
+        }
+
+        .card {
+            transition: all 0.3s ease;
+        }
+
+        #bulkActions {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            min-width: 600px;
+        }
+    </style>
+}
+
+
+
+
+
+

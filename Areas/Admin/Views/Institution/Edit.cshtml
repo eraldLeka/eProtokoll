@@ -1,0 +1,491 @@
+﻿@model eProtokoll.Models.Institution
+
+@{
+    ViewData["Title"] = "Modifiko Institucion";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
+            <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Institution" asp-action="Index">Institucionet</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Modifiko</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="mb-0">
+                <i class="bi bi-pencil-square me-2 text-primary"></i>
+                Modifiko Institucion
+            </h2>
+            <p class="text-muted mt-2">Përditëso të dhënat e institucionit <strong>@Model.Name</strong></p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <form asp-action="Edit" method="post">
+                <input type="hidden" asp-for="InstitutionId" />
+                <input type="hidden" asp-for="CreatedDate" />
+                <input type="hidden" asp-for="CreatedBy" />
+
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                <!-- Informacioni Bazë -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Informacioni Bazë
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    <label asp-for="Name" class="form-label">
+                                        <i class="bi bi-building text-primary"></i>
+                                        Emri i Institucionit <span class="text-danger">*</span>
+                                    </label>
+                                    <input asp-for="Name" class="form-control" placeholder="p.sh. Ministria e Arsimit dhe Sportit" />
+                                    <span asp-validation-for="Name" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label asp-for="ShortName" class="form-label">
+                                        <i class="bi bi-tag text-primary"></i>
+                                        Emri i Shkurtuar
+                                    </label>
+                                    <input asp-for="ShortName" class="form-control" placeholder="p.sh. MAS" />
+                                    <span asp-validation-for="ShortName" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Type" class="form-label">
+                                        <i class="bi bi-diagram-3 text-primary"></i>
+                                        Lloji i Institucionit <span class="text-danger">*</span>
+                                    </label>
+                                    <select asp-for="Type" class="form-select" asp-items="Html.GetEnumSelectList<eProtokoll.Models.Institution.InstitutionType>()">
+                                        <option value="">-- Zgjidh Llojin --</option>
+                                    </select>
+                                    <span asp-validation-for="Type" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="TaxCode" class="form-label">
+                                        <i class="bi bi-hash text-primary"></i>
+                                        NIPT/Kodi Fiskal
+                                    </label>
+                                    <input asp-for="TaxCode" class="form-control" placeholder="p.sh. K12345678A" />
+                                    <span asp-validation-for="TaxCode" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Adresa dhe Vendndodhja -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-geo-alt me-2"></i>
+                            Adresa dhe Vendndodhja
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label asp-for="Adress" class="form-label">
+                                <i class="bi bi-map text-info"></i>
+                                Adresa
+                            </label>
+                            <input asp-for="Adress" class="form-control" placeholder="p.sh. Rruga Durrësit, Nr. 23" />
+                            <span asp-validation-for="Adress" class="text-danger"></span>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-5">
+                                <div class="mb-3">
+                                    <label asp-for="City" class="form-label">
+                                        <i class="bi bi-pin-map text-info"></i>
+                                        Qyteti
+                                    </label>
+                                    <input asp-for="City" class="form-control" placeholder="p.sh. Tiranë" />
+                                    <span asp-validation-for="City" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label asp-for="PostalCode" class="form-label">
+                                        <i class="bi bi-mailbox text-info"></i>
+                                        Kodi Postar
+                                    </label>
+                                    <input asp-for="PostalCode" class="form-control" placeholder="p.sh. 1001" />
+                                    <span asp-validation-for="PostalCode" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label asp-for="Country" class="form-label">
+                                        <i class="bi bi-flag text-info"></i>
+                                        Shteti
+                                    </label>
+                                    <input asp-for="Country" class="form-control" />
+                                    <span asp-validation-for="Country" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Të Dhënat e Kontaktit -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-telephone me-2"></i>
+                            Të Dhënat e Kontaktit
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label asp-for="Phone" class="form-label">
+                                        <i class="bi bi-telephone-fill text-success"></i>
+                                        Telefoni
+                                    </label>
+                                    <input asp-for="Phone" class="form-control" placeholder="+355 4 123 4567" />
+                                    <span asp-validation-for="Phone" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label asp-for="Fax" class="form-label">
+                                        <i class="bi bi-printer text-success"></i>
+                                        Faksi
+                                    </label>
+                                    <input asp-for="Fax" class="form-control" placeholder="+355 4 123 4568" />
+                                    <span asp-validation-for="Fax" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label asp-for="Email" class="form-label">
+                                        <i class="bi bi-envelope-fill text-success"></i>
+                                        Email
+                                    </label>
+                                    <input asp-for="Email" class="form-control" type="email" placeholder="info@institucion.gov.al" />
+                                    <span asp-validation-for="Email" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Website" class="form-label">
+                                <i class="bi bi-globe text-success"></i>
+                                Website
+                            </label>
+                            <input asp-for="Website" class="form-control" type="url" placeholder="https://www.institucion.gov.al" />
+                            <span asp-validation-for="Website" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Personi i Kontaktit -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">
+                            <i class="bi bi-person-circle me-2"></i>
+                            Personi i Kontaktit
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="ContactPerson" class="form-label">
+                                        <i class="bi bi-person-badge text-warning"></i>
+                                        Emri dhe Mbiemri
+                                    </label>
+                                    <input asp-for="ContactPerson" class="form-control" placeholder="p.sh. Agron Zeneli" />
+                                    <span asp-validation-for="ContactPerson" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="ContactPosition" class="form-label">
+                                        <i class="bi bi-briefcase text-warning"></i>
+                                        Pozicioni
+                                    </label>
+                                    <input asp-for="ContactPosition" class="form-control" placeholder="p.sh. Sekretar i Përgjithshëm" />
+                                    <span asp-validation-for="ContactPosition" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="ContactPhone" class="form-label">
+                                        <i class="bi bi-phone text-warning"></i>
+                                        Telefoni i Kontaktit
+                                    </label>
+                                    <input asp-for="ContactPhone" class="form-control" placeholder="+355 69 123 4567" />
+                                    <span asp-validation-for="ContactPhone" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="ContactEmail" class="form-label">
+                                        <i class="bi bi-envelope text-warning"></i>
+                                        Email i Kontaktit
+                                    </label>
+                                    <input asp-for="ContactEmail" class="form-control" type="email" placeholder="agron.zeneli@institucion.gov.al" />
+                                    <span asp-validation-for="ContactEmail" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Shënime dhe Statusi -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-card-text me-2"></i>
+                            Shënime dhe Statusi
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label asp-for="Notes" class="form-label">
+                                <i class="bi bi-sticky text-secondary"></i>
+                                Shënime
+                            </label>
+                            <textarea asp-for="Notes" class="form-control" rows="3" placeholder="Shënime shtesë për institucionin..."></textarea>
+                            <span asp-validation-for="Notes" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-check form-switch">
+                            <input asp-for="IsActive" class="form-check-input" type="checkbox" />
+                            <label asp-for="IsActive" class="form-check-label">
+                                <i class="bi bi-toggle-on text-success"></i>
+                                Aktiv (mund të përdoret në dokumente)
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Metadata -->
+                <div class="card shadow-sm mb-4 bg-light">
+                    <div class="card-header bg-dark text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-info-square me-2"></i>
+                            Të Dhëna të Sistemit
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-2">
+                                    <strong><i class="bi bi-calendar-plus text-success"></i> Krijuar më:</strong><br />
+                                    <span class="text-muted">@Model.CreatedDate.ToString("dd/MM/yyyy HH:mm")</span>
+                                </p>
+                                <p class="mb-0">
+                                    <strong><i class="bi bi-person text-success"></i> Krijuar nga:</strong><br />
+                                    <span class="text-muted">@(Model.CreatedBy ?? "System")</span>
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                @if (Model.ModifiedDate.HasValue)
+                                {
+                                    <p class="mb-2">
+                                        <strong><i class="bi bi-calendar-check text-warning"></i> Modifikuar më:</strong><br />
+                                        <span class="text-muted">@Model.ModifiedDate.Value.ToString("dd/MM/yyyy HH:mm")</span>
+                                    </p>
+                                    <p class="mb-0">
+                                        <strong><i class="bi bi-person text-warning"></i> Modifikuar nga:</strong><br />
+                                        <span class="text-muted">@(Model.ModifiedBy ?? "-")</span>
+                                    </p>
+                                }
+                                else
+                                {
+                                    <p class="text-muted"><em>Ende nuk është modifikuar</em></p>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Index" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-1"></i>
+                                Anulo
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-1"></i>
+                                Ruaj Ndryshimet
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Sidebar me informacion -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-4 border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Informacion
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="text-warning">
+                        <i class="bi bi-lightbulb-fill"></i> Modifikimi i Institucionit
+                    </h6>
+                    <p class="small mb-3">
+                        Të gjitha ndryshimet do të ruhen në historikun e sistemit dhe do të jenë të dukshme për përdoruesit e tjerë.
+                    </p>
+
+                    <hr />
+
+                    <h6 class="text-warning">
+                        <i class="bi bi-exclamation-triangle-fill"></i> Vërejtje
+                    </h6>
+                    <ul class="small mb-0">
+                        <li class="mb-2">Nëse çaktivizoni institucionin, ai nuk do të jetë i disponueshëm për dokumente të reja</li>
+                        <li class="mb-2">Dokumentet ekzistuese të lidhura me këtë institucion nuk do të ndikohen</li>
+                        <li>Ndryshimi i llojit të institucionit mund të ndikojë në raportimin</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle-fill me-2"></i>
+                <strong>ID:</strong> @Model.InstitutionId
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $('#Type').on('change', function() {
+                var type = $(this).val();
+                var description = '';
+
+                switch(type) {
+                    case '1': description = 'Institucione të administratës shtetërore'; break;
+                    case '2': description = 'Bashki dhe komuna të vendit'; break;
+                    case '3': description = 'Ministritë qendrore'; break;
+                    case '4': description = 'Kompani dhe shoqëri private'; break;
+                    case '5': description = 'Organizata joqeveritare dhe jofitimprurëse'; break;
+                    case '6': description = 'Organizata dhe institucione ndërkombëtare'; break;
+                    case '7': description = 'Shkolla, universitete dhe institucione arsimore'; break;
+                    case '8': description = 'Spitale, klinika dhe institucione shëndetësore'; break;
+                    case '9': description = 'Gazeta, televizione, radio dhe media të tjera'; break;
+                    case '10': description = 'Institucione që nuk përfshihen në kategoritë e tjera'; break;
+                }
+
+                if (description) {
+                    $('.text-info').remove();
+                    $('#Type').parent().append('<small class="text-info d-block mt-1"><i class="bi bi-info-circle"></i> ' + description + '</small>');
+                }
+            });
+
+            $('#Email, #ContactEmail').on('blur', function() {
+                var email = $(this).val();
+                var emailRegex = /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/;
+
+                if (email && !emailRegex.test(email)) {
+                    $(this).addClass('is-invalid');
+                } else {
+                    $(this).removeClass('is-invalid');
+                }
+            });
+
+            $('#Phone, #Fax, #ContactPhone').on('input', function() {
+                var value = $(this).val().replace(/\D/g, '');
+
+                if (value.startsWith('355')) {
+                    if (value.length > 3) {
+                        value = '+355 ' + value.substring(3);
+                    }
+                }
+                $(this).val(value);
+            });
+
+            $('#Website').on('blur', function() {
+                var url = $(this).val();
+                if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
+                    $(this).val('https://' + url);
+                }
+            });
+
+            $('form').on('submit', function(e) {
+                var name = $('#Name').val().trim();
+                var type = $('#Type').val();
+
+                if (!name) {
+                    e.preventDefault();
+                    alert('Ju lutem shkruani emrin e institucionit!');
+                    $('#Name').focus();
+                    return false;
+                }
+
+                if (!type) {
+                    e.preventDefault();
+                    alert('Ju lutem zgjidhni llojin e institucionit!');
+                    $('#Type').focus();
+                    return false;
+                }
+            });
+        });
+    </script>
+}
+
+@section Styles {
+    <style>
+        .form-check-input:checked {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+        }
+
+        .card-header {
+            font-weight: 600;
+        }
+
+        .form-label {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .alert {
+            border-left: 4px solid;
+        }
+
+        .is-invalid {
+            border-color: #dc3545;
+        }
+
+        .form-control:focus {
+            border-color: #80bdff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+    </style>
+}

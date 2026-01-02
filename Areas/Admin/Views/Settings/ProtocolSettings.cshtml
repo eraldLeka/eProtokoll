@@ -1,0 +1,555 @@
+﻿@model eProtokoll.Models.ProtocolSettings
+
+@{
+    ViewData["Title"] = Model.ProtocolSettingsId == 0 ? "Krijo Parametra të Rinj" : "Modifiko Parametrat";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
+            <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Settings" asp-action="Index">Parametrat</a></li>
+            <li class="breadcrumb-item active" aria-current="page">@(Model.ProtocolSettingsId == 0 ? "Krijo të Ri" : "Modifiko")</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="mb-0">
+                <i class="bi bi-@(Model.ProtocolSettingsId == 0 ? "plus-circle-fill" : "pencil-square") me-2 text-primary"></i>
+                @(Model.ProtocolSettingsId == 0 ? "Krijo Parametra të Rinj" : "Modifiko Parametrat")
+            </h2>
+            <p class="text-muted mt-2">Konfiguro parametrat për numërimin e dokumenteve</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <form asp-action="ProtocolSettings" method="post" id="settingsForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="ProtocolSettingsId" />
+                <input type="hidden" asp-for="CreatedDate" />
+                <input type="hidden" asp-for="CreatedBy" />
+
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                <!-- Parametra Bazë -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-calendar me-2"></i>
+                            Parametra Bazë
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label asp-for="Year" class="form-label">
+                                        <i class="bi bi-calendar-event text-primary"></i>
+                                        Viti <span class="text-danger">*</span>
+                                    </label>
+                                    <input asp-for="Year" class="form-control" type="number" min="2000" max="2100" />
+                                    <span asp-validation-for="Year" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label asp-for="NumberPadding" class="form-label">
+                                        <i class="bi bi-123 text-primary"></i>
+                                        Gjatësia e Numrit
+                                    </label>
+                                    <select asp-for="NumberPadding" class="form-select">
+                                        <option value="3">3 shifra (001)</option>
+                                        <option value="4" selected>4 shifra (0001)</option>
+                                        <option value="5">5 shifra (00001)</option>
+                                        <option value="6">6 shifra (000001)</option>
+                                    </select>
+                                    <span asp-validation-for="NumberPadding" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label asp-for="ProtocolNumberFormat" class="form-label">
+                                        <i class="bi bi-code-square text-primary"></i>
+                                        Formati
+                                    </label>
+                                    <select asp-for="ProtocolNumberFormat" class="form-select" id="formatSelect">
+                                        <option value="{PREFIX}-{NUMBER}/{YEAR}">{PREFIX}-{NUMBER}/{YEAR}</option>
+                                        <option value="{PREFIX}/{NUMBER}/{YEAR}">{PREFIX}/{NUMBER}/{YEAR}</option>
+                                        <option value="{NUMBER}/{PREFIX}/{YEAR}">{NUMBER}/{PREFIX}/{YEAR}</option>
+                                        <option value="{PREFIX}{NUMBER}-{YEAR}">{PREFIX}{NUMBER}-{YEAR}</option>
+                                    </select>
+                                    <span asp-validation-for="ProtocolNumberFormat" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-check form-switch">
+                                    <input asp-for="AutoResetYearly" class="form-check-input" type="checkbox" />
+                                    <label asp-for="AutoResetYearly" class="form-check-label">
+                                        <i class="bi bi-arrow-clockwise text-success"></i>
+                                        Rivendos automatikisht çdo vit
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check form-switch">
+                                    <input asp-for="ShowYearInNumber" class="form-check-input" type="checkbox" />
+                                    <label asp-for="ShowYearInNumber" class="form-check-label">
+                                        <i class="bi bi-eye text-info"></i>
+                                        Shfaq vitin në numër
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dokumente Hyrëse -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-arrow-down-circle me-2"></i>
+                            Dokumente Hyrëse
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label asp-for="IncomingPrefix" class="form-label">
+                                        Prefiksi
+                                    </label>
+                                    <input asp-for="IncomingPrefix" class="form-control prefix-input" maxlength="20" />
+                                    <span asp-validation-for="IncomingPrefix" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label asp-for="IncomingStartNumber" class="form-label">
+                                        Numri Fillimit <span class="text-danger">*</span>
+                                    </label>
+                                    <input asp-for="IncomingStartNumber" class="form-control" type="number" min="1" />
+                                    <span asp-validation-for="IncomingStartNumber" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label asp-for="IncomingCurrentNumber" class="form-label">
+                                        Numri Aktual
+                                    </label>
+                                    <input asp-for="IncomingCurrentNumber" class="form-control current-number" type="number" min="1" />
+                                    <span asp-validation-for="IncomingCurrentNumber" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label asp-for="IncomingSuffix" class="form-label">
+                                        Sufiksi
+                                    </label>
+                                    <input asp-for="IncomingSuffix" class="form-control" maxlength="20" />
+                                    <span asp-validation-for="IncomingSuffix" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="alert alert-info mb-0">
+                            <strong>Shembull:</strong> <code id="incomingPreview">H-0001/2025</code>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dokumente Dalëse -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">
+                            <i class="bi bi-arrow-up-circle me-2"></i>
+                            Dokumente Dalëse
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label asp-for="OutgoingPrefix" class="form-label">
+                                        Prefiksi
+                                    </label>
+                                    <input asp-for="OutgoingPrefix" class="form-control prefix-input" maxlength="20" />
+                                    <span asp-validation-for="OutgoingPrefix" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label asp-for="OutgoingStartNumber" class="form-label">
+                                        Numri Fillimit <span class="text-danger">*</span>
+                                    </label>
+                                    <input asp-for="OutgoingStartNumber" class="form-control" type="number" min="1" />
+                                    <span asp-validation-for="OutgoingStartNumber" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label asp-for="OutgoingCurrentNumber" class="form-label">
+                                        Numri Aktual
+                                    </label>
+                                    <input asp-for="OutgoingCurrentNumber" class="form-control current-number" type="number" min="1" />
+                                    <span asp-validation-for="OutgoingCurrentNumber" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label asp-for="OutgoingSuffix" class="form-label">
+                                        Sufiksi
+                                    </label>
+                                    <input asp-for="OutgoingSuffix" class="form-control" maxlength="20" />
+                                    <span asp-validation-for="OutgoingSuffix" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="alert alert-info mb-0">
+                            <strong>Shembull:</strong> <code id="outgoingPreview">D-0001/2025</code>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dokumente të Brendshme -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-arrow-left-right me-2"></i>
+                            Dokumente të Brendshme
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label asp-for="InternalPrefix" class="form-label">
+                                        Prefiksi
+                                    </label>
+                                    <input asp-for="InternalPrefix" class="form-control prefix-input" maxlength="20" />
+                                    <span asp-validation-for="InternalPrefix" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label asp-for="InternalStartNumber" class="form-label">
+                                        Numri Fillimit <span class="text-danger">*</span>
+                                    </label>
+                                    <input asp-for="InternalStartNumber" class="form-control" type="number" min="1" />
+                                    <span asp-validation-for="InternalStartNumber" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label asp-for="InternalCurrentNumber" class="form-label">
+                                        Numri Aktual
+                                    </label>
+                                    <input asp-for="InternalCurrentNumber" class="form-control current-number" type="number" min="1" />
+                                    <span asp-validation-for="InternalCurrentNumber" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label asp-for="InternalSuffix" class="form-label">
+                                        Sufiksi
+                                    </label>
+                                    <input asp-for="InternalSuffix" class="form-control" maxlength="20" />
+                                    <span asp-validation-for="InternalSuffix" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="alert alert-info mb-0">
+                            <strong>Shembull:</strong> <code id="internalPreview">B-0001/2025</code>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Informacioni i Institucionit -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-building me-2"></i>
+                            Informacioni i Institucionit (Opsionale)
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    <label asp-for="InstitutionName" class="form-label">
+                                        Emri i Institucionit
+                                    </label>
+                                    <input asp-for="InstitutionName" class="form-control" />
+                                    <span asp-validation-for="InstitutionName" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label asp-for="InstitutionCode" class="form-label">
+                                        Kodi
+                                    </label>
+                                    <input asp-for="InstitutionCode" class="form-control" />
+                                    <span asp-validation-for="InstitutionCode" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="mb-3">
+                                    <label asp-for="InstitutionAddress" class="form-label">
+                                        Adresa
+                                    </label>
+                                    <input asp-for="InstitutionAddress" class="form-control" />
+                                    <span asp-validation-for="InstitutionAddress" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label asp-for="InstitutionPhone" class="form-label">
+                                        Telefoni
+                                    </label>
+                                    <input asp-for="InstitutionPhone" class="form-control" />
+                                    <span asp-validation-for="InstitutionPhone" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label asp-for="InstitutionEmail" class="form-label">
+                                        Email
+                                    </label>
+                                    <input asp-for="InstitutionEmail" class="form-control" type="email" />
+                                    <span asp-validation-for="InstitutionEmail" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label asp-for="InstitutionWebsite" class="form-label">
+                                        Website
+                                    </label>
+                                    <input asp-for="InstitutionWebsite" class="form-control" type="url" />
+                                    <span asp-validation-for="InstitutionWebsite" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cilësime të Tjera -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-dark text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-sliders me-2"></i>
+                            Cilësime të Tjera
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="FiscalYearStart" class="form-label">
+                                        Fillimi i Vitit Fiskal
+                                    </label>
+                                    <input asp-for="FiscalYearStart" class="form-control" type="date" />
+                                    <span asp-validation-for="FiscalYearStart" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="FiscalYearEnd" class="form-label">
+                                        Mbyllja e Vitit Fiskal
+                                    </label>
+                                    <input asp-for="FiscalYearEnd" class="form-control" type="date" />
+                                    <span asp-validation-for="FiscalYearEnd" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Notes" class="form-label">
+                                Shënime
+                            </label>
+                            <textarea asp-for="Notes" class="form-control" rows="3"></textarea>
+                            <span asp-validation-for="Notes" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-check form-switch">
+                            <input asp-for="AllowManualEdit" class="form-check-input" type="checkbox" />
+                            <label asp-for="AllowManualEdit" class="form-check-label">
+                                <i class="bi bi-pencil-square text-primary"></i>
+                                Lejo modifikim manual të numrave
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Index" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-1"></i>
+                                Anulo
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-1"></i>
+                                Ruaj Parametrat
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-4 border-primary sticky-top" style="top: 20px;">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-eye me-2"></i>
+                        Preview
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="text-primary">Numrat e Protokollit</h6>
+                    <div class="mb-3">
+                        <label class="small text-muted">Hyrëse:</label>
+                        <div class="p-2 bg-light rounded">
+                            <code class="fs-5" id="previewIncoming">H-0001/2025</code>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="small text-muted">Dalëse:</label>
+                        <div class="p-2 bg-light rounded">
+                            <code class="fs-5" id="previewOutgoing">D-0001/2025</code>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="small text-muted">Brendshme:</label>
+                        <div class="p-2 bg-light rounded">
+                            <code class="fs-5" id="previewInternal">B-0001/2025</code>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle-fill me-2"></i>
+                <strong>Këshillë:</strong> Përdor prefikse të shkurtra dhe të qarta për të identifikuar shpejt llojet e dokumenteve.
+            </div>
+
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <strong>Kujdes:</strong> Ndryshimi i numrave aktual mund të shkaktojë duplikate në numrat e protokollit.
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Update preview on any input change
+            function updatePreviews() {
+                var year = $('#Year').val();
+                var padding = parseInt($('#NumberPadding').val()) || 4;
+                var format = $('#ProtocolNumberFormat').val();
+                var showYear = $('#ShowYearInNumber').is(':checked');
+
+                // Incoming
+                var inPrefix = $('#IncomingPrefix').val() || 'H';
+                var inNumber = parseInt($('#IncomingCurrentNumber').val()) || 1;
+                var inPreview = generatePreview(inPrefix, inNumber, year, format, padding, showYear);
+                $('#incomingPreview, #previewIncoming').text(inPreview);
+
+                // Outgoing
+                var outPrefix = $('#OutgoingPrefix').val() || 'D';
+                var outNumber = parseInt($('#OutgoingCurrentNumber').val()) || 1;
+                var outPreview = generatePreview(outPrefix, outNumber, year, format, padding, showYear);
+                $('#outgoingPreview, #previewOutgoing').text(outPreview);
+
+                // Internal
+                var intPrefix = $('#InternalPrefix').val() || 'B';
+                var intNumber = parseInt($('#InternalCurrentNumber').val()) || 1;
+                var intPreview = generatePreview(intPrefix, intNumber, year, format, padding, showYear);
+                $('#internalPreview, #previewInternal').text(intPreview);
+            }
+
+            function generatePreview(prefix, number, year, format, padding, showYear) {
+                var result = format;
+                var paddedNumber = String(number).padStart(padding, '0');
+
+                result = result.replace('{PREFIX}', prefix);
+                result = result.replace('{NUMBER}', paddedNumber);
+
+                if (showYear) {
+                    result = result.replace('{YEAR}', year);
+                } else {
+                    result = result.replace('{YEAR}', '');
+                    result = result.replace('//', '/').replace('--', '-');
+                }
+
+                return result;
+            }
+
+            // Bind events
+            $('#Year, #NumberPadding, #ProtocolNumberFormat, #ShowYearInNumber').on('change', updatePreviews);
+            $('#IncomingPrefix, #IncomingCurrentNumber').on('input', updatePreviews);
+            $('#OutgoingPrefix, #OutgoingCurrentNumber').on('input', updatePreviews);
+            $('#InternalPrefix, #InternalCurrentNumber').on('input', updatePreviews);
+
+            // Initialize preview
+            updatePreviews();
+
+            // Auto-sync current number with start number for new settings
+            @if (Model.ProtocolSettingsId == 0)
+            {
+                    <text>
+                    $('#IncomingStartNumber').on('change', function() {
+                        $('#IncomingCurrentNumber').val($(this).val());
+                        updatePreviews();
+                    });
+
+                    $('#OutgoingStartNumber').on('change', function() {
+                        $('#OutgoingCurrentNumber').val($(this).val());
+                        updatePreviews();
+                    });
+
+                    $('#InternalStartNumber').on('change', function() {
+                        $('#InternalCurrentNumber').val($(this).val());
+                        updatePreviews();
+                    });
+                    </text>
+            }
+        });
+    </script>
+}
+
+@section Styles {
+    <style>
+        code {
+            background-color: #f8f9fa;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        .sticky-top {
+            z-index: 1020;
+        }
+
+        .form-control:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        }
+    </style>
+}

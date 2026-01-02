@@ -1,0 +1,297 @@
+﻿@{
+    ViewData["Title"] = "Dashboard Administratori";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Përdoruesit
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">125</div>
+                        <small class="text-muted"><i class="bi bi-arrow-up text-success"></i> +12 këtë muaj</small>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-people-fill text-primary" style="font-size: 2rem; opacity: 0.3;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Dokumentet
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">1,543</div>
+                        <small class="text-muted"><i class="bi bi-arrow-up text-success"></i> +87 sot</small>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-file-earmark-text-fill text-success" style="font-size: 2rem; opacity: 0.3;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Institucionet
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">45</div>
+                        <small class="text-muted"><i class="bi bi-arrow-up text-success"></i> +3 këtë muaj</small>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-building text-warning" style="font-size: 2rem; opacity: 0.3;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card border-left-danger shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                            Afatet Aktive
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">12</div>
+                        <small class="text-muted"><i class="bi bi-exclamation-circle text-danger"></i> Në pritje</small>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-alarm-fill text-danger" style="font-size: 2rem; opacity: 0.3;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-4">
+    <div class="col-xl-8 col-lg-7">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="bi bi-graph-up"></i> Dokumentet - Vlerësim Mujor
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-area">
+                    <canvas id="myAreaChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4 col-lg-5">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="bi bi-pie-chart"></i> Shpërndarja e Dokumenteve
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="chart-pie">
+                    <canvas id="myPieChart"></canvas>
+                </div>
+                <div class="mt-4 text-center small">
+                    <span class="mr-2">
+                        <i class="bi bi-circle-fill text-primary"></i> Hyrëse
+                    </span>
+                    <span class="mr-2">
+                        <i class="bi bi-circle-fill text-success"></i> Dalëse
+                    </span>
+                    <span class="mr-2">
+                        <i class="bi bi-circle-fill text-info"></i> Të brendshme
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Content Row -->
+<div class="row">
+    <!-- Activity Table -->
+    <div class="col-lg-8 mb-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="bi bi-activity"></i> Aktiviteti i Fundit
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Koha</th>
+                                <th>Përdoruesi</th>
+                                <th>Veprimi</th>
+                                <th>Statusi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><small class="text-muted">10:30</small></td>
+                                <td>
+                                    <i class="bi bi-person-circle text-primary"></i> Erald Hoxha
+                                </td>
+                                <td>Krijoi dokument hyrës <strong>H-0143/2024</strong></td>
+                                <td><span class="badge bg-success">Sukses</span></td>
+                            </tr>
+                            <tr>
+                                <td><small class="text-muted">10:15</small></td>
+                                <td>
+                                    <i class="bi bi-person-circle text-success"></i> Ana Marku
+                                </td>
+                                <td>Aprovoi dokument dalës <strong>D-0089/2024</strong></td>
+                                <td><span class="badge bg-success">Sukses</span></td>
+                            </tr>
+                            <tr>
+                                <td><small class="text-muted">09:45</small></td>
+                                <td>
+                                    <i class="bi bi-person-circle text-info"></i> Besnik Kola
+                                </td>
+                                <td>Shtoi institucion të ri <strong>Bashkia Tiranë</strong></td>
+                                <td><span class="badge bg-success">Sukses</span></td>
+                            </tr>
+                            <tr>
+                                <td><small class="text-muted">09:30</small></td>
+                                <td>
+                                    <i class="bi bi-person-circle text-warning"></i> Diana Shehu
+                                </td>
+                                <td>Modifikoi cilësimet e protokollit</td>
+                                <td><span class="badge bg-info">Ndryshuar</span></td>
+                            </tr>
+                            <tr>
+                                <td><small class="text-muted">09:00</small></td>
+                                <td>
+                                    <i class="bi bi-person-circle text-danger"></i> Klodian Pira
+                                </td>
+                                <td>Fshiu përdorues <strong>test@example.com</strong></td>
+                                <td><span class="badge bg-danger">Fshirë</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <a href="#" class="btn btn-sm btn-link">Shiko të gjitha <i class="bi bi-arrow-right"></i></a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notifications -->
+    <div class="col-lg-4 mb-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="bi bi-bell"></i> Njoftimet
+                </h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    <a href="#" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1"><i class="bi bi-clock text-danger"></i> Afat i ri</h6>
+                            <small class="text-muted">5 min</small>
+                        </div>
+                        <p class="mb-1 small">Dokument H-0142/2024 ka afat deri më 30/12/2024</p>
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1"><i class="bi bi-person-plus text-success"></i> Përdorues i ri</h6>
+                            <small class="text-muted">1 orë</small>
+                        </div>
+                        <p class="mb-1 small">User 'test@example.com' është regjistruar</p>
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1"><i class="bi bi-file-earmark text-info"></i> Dokument i ri</h6>
+                            <small class="text-muted">2 orë</small>
+                        </div>
+                        <p class="mb-1 small">Dokument hyrës H-0141/2024 nga Ministria e Financave</p>
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1"><i class="bi bi-gear text-warning"></i> Cilësim i ndryshuar</h6>
+                            <small class="text-muted">3 orë</small>
+                        </div>
+                        <p class="mb-1 small">Protokolli vjetor është rivendosur për 2025</p>
+                    </a>
+                </div>
+            </div>
+            <div class="card-footer text-center">
+                <a href="#" class="small">Shiko të gjitha njoftimet</a>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="bi bi-speedometer"></i> Statistika të Shpejta
+                </h6>
+            </div>
+            <div class="card-body">
+                <h4 class="small font-weight-bold">
+                    Dokumentet e Procesuar
+                    <span class="float-right">80%</span>
+                </h4>
+                <div class="progress mb-3">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: 80%"></div>
+                </div>
+                <h4 class="small font-weight-bold">
+                    Afatet e Përfunduara
+                    <span class="float-right">60%</span>
+                </h4>
+                <div class="progress mb-3">
+                    <div class="progress-bar bg-info" role="progressbar" style="width: 60%"></div>
+                </div>
+                <h4 class="small font-weight-bold">
+                    Aprovime në Pritje
+                    <span class="float-right">40%</span>
+                </h4>
+                <div class="progress mb-3">
+                    <div class="progress-bar bg-warning" role="progressbar" style="width: 40%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .border-left-primary {
+        border-left: 0.25rem solid #4e73df !important;
+    }
+
+    .border-left-success {
+        border-left: 0.25rem solid #1cc88a !important;
+    }
+
+    .border-left-warning {
+        border-left: 0.25rem solid #f6c23e !important;
+    }
+
+    .border-left-danger {
+        border-left: 0.25rem solid #e74a3b !important;
+    }
+
+    .text-xs {
+        font-size: .7rem;
+    }
+</style>

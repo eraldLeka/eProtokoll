@@ -1,0 +1,499 @@
+﻿@model IEnumerable<eProtokoll.Models.ApplicationUser>
+
+@{
+    ViewData["Title"] = "Menaxhimi i Përdoruesve";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Përdoruesit</li>
+        </ol>
+    </nav>
+
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="mb-0">
+                <i class="bi bi-people-fill me-2"></i>
+                Menaxhimi i Përdoruesve
+            </h2>
+            <p class="text-muted mt-2">Menaxho të gjithë përdoruesit e sistemit</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a asp-area="Admin" asp-controller="UserManagement" asp-action="Create" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i>
+                Shto Përdorues të Ri
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Total Përdorues</h6>
+                            <h3 class="mb-0">@Model.Count()</h3>
+                        </div>
+                        <div class="text-primary">
+                            <i class="bi bi-people" style="font-size: 2rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Administratorë</h6>
+                            <h3 class="mb-0 text-danger">@Model.Count(u => u.Role == eProtokoll.Models.ApplicationUser.UserRole.Administrator)</h3>
+                        </div>
+                        <div class="text-danger">
+                            <i class="bi bi-shield-fill-check" style="font-size: 2rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Menaxherë</h6>
+                            <h3 class="mb-0 text-warning">@Model.Count(u => u.Role == eProtokoll.Models.ApplicationUser.UserRole.Manager)</h3>
+                        </div>
+                        <div class="text-warning">
+                            <i class="bi bi-person-badge" style="font-size: 2rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Punonjës</h6>
+                            <h3 class="mb-0 text-success">@Model.Count(u => u.Role == eProtokoll.Models.ApplicationUser.UserRole.Employee)</h3>
+                        </div>
+                        <div class="text-success">
+                            <i class="bi bi-person" style="font-size: 2rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter Section -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" id="filterForm">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="searchTerm" class="form-label">Kërko</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white">
+                                <i class="bi bi-search"></i>
+                            </span>
+                            <input type="text" class="form-control" id="searchTerm" name="searchTerm"
+                                   value="@ViewBag.SearchTerm" placeholder="Emri, email, username...">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="role" class="form-label">Roli</label>
+                        <select class="form-select" id="role" name="role">
+                            <option value="">Të gjithë</option>
+                            <option value="Administrator" selected="@(ViewBag.SelectedRole == "Administrator")">Administrator</option>
+                            <option value="Manager" selected="@(ViewBag.SelectedRole == "Manager")">Menaxher</option>
+                            <option value="Employee" selected="@(ViewBag.SelectedRole == "Employee")">Punonjës</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="status" class="form-label">Statusi</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="">Të gjithë</option>
+                            <option value="active" selected="@(ViewBag.SelectedStatus == "active")">Aktiv</option>
+                            <option value="inactive" selected="@(ViewBag.SelectedStatus == "inactive")">Joaktiv</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label d-block">&nbsp;</label>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-funnel me-1"></i>
+                            Filtro
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h5 class="mb-0">Lista e Përdoruesve</h5>
+                </div>
+                <div class="col-auto">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="exportBtn">
+                        <i class="bi bi-download me-1"></i>
+                        Eksporto
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            @if (Model != null && Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" id="usersTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 5%;">
+                                    <input type="checkbox" class="form-check-input" id="selectAll">
+                                </th>
+                                <th style="width: 20%;">Përdoruesi</th>
+                                <th style="width: 15%;">Email</th>
+                                <th style="width: 15%;">Departmenti</th>
+                                <th style="width: 10%;">Roli</th>
+                                <th style="width: 10%;">Telefoni</th>
+                                <th style="width: 10%;">Statusi</th>
+                                <th style="width: 10%;">Data Krijimit</th>
+                                <th style="width: 5%;" class="text-end">Veprime</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var user in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" class="form-check-input row-checkbox" value="@user.Id">
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-circle bg-primary text-white me-2">
+                                                @user.FirstName.Substring(0, 1)@user.LastName.Substring(0, 1)
+                                            </div>
+                                            <div>
+                                                <strong>@user.FullName</strong>
+                                                <br />
+                                                <small class="text-muted">@@@user.UserName</small>
+                                                @if (!string.IsNullOrEmpty(user.Position))
+                                                {
+                                                    <br />
+                                                    <small class="text-muted">
+                                                        <i class="bi bi-briefcase"></i> @user.Position
+                                                    </small>
+                                                }
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <a href="mailto:@user.Email" class="text-decoration-none">
+                                            <i class="bi bi-envelope"></i> @user.Email
+                                        </a>
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(user.Department))
+                                        {
+                                            <span class="badge bg-light text-dark">
+                                                <i class="bi bi-building"></i> @user.Department
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @switch (user.Role)
+                                        {
+                                            case eProtokoll.Models.ApplicationUser.UserRole.Administrator:
+                                                <span class="badge bg-danger">
+                                                    <i class="bi bi-shield-fill-check"></i> Admin
+                                                </span>
+                                                break;
+                                            case eProtokoll.Models.ApplicationUser.UserRole.Manager:
+                                                <span class="badge bg-warning text-dark">
+                                                    <i class="bi bi-person-badge"></i> Menaxher
+                                                </span>
+                                                break;
+                                            case eProtokoll.Models.ApplicationUser.UserRole.Employee:
+                                                <span class="badge bg-success">
+                                                    <i class="bi bi-person"></i> Punonjës
+                                                </span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(user.PhoneNumber))
+                                        {
+                                            <small>
+                                                <i class="bi bi-telephone"></i> @user.PhoneNumber
+                                            </small>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (user.IsActive)
+                                        {
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-check-circle-fill"></i> Aktiv
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">
+                                                <i class="bi bi-x-circle-fill"></i> Joaktiv
+                                            </span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            @(user.CreatedDate?.ToString("dd/MM/yyyy") ?? "-")
+                                        </small>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a asp-area="Admin" asp-controller="UserManagement" asp-action="Details" asp-route-id="@user.Id"
+                                               class="btn btn-outline-info"
+                                               title="Detajet">
+                                                <i class="bi bi-eye-fill"></i>
+                                            </a>
+                                            <a asp-area="Admin" asp-controller="UserManagement" asp-action="Edit" asp-route-id="@user.Id"
+                                               class="btn btn-outline-primary"
+                                               title="Modifiko">
+                                                <i class="bi bi-pencil-fill"></i>
+                                            </a>
+                                            <a asp-area="Admin" asp-controller="UserManagement" asp-action="ChangePassword" asp-route-id="@user.Id"
+                                               class="btn btn-outline-warning"
+                                               title="Ndrysho Fjalëkalimin">
+                                                <i class="bi bi-key-fill"></i>
+                                            </a>
+                                            <button type="button"
+                                                    class="btn btn-outline-danger delete-user"
+                                                    data-id="@user.Id"
+                                                    data-name="@user.FullName"
+                                                    title="Fshij">
+                                                <i class="bi bi-trash-fill"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-people text-muted" style="font-size: 4rem;"></i>
+                    <h4 class="mt-3 text-muted">Nuk ka përdorues të regjistruar</h4>
+                    <p class="text-muted">Kliko butonin "Shto Përdorues të Ri" për të filluar</p>
+                    <a asp-area="Admin" asp-controller="UserManagement" asp-action="Create" class="btn btn-primary mt-3">
+                        <i class="bi bi-plus-circle me-1"></i>
+                        Shto Përdorues të Ri
+                    </a>
+                </div>
+            }
+        </div>
+        @if (Model != null && Model.Any())
+        {
+            <div class="card-footer bg-white">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <span class="text-muted">
+                            Duke shfaqur <strong>@Model.Count()</strong> përdorues
+                        </span>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Bulk Actions -->
+    <div id="bulkActions" class="card border-0 shadow-sm mt-3" style="display: none;">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <span id="selectedCount" class="text-muted">0 përdorues të zgjedhur</span>
+                </div>
+                <div class="col-md-6 text-end">
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-sm btn-success" id="activateSelected">
+                            <i class="bi bi-check-circle me-1"></i>
+                            Aktivizo
+                        </button>
+                        <button type="button" class="btn btn-sm btn-secondary" id="deactivateSelected">
+                            <i class="bi bi-x-circle me-1"></i>
+                            Çaktivizo
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    Konfirmo Fshirjen
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>A jeni të sigurt që dëshironi të fshini përdoruesin:</p>
+                <p class="fw-bold text-center" id="deleteItemName"></p>
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <strong>Kujdes:</strong> Kjo veprim nuk mund të zhbëhet!
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>
+                    Anulo
+                </button>
+                <form method="post" asp-area="Admin" asp-controller="UserManagement" asp-action="Delete" id="deleteForm" class="d-inline">
+                    <input type="hidden" name="id" id="deleteItemId">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash-fill me-1"></i>
+                        Fshij Përdoruesin
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Delete user
+            $('.delete-user').on('click', function() {
+                const id = $(this).data('id');
+                const name = $(this).data('name');
+                $('#deleteItemName').text(name);
+                $('#deleteItemId').val(id);
+                $('#deleteModal').modal('show');
+            });
+
+            // Select all checkboxes
+            $('#selectAll').on('change', function() {
+                $('.row-checkbox').prop('checked', $(this).prop('checked'));
+                updateBulkActions();
+            });
+
+            $('.row-checkbox').on('change', function() {
+                updateBulkActions();
+            });
+
+            function updateBulkActions() {
+                const selectedCount = $('.row-checkbox:checked').length;
+                if (selectedCount > 0) {
+                    $('#bulkActions').show();
+                    $('#selectedCount').text(selectedCount + ' përdorues të zgjedhur');
+                } else {
+                    $('#bulkActions').hide();
+                }
+            }
+
+            // Bulk activate
+            $('#activateSelected').on('click', function() {
+                const selectedIds = $('.row-checkbox:checked').map(function() {
+                    return $(this).val();
+                }).get();
+
+                if (confirm('A dëshironi të aktivizoni ' + selectedIds.length + ' përdorues?')) {
+                    $.ajax({
+                        url: '@Url.Action("BulkActivate", "UserManagement", new { area = "Admin" })',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify(selectedIds),
+                        success: function(response) {
+                            if (response.success) {
+                                alert(response.message);
+                                location.reload();
+                            } else {
+                                alert('Gabim: ' + response.message);
+                            }
+                        }
+                    });
+                }
+            });
+
+            // Bulk deactivate
+            $('#deactivateSelected').on('click', function() {
+                const selectedIds = $('.row-checkbox:checked').map(function() {
+                    return $(this).val();
+                }).get();
+
+                if (confirm('A dëshironi të çaktivizoni ' + selectedIds.length + ' përdorues?')) {
+                    $.ajax({
+                        url: '@Url.Action("BulkDeactivate", "UserManagement", new { area = "Admin" })',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify(selectedIds),
+                        success: function(response) {
+                            if (response.success) {
+                                alert(response.message);
+                                location.reload();
+                            } else {
+                                alert('Gabim: ' + response.message);
+                            }
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+}
+
+@section Styles {
+    <style>
+        .avatar-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: rgba(0, 123, 255, 0.05);
+        }
+
+        #bulkActions {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            min-width: 600px;
+        }
+    </style>
+}

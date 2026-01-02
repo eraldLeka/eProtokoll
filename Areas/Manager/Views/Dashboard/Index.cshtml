@@ -1,0 +1,682 @@
+﻿@{
+    ViewData["Title"] = "Dashboard - Menaxher";
+}
+
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item active" aria-current="page">
+                <i class="bi bi-speedometer2"></i> Dashboard
+            </li>
+        </ol>
+    </nav>
+
+    <!-- Welcome Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="mb-1">
+                <i class="bi bi-house-door me-2 text-primary"></i>
+                Mirë se vini, @User.Identity?.Name
+            </h2>
+            <p class="text-muted">Këtu është përmbledhja e aktivitetit tuaj sot, @DateTime.Now.ToString("dd MMMM yyyy")</p>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <!-- Total Documents -->
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1 text-uppercase small">Total Dokumentet</h6>
+                            <h2 class="mb-0 fw-bold">@ViewBag.TotalDocuments</h2>
+                            <small class="text-success">
+                                <i class="bi bi-arrow-up"></i> @ViewBag.MonthDocuments muajin
+                            </small>
+                        </div>
+                        <div class="stat-icon bg-primary-subtle text-primary">
+                            <i class="bi bi-files"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Today's Documents -->
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1 text-uppercase small">Sot</h6>
+                            <h2 class="mb-0 fw-bold">@ViewBag.TodayDocuments</h2>
+                            <small class="text-muted">
+                                <i class="bi bi-calendar-check"></i> Të protokolluara
+                            </small>
+                        </div>
+                        <div class="stat-icon bg-success-subtle text-success">
+                            <i class="bi bi-file-earmark-plus"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Urgent Documents -->
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1 text-uppercase small">Urgjente</h6>
+                            <h2 class="mb-0 fw-bold text-danger">@ViewBag.UrgentDocuments</h2>
+                            <small class="text-danger">
+                                <i class="bi bi-exclamation-triangle"></i> Kërkon vëmendje
+                            </small>
+                        </div>
+                        <div class="stat-icon bg-danger-subtle text-danger">
+                            <i class="bi bi-lightning-charge"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Overdue Deadlines -->
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1 text-uppercase small">Afate të Vonuara</h6>
+                            <h2 class="mb-0 fw-bold text-warning">@ViewBag.OverdueDeadlines</h2>
+                            <small class="text-warning">
+                                <i class="bi bi-clock-history"></i> @ViewBag.TodayDeadlines sot
+                            </small>
+                        </div>
+                        <div class="stat-icon bg-warning-subtle text-warning">
+                            <i class="bi bi-alarm"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <!-- Daily Activity Chart -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-bar-chart-line me-2 text-primary"></i>
+                        Aktiviteti i 7 Ditëve të Fundit
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="dailyActivityChart" height="80"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Document Types Chart -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-pie-chart me-2 text-primary"></i>
+                        Llojet e Dokumenteve
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="documentTypesChart"></canvas>
+                    <div class="mt-3">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span><i class="bi bi-circle-fill text-primary"></i> Hyrëse</span>
+                            <strong>@ViewBag.TotalIncoming</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span><i class="bi bi-circle-fill text-success"></i> Dalëse</span>
+                            <strong>@ViewBag.TotalOutgoing</strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span><i class="bi bi-circle-fill text-warning"></i> Brendshme</span>
+                            <strong>@ViewBag.TotalInternal</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Documents & Quick Actions -->
+    <div class="row mb-4">
+        <!-- Recent Documents -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-clock-history me-2 text-primary"></i>
+                        Dokumentet e Fundit
+                    </h5>
+                    <a asp-area="Manager" asp-controller="IncomingDocument" asp-action="Index" class="btn btn-sm btn-outline-primary">
+                        Shiko të Gjitha <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    @if (ViewBag.RecentDocuments != null && ((IEnumerable<Document>)ViewBag.RecentDocuments).Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Nr. Protokolli</th>
+                                        <th>Subjekti</th>
+                                        <th>Lloji</th>
+                                        <th>Statusi</th>
+                                        <th>Data</th>
+                                        <th class="text-end">Veprime</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var doc in (IEnumerable<Document>)ViewBag.RecentDocuments)
+                                    {
+                                        <tr>
+                                            <td><strong>@doc.ProtocolNumber</strong></td>
+                                            <td>
+                                                <div class="text-truncate" style="max-width: 300px;" title="@doc.Subject">
+                                                    @doc.Subject
+                                                </div>
+                                            </td>
+                                            <td>
+                                                @switch (doc.DocumentType)
+                                                {
+                                                    case DocumentType.Incoming:
+                                                        <span class="badge bg-primary">
+                                                            <i class="bi bi-arrow-down-circle"></i> Hyrës
+                                                        </span>
+                                                        break;
+                                                    case DocumentType.Outgoing:
+                                                        <span class="badge bg-success">
+                                                            <i class="bi bi-arrow-up-circle"></i> Dalës
+                                                        </span>
+                                                        break;
+                                                    case DocumentType.Internal:
+                                                        <span class="badge bg-warning text-dark">
+                                                            <i class="bi bi-arrow-left-right"></i> Brendshëm
+                                                        </span>
+                                                        break;
+                                                }
+                                            </td>
+                                            <td>
+                                                @switch (doc.Status)
+                                                {
+                                                    case DocumentStatus.Draft:
+                                                        <span class="badge bg-secondary">Draft</span>
+                                                        break;
+                                                    case DocumentStatus.Registered:
+                                                        <span class="badge bg-info">Protokolluar</span>
+                                                        break;
+                                                    case DocumentStatus.InProgress:
+                                                        <span class="badge bg-primary">Në Proces</span>
+                                                        break;
+                                                    case DocumentStatus.Completed:
+                                                        <span class="badge bg-success">Përfunduar</span>
+                                                        break;
+                                                    default:
+                                                        <span class="badge bg-light text-dark">@doc.Status</span>
+                                                        break;
+                                                }
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">
+                                                    @doc.ProtocolDate.ToString("dd/MM/yyyy")
+                                                </small>
+                                            </td>
+                                            <td class="text-end">
+                                                <a href="#" class="btn btn-sm btn-outline-primary" title="Detajet">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+                            <p class="text-muted mt-3">Nuk ka dokumente të regjistruara</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-lightning-charge me-2"></i>
+                        Veprime të Shpejta
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a asp-area="Manager" asp-controller="IncomingDocument" asp-action="Create" class="btn btn-primary">
+                            <i class="bi bi-plus-circle me-2"></i>
+                            Dokument Hyrës
+                        </a>
+                        <a asp-area="Manager" asp-controller="OutgoingDocument" asp-action="Create" class="btn btn-success">
+                            <i class="bi bi-send me-2"></i>
+                            Dokument Dalës
+                        </a>
+                        <a asp-area="Manager" asp-controller="InternalDocument" asp-action="Create" class="btn btn-warning">
+                            <i class="bi bi-file-earmark-text me-2"></i>
+                            Dokument Brendshëm
+                        </a>
+                        <hr>
+                        <a asp-area="Manager" asp-controller="ProtocolBook" asp-action="Index" class="btn btn-outline-primary">
+                            <i class="bi bi-book me-2"></i>
+                            Libër Protokolli
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status Summary -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0">
+                        <i class="bi bi-bar-chart me-2 text-primary"></i>
+                        Përmbledhje Statusesh
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <small class="text-muted">Draft</small>
+                            <small class="fw-bold">@ViewBag.DraftDocuments</small>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-secondary" style="width: @(ViewBag.TotalDocuments > 0 ? (ViewBag.DraftDocuments * 100.0 / ViewBag.TotalDocuments) : 0)%"></div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <small class="text-muted">Në Proces</small>
+                            <small class="fw-bold">@ViewBag.InProgressDocuments</small>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-primary" style="width: @(ViewBag.TotalDocuments > 0 ? (ViewBag.InProgressDocuments * 100.0 / ViewBag.TotalDocuments) : 0)%"></div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <small class="text-muted">Përfunduar</small>
+                            <small class="fw-bold">@ViewBag.CompletedDocuments</small>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-success" style="width: @(ViewBag.TotalDocuments > 0 ? (ViewBag.CompletedDocuments * 100.0 / ViewBag.TotalDocuments) : 0)%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="d-flex justify-content-between mb-1">
+                            <small class="text-muted">Arkivuar</small>
+                            <small class="fw-bold">@ViewBag.ArchivedDocuments</small>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-info" style="width: @(ViewBag.TotalDocuments > 0 ? (ViewBag.ArchivedDocuments * 100.0 / ViewBag.TotalDocuments) : 0)%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deadlines Row -->
+    <div class="row mb-4">
+        <!-- Upcoming Deadlines -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-calendar-check me-2 text-success"></i>
+                        Afate që Afrojnë
+                        <span class="badge bg-success">@ViewBag.UpcomingDeadlines</span>
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    @if (ViewBag.UpcomingDeadlinesList != null && ((IEnumerable<Deadline>)ViewBag.UpcomingDeadlinesList).Any())
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var deadline in (IEnumerable<Deadline>)ViewBag.UpcomingDeadlinesList)
+                            {
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1">@deadline.Title</h6>
+                                            <p class="mb-1 text-muted small">@deadline.Document?.Subject</p>
+                                            <small class="text-muted">
+                                                <i class="bi bi-person"></i> @(deadline.ResponsibleUser?.FullName ?? "Nuk është caktuar")
+                                            </small>
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="badge bg-success-subtle text-success">
+                                                <i class="bi bi-calendar"></i> @deadline.DueDate.ToString("dd/MM/yyyy")
+                                            </span>
+                                            <br>
+                                            <small class="text-success">
+                                                @deadline.DaysRemaining ditë
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4">
+                            <i class="bi bi-check-circle text-success" style="font-size: 2rem;"></i>
+                            <p class="text-muted mt-2 mb-0">Nuk ka afate që afrojnë</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Overdue Deadlines -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-exclamation-triangle me-2 text-danger"></i>
+                        Afate të Vonuara
+                        <span class="badge bg-danger">@ViewBag.OverdueDeadlines</span>
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    @if (ViewBag.OverdueDeadlinesList != null && ((IEnumerable<Deadline>)ViewBag.OverdueDeadlinesList).Any())
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var deadline in (IEnumerable<Deadline>)ViewBag.OverdueDeadlinesList)
+                            {
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1">@deadline.Title</h6>
+                                            <p class="mb-1 text-muted small">@deadline.Document?.Subject</p>
+                                            <small class="text-muted">
+                                                <i class="bi bi-person"></i> @(deadline.ResponsibleUser?.FullName ?? "Nuk është caktuar")
+                                            </small>
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="badge bg-danger-subtle text-danger">
+                                                <i class="bi bi-calendar-x"></i> @deadline.DueDate.ToString("dd/MM/yyyy")
+                                            </span>
+                                            <br>
+                                            <small class="text-danger fw-bold">
+                                                @Math.Abs(deadline.DaysRemaining) ditë vonë
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4">
+                            <i class="bi bi-check-circle text-success" style="font-size: 2rem;"></i>
+                            <p class="text-muted mt-2 mb-0">Nuk ka afate të vonuara</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Needs Response & Approval Row -->
+    <div class="row mb-4">
+        <!-- Needs Response -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-reply me-2 text-primary"></i>
+                        Kërkon Përgjigje
+                        <span class="badge bg-primary">@ViewBag.NeedsResponseCount</span>
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    @if (ViewBag.NeedsResponseList != null && ((IEnumerable<IncomingDocument>)ViewBag.NeedsResponseList).Any())
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var doc in (IEnumerable<IncomingDocument>)ViewBag.NeedsResponseList)
+                            {
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between">
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1">@doc.ProtocolNumber</h6>
+                                            <p class="mb-1 text-muted small">@doc.Subject</p>
+                                            <small class="text-muted">
+                                                <i class="bi bi-building"></i> @doc.Institution?.Name
+                                            </small>
+                                        </div>
+                                        @if (doc.ResponseDeadline.HasValue)
+                                        {
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="bi bi-calendar"></i> @doc.ResponseDeadline.Value.ToString("dd/MM/yyyy")
+                                            </span>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4">
+                            <i class="bi bi-check-circle text-success" style="font-size: 2rem;"></i>
+                            <p class="text-muted mt-2 mb-0">Nuk ka dokumente që kërkojnë përgjigje</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Needs Approval -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-check-circle me-2 text-warning"></i>
+                        Kërkon Miratim
+                        <span class="badge bg-warning text-dark">@ViewBag.NeedsApprovalCount</span>
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    @if (ViewBag.NeedsApprovalList != null && ((IEnumerable<InternalDocument>)ViewBag.NeedsApprovalList).Any())
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var doc in (IEnumerable<InternalDocument>)ViewBag.NeedsApprovalList)
+                            {
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1">@doc.ProtocolNumber</h6>
+                                            <p class="mb-1 text-muted small">@doc.Subject</p>
+                                            <small class="text-muted">
+                                                <i class="bi bi-person"></i> @(doc.FromUser?.FullName ?? doc.FromDepartment)
+                                            </small>
+                                        </div>
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="bi bi-clock"></i> @doc.CreatedDate.ToString("dd/MM/yyyy")
+                                        </span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4">
+                            <i class="bi bi-check-circle text-success" style="font-size: 2rem;"></i>
+                            <p class="text-muted mt-2 mb-0">Nuk ka dokumente që kërkojnë miratim</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Daily Activity Chart
+            const dailyCtx = document.getElementById('dailyActivityChart');
+            if (dailyCtx) {
+                const dailyData = @Html.Raw(Json.Serialize(ViewBag.DailyStats));
+
+                new Chart(dailyCtx, {
+                    type: 'line',
+                    data: {
+                        labels: dailyData.map(d => d.date),
+                        datasets: [{
+                            label: 'Dokumentet',
+                            data: dailyData.map(d => d.count),
+                            borderColor: '#0d6efd',
+                            backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Document Types Pie Chart
+            const pieCtx = document.getElementById('documentTypesChart');
+            if (pieCtx) {
+                new Chart(pieCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Hyrëse', 'Dalëse', 'Brendshme'],
+                        datasets: [{
+                            data: [@ViewBag.TotalIncoming, @ViewBag.TotalOutgoing, @ViewBag.TotalInternal],
+                            backgroundColor: [
+                                '#0d6efd',
+                                '#198754',
+                                '#ffc107'
+                            ],
+                            borderWidth: 2,
+                            borderColor: '#fff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+}
+
+@section Styles {
+    <style>
+        .stat-card {
+            transition: transform 0.2s;
+        }
+
+            .stat-card:hover {
+                transform: translateY(-5px);
+            }
+
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .card {
+            border-radius: 12px;
+        }
+
+        .card-header {
+            border-radius: 12px 12px 0 0 !important;
+        }
+
+        .list-group-item {
+            border-left: none;
+            border-right: none;
+        }
+
+            .list-group-item:first-child {
+                border-top: none;
+            }
+
+            .list-group-item:last-child {
+                border-bottom: none;
+            }
+
+        .progress {
+            border-radius: 10px;
+        }
+
+        .progress-bar {
+            border-radius: 10px;
+        }
+
+        .bg-primary-subtle {
+            background-color: rgba(13, 110, 253, 0.1) !important;
+        }
+
+        .bg-success-subtle {
+            background-color: rgba(25, 135, 84, 0.1) !important;
+        }
+
+        .bg-danger-subtle {
+            background-color: rgba(220, 53, 69, 0.1) !important;
+        }
+
+        .bg-warning-subtle {
+            background-color: rgba(255, 193, 7, 0.1) !important;
+        }
+    </style>
+}

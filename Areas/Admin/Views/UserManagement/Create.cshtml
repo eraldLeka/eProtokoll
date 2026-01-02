@@ -1,0 +1,405 @@
+﻿@model eProtokoll.Models.ApplicationUser
+
+@{
+    ViewData["Title"] = "Shto Përdorues të Ri";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
+            <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="UserManagement" asp-action="Index">Përdoruesit</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Shto të Ri</li>
+        </ol>
+    </nav>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="mb-0">
+                <i class="bi bi-person-plus-fill me-2 text-primary"></i>
+                Shto Përdorues të Ri
+            </h2>
+            <p class="text-muted mt-2">Regjistro një përdorues të ri në sistem</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <form asp-action="Create" method="post">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-person-circle me-2"></i>
+                            Informacioni i Llogarisë
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="UserName" class="form-label">
+                                        <i class="bi bi-at text-primary"></i>
+                                        Emri i Përdoruesit <span class="text-danger">*</span>
+                                    </label>
+                                    <input asp-for="UserName" class="form-control" placeholder="p.sh. erald.hoxha" />
+                                    <span asp-validation-for="UserName" class="text-danger"></span>
+                                    <small class="text-muted">Duhet të jetë unik në sistem</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Email" class="form-label">
+                                        <i class="bi bi-envelope text-primary"></i>
+                                        Email <span class="text-danger">*</span>
+                                    </label>
+                                    <input asp-for="Email" class="form-control" type="email" placeholder="erald.hoxha@example.com" />
+                                    <span asp-validation-for="Email" class="text-danger"></span>
+                                    <small class="text-muted">Duhet të jetë unik në sistem</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="Password" class="form-label">
+                                        <i class="bi bi-key text-primary"></i>
+                                        Fjalëkalimi <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="password" name="Password" id="Password" class="form-control" value="@ViewBag.Password" />
+                                        <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                            <i class="bi bi-eye" id="eyeIcon"></i>
+                                        </button>
+                                    </div>
+                                    @if (TempData["PasswordError"] != null)
+                                    {
+                                        <span class="text-danger d-block mt-1">@TempData["PasswordError"]</span>
+                                    }
+                                    <small class="text-muted d-block mt-1">Të paktën 6 karaktere</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="ConfirmPassword" class="form-label">
+                                        <i class="bi bi-key-fill text-primary"></i>
+                                        Konfirmo Fjalëkalimin <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="password" name="ConfirmPassword" id="ConfirmPassword" class="form-control" value="@ViewBag.ConfirmPassword" />
+                                    @if (TempData["ConfirmPasswordError"] != null)
+                                    {
+                                        <span class="text-danger d-block mt-1">@TempData["ConfirmPasswordError"]</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info mb-0">
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                            <strong>Këshillë:</strong> Përdorni fjalëkalim të fortë me shkronja, numra dhe karaktere speciale.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-person-vcard me-2"></i>
+                            Informacioni Personal
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="FirstName" class="form-label">
+                                        <i class="bi bi-person text-success"></i>
+                                        Emri <span class="text-danger">*</span>
+                                    </label>
+                                    <input asp-for="FirstName" class="form-control" placeholder="p.sh. Erald" />
+                                    <span asp-validation-for="FirstName" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="LastName" class="form-label">
+                                        <i class="bi bi-person-fill text-success"></i>
+                                        Mbiemri <span class="text-danger">*</span>
+                                    </label>
+                                    <input asp-for="LastName" class="form-control" placeholder="p.sh. Hoxha" />
+                                    <span asp-validation-for="LastName" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Position" class="form-label">
+                                        <i class="bi bi-briefcase text-success"></i>
+                                        Pozicioni
+                                    </label>
+                                    <input asp-for="Position" class="form-control" placeholder="p.sh. Sekretar i Përgjithshëm" />
+                                    <span asp-validation-for="Position" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Department" class="form-label">
+                                        <i class="bi bi-building text-success"></i>
+                                        Departmenti
+                                    </label>
+                                    <input asp-for="Department" class="form-control" placeholder="p.sh. Protokolli" />
+                                    <span asp-validation-for="Department" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="PhoneNumber" class="form-label">
+                                <i class="bi bi-telephone text-success"></i>
+                                Telefoni
+                            </label>
+                            <input asp-for="PhoneNumber" class="form-control" type="tel" placeholder="+355 69 123 4567" />
+                            <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">
+                            <i class="bi bi-shield-lock me-2"></i>
+                            Roli dhe Lejet
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label asp-for="Role" class="form-label">
+                                <i class="bi bi-person-badge text-warning"></i>
+                                Roli në Sistem <span class="text-danger">*</span>
+                            </label>
+                            <select asp-for="Role" class="form-select" id="roleSelect" asp-items="Html.GetEnumSelectList<eProtokoll.Models.ApplicationUser.UserRole>()">
+                                <option value="">-- Zgjidh Rolin --</option>
+                            </select>
+                            <span asp-validation-for="Role" class="text-danger"></span>
+                        </div>
+
+                        <div id="roleDescription" class="alert alert-light" style="display: none;">
+                            <strong id="roleTitle"></strong>
+                            <p id="roleDetails" class="mb-0 mt-2"></p>
+                        </div>
+
+                        <div class="form-check form-switch mt-3">
+                            <input asp-for="IsActive" class="form-check-input" type="checkbox" checked />
+                            <label asp-for="IsActive" class="form-check-label">
+                                <i class="bi bi-toggle-on text-success"></i>
+                                Aktiv (përdoruesi mund të hyjë në sistem)
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Index" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-1"></i>
+                                Anulo
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-1"></i>
+                                Ruaj Përdoruesin
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-4 border-primary sticky-top" style="top: 20px;">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Udhëzime
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="text-primary">
+                        <i class="bi bi-lightbulb-fill"></i> Krijimi i Përdoruesit
+                    </h6>
+                    <ul class="small">
+                        <li class="mb-2">Plotëso të gjitha fushat e detyrueshme (*)</li>
+                        <li class="mb-2"><strong>Username</strong> dhe <strong>Email</strong> duhet të jenë unikë</li>
+                        <li class="mb-2">Fjalëkalimi duhet të ketë të paktën 6 karaktere</li>
+                    </ul>
+                    <hr />
+                    <h6 class="text-primary">
+                        <i class="bi bi-shield-check"></i> Rolet
+                    </h6>
+                    <div class="small">
+                        <div class="mb-2">
+                            <strong class="text-danger">Administrator:</strong>
+                            <p class="mb-1 text-muted">Akses i plotë në sistem</p>
+                        </div>
+                        <div class="mb-2">
+                            <strong class="text-warning">Menaxher:</strong>
+                            <p class="mb-1 text-muted">Menaxhon dokumentet dhe detyrat</p>
+                        </div>
+                        <div class="mb-2">
+                            <strong class="text-success">Punonjës:</strong>
+                            <p class="mb-0 text-muted">Akseson dokumentet e caktuara</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        $(document).ready(function() {
+            // Toggle password visibility
+            $('#togglePassword').on('click', function() {
+                const passwordField = $('#Password');
+                const eyeIcon = $('#eyeIcon');
+
+                if (passwordField.attr('type') === 'password') {
+                    passwordField.attr('type', 'text');
+                    eyeIcon.removeClass('bi-eye').addClass('bi-eye-slash');
+                } else {
+                    passwordField.attr('type', 'password');
+                    eyeIcon.removeClass('bi-eye-slash').addClass('bi-eye');
+                }
+            });
+
+            // Role selection description
+            $('#roleSelect').on('change', function() {
+                const role = $(this).val();
+                const roleDescription = $('#roleDescription');
+                const roleTitle = $('#roleTitle');
+                const roleDetails = $('#roleDetails');
+
+                if (role) {
+                    roleDescription.show();
+
+                    if (role === '1') { // Administrator
+                        roleTitle.text('👑 Administrator');
+                        roleDescription.attr('class', 'alert alert-danger');
+                        roleDetails.html('<strong>Lejet:</strong><br>✓ Menaxhim i plotë i përdoruesve<br>✓ Konfigurimi i sistemit<br>✓ Të gjitha dokumentet');
+                    } else if (role === '2') { // Manager
+                        roleTitle.text('📋 Menaxher');
+                        roleDescription.attr('class', 'alert alert-warning');
+                        roleDetails.html('<strong>Lejet:</strong><br>✓ Menaxhim dokumentesh (CRUD)<br>✓ Delegim detyrash<br>✓ Miratim dhe firmosje');
+                    } else if (role === '3') { // Employee
+                        roleTitle.text('👤 Punonjës');
+                        roleDescription.attr('class', 'alert alert-success');
+                        roleDetails.html('<strong>Lejet:</strong><br>✓ Shikimi i dokumenteve të caktuara<br>✓ Përfundimi i detyrave');
+                    }
+                } else {
+                    roleDescription.hide();
+                }
+            });
+
+            // Generate username from name
+            $('#FirstName, #LastName').on('blur', function() {
+                const firstName = $('#FirstName').val().toLowerCase().trim();
+                const lastName = $('#LastName').val().toLowerCase().trim();
+                const userNameField = $('#UserName');
+
+                if (!userNameField.val() && firstName && lastName) {
+                    userNameField.val(firstName + '.' + lastName);
+                }
+            });
+
+            // Password strength indicator
+            $('#Password').on('input', function() {
+                const password = $(this).val();
+                let strength = 0;
+
+                if (password.length >= 6) strength++;
+                if (password.length >= 10) strength++;
+                if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
+                if (/\d/.test(password)) strength++;
+                if (/[^a-zA-Z\d]/.test(password)) strength++;
+
+                let strengthText = '';
+                let strengthClass = '';
+
+                if (strength < 2) {
+                    strengthText = 'I dobët';
+                    strengthClass = 'text-danger';
+                } else if (strength < 4) {
+                    strengthText = 'Mesatar';
+                    strengthClass = 'text-warning';
+                } else {
+                    strengthText = 'I fortë';
+                    strengthClass = 'text-success';
+                }
+
+                $('.password-strength').remove();
+                if (password) {
+                    $(this).closest('.mb-3').append('<small class="password-strength ' + strengthClass + '">Fuqia: ' + strengthText + '</small>');
+                }
+            });
+
+            // Form validation before submit
+            $('form').on('submit', function(e) {
+                const password = $('#Password').val();
+                const confirmPassword = $('#ConfirmPassword').val();
+
+                if (!password) {
+                    e.preventDefault();
+                    alert('Ju lutem shkruani fjalëkalimin!');
+                    return false;
+                }
+
+                if (password !== confirmPassword) {
+                    e.preventDefault();
+                    alert('Fjalëkalimet nuk përputhen!');
+                    return false;
+                }
+            });
+        });
+    </script>
+}
+
+@section Styles {
+    <style>
+        .form-control:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        }
+
+        .alert {
+            border-left: 4px solid;
+        }
+
+        .alert-danger {
+            border-left-color: #dc3545;
+        }
+
+        .alert-warning {
+            border-left-color: #ffc107;
+        }
+
+        .alert-success {
+            border-left-color: #198754;
+        }
+
+        .password-strength {
+            display: block;
+            margin-top: 0.25rem;
+            font-weight: 600;
+        }
+    </style>
+}

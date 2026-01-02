@@ -1,0 +1,411 @@
+﻿@model eProtokoll.Areas.Admin.Controllers.ReportDashboardViewModel
+
+@{
+    ViewData["Title"] = "Raportet dhe Statistikat";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Raportet</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="mb-0">
+                <i class="bi bi-bar-chart-fill me-2"></i>
+                Raportet dhe Statistikat
+            </h2>
+            <p class="text-muted mt-2">Statistika të përgjithshme dhe raporte të detajuara</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <button type="button" class="btn btn-success" onclick="window.print()">
+                <i class="bi bi-printer me-1"></i>
+                Printo Raportin
+            </button>
+        </div>
+    </div>
+
+    <!-- Statistika Kryesore -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Total Dokumente</h6>
+                            <h2 class="mb-0">@Model.TotalDocuments</h2>
+                            <small class="text-success">
+                                <i class="bi bi-arrow-up"></i>
+                                +@Model.CurrentMonthDocuments këtë muaj
+                            </small>
+                        </div>
+                        <div class="text-primary">
+                            <i class="bi bi-file-earmark-text" style="font-size: 2.5rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Dokumente Hyrëse</h6>
+                            <h2 class="mb-0 text-info">@Model.TotalIncomingDocuments</h2>
+                            <small class="text-muted">
+                                @(Model.TotalDocuments > 0 ? Math.Round((double)Model.TotalIncomingDocuments / Model.TotalDocuments * 100, 1) : 0)%
+                            </small>
+                        </div>
+                        <div class="text-info">
+                            <i class="bi bi-arrow-down-circle" style="font-size: 2.5rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Dokumente Dalëse</h6>
+                            <h2 class="mb-0 text-warning">@Model.TotalOutgoingDocuments</h2>
+                            <small class="text-muted">
+                                @(Model.TotalDocuments > 0 ? Math.Round((double)Model.TotalOutgoingDocuments / Model.TotalDocuments * 100, 1) : 0)%
+                            </small>
+                        </div>
+                        <div class="text-warning">
+                            <i class="bi bi-arrow-up-circle" style="font-size: 2.5rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Dokumente të Brendshme</h6>
+                            <h2 class="mb-0 text-success">@Model.TotalInternalDocuments</h2>
+                            <small class="text-muted">
+                                @(Model.TotalDocuments > 0 ? Math.Round((double)Model.TotalInternalDocuments / Model.TotalDocuments * 100, 1) : 0)%
+                            </small>
+                        </div>
+                        <div class="text-success">
+                            <i class="bi bi-arrow-left-right" style="font-size: 2.5rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dokumente sipas Statusit -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-check-circle me-2"></i>
+                        Dokumente sipas Statusit
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="text-center p-3 border rounded">
+                                <h4 class="text-secondary">@Model.DraftDocuments</h4>
+                                <p class="mb-0 small text-muted">Draft</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center p-3 border rounded">
+                                <h4 class="text-primary">@Model.RegisteredDocuments</h4>
+                                <p class="mb-0 small text-muted">I Protokolluar</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center p-3 border rounded">
+                                <h4 class="text-warning">@Model.InProgressDocuments</h4>
+                                <p class="mb-0 small text-muted">Në Proces</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center p-3 border rounded">
+                                <h4 class="text-success">@Model.CompletedDocuments</h4>
+                                <p class="mb-0 small text-muted">I Përfunduar</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dokumente sipas Prioritetit -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Dokumente sipas Prioritetit
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span>I Ulët</span>
+                            <strong>@Model.LowPriorityDocuments</strong>
+                        </div>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar bg-secondary" role="progressbar"
+                                 style="width: @(Model.TotalDocuments > 0 ? (double)Model.LowPriorityDocuments / Model.TotalDocuments * 100 : 0)%">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span>Normal</span>
+                            <strong>@Model.NormalPriorityDocuments</strong>
+                        </div>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar bg-primary" role="progressbar"
+                                 style="width: @(Model.TotalDocuments > 0 ? (double)Model.NormalPriorityDocuments / Model.TotalDocuments * 100 : 0)%">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span>I Lartë</span>
+                            <strong>@Model.HighPriorityDocuments</strong>
+                        </div>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar bg-warning" role="progressbar"
+                                 style="width: @(Model.TotalDocuments > 0 ? (double)Model.HighPriorityDocuments / Model.TotalDocuments * 100 : 0)%">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-0">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span>Urgjent</span>
+                            <strong>@Model.UrgentPriorityDocuments</strong>
+                        </div>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar bg-danger" role="progressbar"
+                                 style="width: @(Model.TotalDocuments > 0 ? (double)Model.UrgentPriorityDocuments / Model.TotalDocuments * 100 : 0)%">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-calendar-week me-2"></i>
+                        Aktiviteti i Fundit
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="bi bi-calendar-day text-primary me-2"></i>
+                                <span>Dokumente Sot</span>
+                            </div>
+                            <h4 class="mb-0">@Model.TodayDocuments</h4>
+                        </div>
+                        <hr />
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="bi bi-calendar-week text-info me-2"></i>
+                                <span>Dokumente këtë Javë</span>
+                            </div>
+                            <h4 class="mb-0">@Model.CurrentWeekDocuments</h4>
+                        </div>
+                        <hr />
+                    </div>
+
+                    <div class="mb-0">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="bi bi-calendar-month text-success me-2"></i>
+                                <span>Dokumente këtë Muaj</span>
+                            </div>
+                            <h4 class="mb-0">@Model.CurrentMonthDocuments</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistika të Tjera -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-building me-2"></i>
+                        Institucione
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span>Total Institucione</span>
+                        <h3 class="mb-0">@Model.TotalInstitutions</h3>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-success">Institucione Aktive</span>
+                        <h4 class="mb-0 text-success">@Model.ActiveInstitutions</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-folder me-2"></i>
+                        Klasifikime
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Total Klasifikime</span>
+                        <h3 class="mb-0">@Model.TotalClassifications</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Raporte të Detajuara -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-file-earmark-bar-graph me-2"></i>
+                        Raporte të Detajuara
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <a asp-action="DocumentsByType" class="text-decoration-none">
+                                <div class="card h-100 border-primary">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-pie-chart text-primary" style="font-size: 3rem;"></i>
+                                        <h5 class="mt-3">Dokumente sipas Llojit</h5>
+                                        <p class="text-muted small">Raport i detajuar për llojet e dokumenteve</p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+
+                        <div class="col-md-4">
+                            <a asp-action="DocumentsByStatus" class="text-decoration-none">
+                                <div class="card h-100 border-success">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-check-circle text-success" style="font-size: 3rem;"></i>
+                                        <h5 class="mt-3">Dokumente sipas Statusit</h5>
+                                        <p class="text-muted small">Raport i detajuar për statusin e dokumenteve</p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+
+                        <div class="col-md-4">
+                            <a asp-action="DocumentsByInstitution" class="text-decoration-none">
+                                <div class="card h-100 border-warning">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-building text-warning" style="font-size: 3rem;"></i>
+                                        <h5 class="mt-3">Dokumente sipas Institucionit</h5>
+                                        <p class="text-muted small">Raport për institucione më aktive</p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+
+                        <div class="col-md-4">
+                            <a asp-action="MonthlyReport" class="text-decoration-none">
+                                <div class="card h-100 border-info">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-calendar-month text-info" style="font-size: 3rem;"></i>
+                                        <h5 class="mt-3">Raport Mujor</h5>
+                                        <p class="text-muted small">Statistika të detajuara mujore</p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+
+                        <div class="col-md-4">
+                            <a asp-action="ExportData" class="text-decoration-none">
+                                <div class="card h-100 border-secondary">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-download text-secondary" style="font-size: 3rem;"></i>
+                                        <h5 class="mt-3">Eksporto të Dhënat</h5>
+                                        <p class="text-muted small">Eksporto raportet në Excel/PDF</p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+
+                        <div class="col-md-4">
+                            <a asp-action="AuditLog" class="text-decoration-none">
+                                <div class="card h-100 border-danger">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-shield-lock text-danger" style="font-size: 3rem;"></i>
+                                        <h5 class="mt-3">Audit Log</h5>
+                                        <p class="text-muted small">Historiku i veprimeve në sistem</p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .card:hover {
+            transform: translateY(-5px);
+            transition: all 0.3s ease;
+        }
+
+        .progress-bar {
+            transition: width 0.6s ease;
+        }
+
+        @@media print {
+            .btn, .breadcrumb, nav {
+                display: none !important;
+            }
+        }
+    </style>
+}

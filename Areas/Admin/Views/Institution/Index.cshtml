@@ -1,0 +1,667 @@
+﻿@model IEnumerable<eProtokoll.Models.Institution>
+
+@{
+    ViewData["Title"] = "Menaxhimi i Institucioneve";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Institucionet</li>
+        </ol>
+    </nav>
+
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="mb-0">
+                <i class="bi bi-building me-2"></i>
+                Menaxhimi i Institucioneve
+            </h2>
+            <p class="text-muted mt-2">Menaxho institucionet e jashtme që komunikojnë me sistemin</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="/Admin/Institution/Create" class="btn btn-primary" id="createInstitutionBtn">
+                <i class="bi bi-plus-circle me-1"></i>
+                Shto Institucion të Ri
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Total Institucione</h6>
+                            <h3 class="mb-0">@Model.Count()</h3>
+                        </div>
+                        <div class="text-primary">
+                            <i class="bi bi-building" style="font-size: 2rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Aktive</h6>
+                            <h3 class="mb-0 text-success">@Model.Count(i => i.IsActive)</h3>
+                        </div>
+                        <div class="text-success">
+                            <i class="bi bi-check-circle-fill" style="font-size: 2rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Joaktive</h6>
+                            <h3 class="mb-0 text-warning">@Model.Count(i => !i.IsActive)</h3>
+                        </div>
+                        <div class="text-warning">
+                            <i class="bi bi-x-circle-fill" style="font-size: 2rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Shtetërore</h6>
+                            <h3 class="mb-0 text-info">@Model.Count(i => i.Type == eProtokoll.Models.Institution.InstitutionType.Government)</h3>
+                        </div>
+                        <div class="text-info">
+                            <i class="bi bi-bank" style="font-size: 2rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter Section -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" id="filterForm">
+                <div class="row g-3">
+                    <div class="col-md-5">
+                        <label for="searchTerm" class="form-label">Kërko</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white">
+                                <i class="bi bi-search"></i>
+                            </span>
+                            <input type="text" class="form-control" id="searchTerm" name="searchTerm"
+                                   placeholder="Emri, adresa ose kontakti...">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="filterType" class="form-label">Lloji</label>
+                        <select class="form-select" id="filterType" name="type">
+                            <option value="">Të gjitha</option>
+                            <option value="1">Institucion Shteteror</option>
+                            <option value="2">Bashki/Komune</option>
+                            <option value="3">Ministri</option>
+                            <option value="4">Kompani Private</option>
+                            <option value="5">OJF/OJQ</option>
+                            <option value="6">Organizatë Ndërkombëtare</option>
+                            <option value="7">Institucion Arsimor</option>
+                            <option value="8">Institucion Shëndetësor</option>
+                            <option value="9">Media</option>
+                            <option value="10">Tjetër</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="filterStatus" class="form-label">Statusi</label>
+                        <select class="form-select" id="filterStatus" name="status">
+                            <option value="">Të gjitha</option>
+                            <option value="active">Aktive</option>
+                            <option value="inactive">Joaktive</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label d-block">&nbsp;</label>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-funnel me-1"></i>
+                            Filtro
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Institutions Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h5 class="mb-0">Lista e Institucioneve</h5>
+                </div>
+                <div class="col-auto">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="exportBtn">
+                        <i class="bi bi-download me-1"></i>
+                        Eksporto
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            @if (Model != null && Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" id="institutionsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 5%;">
+                                    <input type="checkbox" class="form-check-input" id="selectAll">
+                                </th>
+                                <th style="width: 25%;">Emri</th>
+                                <th style="width: 15%;">Lloji</th>
+                                <th style="width: 20%;">Adresa</th>
+                                <th style="width: 15%;">Kontakti</th>
+                                <th style="width: 10%;">Email</th>
+                                <th style="width: 5%;">Statusi</th>
+                                <th style="width: 5%;" class="text-end">Veprime</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var institution in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" class="form-check-input row-checkbox" value="@institution.InstitutionId">
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <strong>@institution.Name</strong>
+                                            @if (!string.IsNullOrEmpty(institution.ShortName))
+                                            {
+                                                <br />
+                                                <small class="text-muted">(@institution.ShortName)</small>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @switch (institution.Type)
+                                        {
+                                            case eProtokoll.Models.Institution.InstitutionType.Government:
+                                                <span class="badge bg-primary">
+                                                    <i class="bi bi-bank me-1"></i>
+                                                    Shteteror
+                                                </span>
+                                                break;
+                                            case eProtokoll.Models.Institution.InstitutionType.Municipality:
+                                                <span class="badge bg-info">
+                                                    <i class="bi bi-building me-1"></i>
+                                                    Bashki/Komune
+                                                </span>
+                                                break;
+                                            case eProtokoll.Models.Institution.InstitutionType.Ministry:
+                                                <span class="badge bg-success">
+                                                    <i class="bi bi-bank2 me-1"></i>
+                                                    Ministri
+                                                </span>
+                                                break;
+                                            case eProtokoll.Models.Institution.InstitutionType.Private:
+                                                <span class="badge bg-warning text-dark">
+                                                    <i class="bi bi-briefcase me-1"></i>
+                                                    Private
+                                                </span>
+                                                break;
+                                            case eProtokoll.Models.Institution.InstitutionType.NGO:
+                                                <span class="badge bg-secondary">
+                                                    <i class="bi bi-people me-1"></i>
+                                                    OJF/OJQ
+                                                </span>
+                                                break;
+                                            case eProtokoll.Models.Institution.InstitutionType.International:
+                                                <span class="badge bg-danger">
+                                                    <i class="bi bi-globe me-1"></i>
+                                                    Ndërkombëtare
+                                                </span>
+                                                break;
+                                            case eProtokoll.Models.Institution.InstitutionType.Educational:
+                                                <span class="badge bg-primary">
+                                                    <i class="bi bi-book me-1"></i>
+                                                    Arsimor
+                                                </span>
+                                                break;
+                                            case eProtokoll.Models.Institution.InstitutionType.Healthcare:
+                                                <span class="badge bg-danger">
+                                                    <i class="bi bi-hospital me-1"></i>
+                                                    Shëndetësor
+                                                </span>
+                                                break;
+                                            case eProtokoll.Models.Institution.InstitutionType.Media:
+                                                <span class="badge bg-dark">
+                                                    <i class="bi bi-broadcast me-1"></i>
+                                                    Media
+                                                </span>
+                                                break;
+                                            case eProtokoll.Models.Institution.InstitutionType.Other:
+                                                <span class="badge bg-secondary">
+                                                    <i class="bi bi-three-dots me-1"></i>
+                                                    Tjetër
+                                                </span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(institution.Adress))
+                                        {
+                                            <small>
+                                                <i class="bi bi-geo-alt text-muted"></i>
+                                                @institution.Adress
+                                                @if (!string.IsNullOrEmpty(institution.City))
+                                                {
+                                                    <br />
+                                                    <span class="text-muted">@institution.City</span>
+                                                }
+                                            </small>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(institution.Phone))
+                                        {
+                                            <small>
+                                                <i class="bi bi-telephone text-primary"></i>
+                                                @institution.Phone
+                                            </small>
+                                        }
+                                        @if (!string.IsNullOrEmpty(institution.ContactPerson))
+                                        {
+                                            <br />
+                                            <small class="text-muted">
+                                                <i class="bi bi-person"></i>
+                                                @institution.ContactPerson
+                                            </small>
+                                        }
+                                        @if (string.IsNullOrEmpty(institution.Phone) && string.IsNullOrEmpty(institution.ContactPerson))
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(institution.Email))
+                                        {
+                                            <small>
+                                                <a href="mailto:@institution.Email" class="text-decoration-none">
+                                                    <i class="bi bi-envelope text-info"></i>
+                                                    @institution.Email
+                                                </a>
+                                            </small>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (institution.IsActive)
+                                        {
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-check-circle-fill"></i>
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">
+                                                <i class="bi bi-x-circle-fill"></i>
+                                            </span>
+                                        }
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a asp-area="Admin" asp-controller="Institution" asp-action="Edit"
+                                               asp-route-id="@institution.InstitutionId"
+                                               class="btn btn-outline-primary"
+                                               title="Modifiko">
+                                                <i class="bi bi-pencil-fill"></i>
+                                            </a>
+                                            <button type="button"
+                                                    class="btn btn-outline-danger delete-institution"
+                                                    data-id="@institution.InstitutionId"
+                                                    data-name="@institution.Name"
+                                                    title="Fshij">
+                                                <i class="bi bi-trash-fill"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-building text-muted" style="font-size: 4rem;"></i>
+                    <h4 class="mt-3 text-muted">Nuk ka institucione të regjistruara</h4>
+                    <p class="text-muted">Kliko butonin "Shto Institucion të Ri" për të filluar</p>
+                    <a asp-area="Admin" asp-controller="Institution" asp-action="Create" class="btn btn-primary mt-3">
+                        <i class="bi bi-plus-circle me-1"></i>
+                        Shto Institucion të Ri
+                    </a>
+                </div>
+            }
+        </div>
+        @if (Model != null && Model.Any())
+        {
+            <div class="card-footer bg-white">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <span class="text-muted">
+                            Duke shfaqur <strong>@Model.Count()</strong> institucione
+                        </span>
+                    </div>
+                    <div class="col-md-6">
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination pagination-sm justify-content-end mb-0">
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#" tabindex="-1">Mëparshëm</a>
+                                </li>
+                                <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                                <li class="page-item">
+                                    <a class="page-link" href="#">Tjetër</a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Bulk Actions -->
+    <div id="bulkActions" class="card border-0 shadow-sm mt-3" style="display: none;">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <span id="selectedCount" class="text-muted">0 institucione të zgjedhura</span>
+                </div>
+                <div class="col-md-6 text-end">
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-sm btn-success" id="activateSelected">
+                            <i class="bi bi-check-circle me-1"></i>
+                            Aktivizo
+                        </button>
+                        <button type="button" class="btn btn-sm btn-secondary" id="deactivateSelected">
+                            <i class="bi bi-x-circle me-1"></i>
+                            Çaktivizo
+                        </button>
+                        <button type="button" class="btn btn-sm btn-danger" id="deleteSelected">
+                            <i class="bi bi-trash me-1"></i>
+                            Fshij
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteModalLabel">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    Konfirmo Fshirjen
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>A jeni të sigurt që dëshironi të fshini institucionin:</p>
+                <p class="fw-bold text-center" id="deleteItemName"></p>
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <strong>Kujdes:</strong> Kjo veprim nuk mund të zhbëhet dhe do të ndikojë në të gjitha dokumentet që lidhen me këtë institucion.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>
+                    Anulo
+                </button>
+                <form method="post" asp-area="Admin" asp-controller="Institution" asp-action="Delete" id="deleteForm" class="d-inline">
+                    <input type="hidden" name="id" id="deleteItemId">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash-fill me-1"></i>
+                        Fshij Institucionin
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Delete institution
+            $('.delete-institution').on('click', function() {
+                const id = $(this).data('id');
+                const name = $(this).data('name');
+
+                $('#deleteItemName').text(name);
+                $('#deleteItemId').val(id);
+
+                $('#deleteModal').modal('show');
+            });
+
+            // Select all checkboxes
+            $('#selectAll').on('change', function() {
+                $('.row-checkbox').prop('checked', $(this).prop('checked'));
+                updateBulkActions();
+            });
+
+            // Individual checkbox
+            $('.row-checkbox').on('change', function() {
+                updateBulkActions();
+            });
+
+            // Update bulk actions visibility
+            function updateBulkActions() {
+                const selectedCount = $('.row-checkbox:checked').length;
+                if (selectedCount > 0) {
+                    $('#bulkActions').show();
+                    $('#selectedCount').text(selectedCount + ' institucione të zgjedhura');
+                } else {
+                    $('#bulkActions').hide();
+                }
+            }
+
+            // Bulk activate
+            $('#activateSelected').on('click', function() {
+                const selectedIds = $('.row-checkbox:checked').map(function() {
+                    return parseInt($(this).val());
+                }).get();
+
+                if (selectedIds.length === 0) {
+                    alert('Ju lutem zgjidhni së paku një institucion!');
+                    return;
+                }
+
+                if (confirm('A dëshironi të aktivizoni ' + selectedIds.length + ' institucione?')) {
+                    $.ajax({
+                        url: '@Url.Action("BulkActivate", "Institution", new { area = "Admin" })',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify(selectedIds),
+                        success: function(response) {
+                            if (response.success) {
+                                alert(response.message);
+                                location.reload();
+                            } else {
+                                alert('Gabim: ' + response.message);
+                            }
+                        },
+                        error: function() {
+                            alert('Ka ndodhur një gabim gjatë aktivizimit!');
+                        }
+                    });
+                }
+            });
+
+            // Bulk deactivate
+            $('#deactivateSelected').on('click', function() {
+                const selectedIds = $('.row-checkbox:checked').map(function() {
+                    return parseInt($(this).val());
+                }).get();
+
+                if (selectedIds.length === 0) {
+                    alert('Ju lutem zgjidhni së paku një institucion!');
+                    return;
+                }
+
+                if (confirm('A dëshironi të çaktivizoni ' + selectedIds.length + ' institucione?')) {
+                    $.ajax({
+                        url: '@Url.Action("BulkDeactivate", "Institution", new { area = "Admin" })',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify(selectedIds),
+                        success: function(response) {
+                            if (response.success) {
+                                alert(response.message);
+                                location.reload();
+                            } else {
+                                alert('Gabim: ' + response.message);
+                            }
+                        },
+                        error: function() {
+                            alert('Ka ndodhur një gabim gjatë çaktivizimit!');
+                        }
+                    });
+                }
+            });
+
+            // Bulk delete
+            $('#deleteSelected').on('click', function() {
+                const selectedIds = $('.row-checkbox:checked').map(function() {
+                    return parseInt($(this).val());
+                }).get();
+
+                if (selectedIds.length === 0) {
+                    alert('Ju lutem zgjidhni së paku një institucion!');
+                    return;
+                }
+
+                if (confirm('KUJDES: A jeni të sigurt që dëshironi të fshini ' + selectedIds.length + ' institucione? Kjo veprim nuk mund të zhbëhet!')) {
+                    $.ajax({
+                        url: '@Url.Action("BulkDelete", "Institution", new { area = "Admin" })',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify(selectedIds),
+                        success: function(response) {
+                            if (response.success) {
+                                alert(response.message);
+                                location.reload();
+                            } else {
+                                alert('Gabim: ' + response.message);
+                            }
+                        },
+                        error: function() {
+                            alert('Ka ndodhur një gabim gjatë fshirjes!');
+                        }
+                    });
+                }
+            });
+
+            // Export functionality
+            $('#exportBtn').on('click', function() {
+                alert('Funksionaliteti i eksportimit do të implementohet së shpejti');
+            });
+
+            // Search functionality
+            $('#searchTerm').on('keyup', function() {
+                const searchValue = $(this).val().toLowerCase();
+                $('#institutionsTable tbody tr').filter(function() {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(searchValue) > -1);
+                });
+            });
+
+            // Filter by type
+            $('#filterType').on('change', function() {
+                const typeValue = $(this).val();
+                if (typeValue === '') {
+                    $('#institutionsTable tbody tr').show();
+                } else {
+                    $('#institutionsTable tbody tr').each(function() {
+                        const row = $(this);
+                        const typeBadge = row.find('td:eq(2)').text().trim();
+                        row.toggle(typeBadge.length > 0);
+                    });
+                }
+            });
+
+            // Filter by status
+            $('#filterStatus').on('change', function() {
+                const statusValue = $(this).val();
+                if (statusValue === '') {
+                    $('#institutionsTable tbody tr').show();
+                } else if (statusValue === 'active') {
+                    $('#institutionsTable tbody tr').each(function() {
+                        const hasActiveIcon = $(this).find('.badge.bg-success').length > 0;
+                        $(this).toggle(hasActiveIcon);
+                    });
+                } else if (statusValue === 'inactive') {
+                    $('#institutionsTable tbody tr').each(function() {
+                        const hasInactiveIcon = $(this).find('.badge.bg-secondary').length > 0;
+                        $(this).toggle(hasInactiveIcon);
+                    });
+                }
+            });
+        });
+    </script>
+}
+@section Styles {
+    <style>
+        .table-hover tbody tr:hover {
+            background-color: rgba(0, 123, 255, 0.05);
+        }
+
+        .btn-group-sm .btn {
+            padding: 0.25rem 0.5rem;
+        }
+
+        .badge {
+            font-weight: 500;
+            padding: 0.35em 0.65em;
+        }
+
+        .card {
+            transition: all 0.3s ease;
+        }
+
+        #bulkActions {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            min-width: 600px;
+        }
+    </style>
+}
