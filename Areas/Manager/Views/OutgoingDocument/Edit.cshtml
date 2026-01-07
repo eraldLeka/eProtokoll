@@ -1,0 +1,640 @@
+﻿@model eProtokoll.Models.OutgoingDocument
+
+@{
+    ViewData["Title"] = "Modifiko Dokument Dalës";
+}
+
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a asp-area="Manager" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
+            </li>
+            <li class="breadcrumb-item">
+                <a asp-area="Manager" asp-controller="OutgoingDocument" asp-action="Index">Dokumente Dalëse</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">Modifiko</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="mb-0">
+                <i class="bi bi-pencil-square me-2 text-success"></i>
+                Modifiko Dokument Dalës
+            </h2>
+            <p class="text-muted mt-2">Përditëso të dhënat e dokumentit: <strong class="text-success">@Model.ProtocolNumber</strong></p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a asp-area="Manager" asp-controller="OutgoingDocument" asp-action="Details" asp-route-id="@Model.DocumentId" class="btn btn-outline-info">
+                <i class="bi bi-eye me-1"></i>
+                Shiko Detajet
+            </a>
+        </div>
+    </div>
+
+    <form asp-action="Edit" method="post" enctype="multipart/form-data" id="editForm">
+        <input type="hidden" asp-for="DocumentId" />
+        <input type="hidden" asp-for="CreatedDate" />
+        <input type="hidden" asp-for="CreatedBy" />
+        <input type="hidden" asp-for="DocumentType" />
+
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+        <!-- Protocol Information -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-hash me-2"></i>
+                    Informacioni i Protokollimit
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label asp-for="ProtocolNumber" class="form-label">
+                                <i class="bi bi-file-text text-success"></i>
+                                Numri i Protokollit <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="ProtocolNumber" class="form-control form-control-lg fw-bold text-success" readonly />
+                            <span asp-validation-for="ProtocolNumber" class="text-danger"></span>
+                            <small class="text-muted">Nuk mund të ndryshohet</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label asp-for="ProtocolDate" class="form-label">
+                                Data e Protokollimit <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="ProtocolDate" class="form-control" type="date" />
+                            <span asp-validation-for="ProtocolDate" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label asp-for="ProtocolTime" class="form-label">
+                                Ora e Protokollimit <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="ProtocolTime" class="form-control" type="time" />
+                            <span asp-validation-for="ProtocolTime" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recipient Information -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-building me-2"></i>
+                    Informacioni i Marrësit
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="InstitutionId" class="form-label">
+                                <i class="bi bi-bank text-info"></i>
+                                Institucioni Marrës <span class="text-danger">*</span>
+                            </label>
+                            <select asp-for="InstitutionId" class="form-select" asp-items="ViewBag.Institutions">
+                                <option value="">-- Zgjidh Institucionin --</option>
+                            </select>
+                            <span asp-validation-for="InstitutionId" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="RecipientName" class="form-label">
+                                <i class="bi bi-person text-info"></i>
+                                Emri i Marrësit <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="RecipientName" class="form-control" placeholder="Emri i plotë i marrësit" />
+                            <span asp-validation-for="RecipientName" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="RecipientPosition" class="form-label">
+                                <i class="bi bi-briefcase text-info"></i>
+                                Pozicioni
+                            </label>
+                            <input asp-for="RecipientPosition" class="form-control" placeholder="p.sh. Drejtor, Sekretar..." />
+                            <span asp-validation-for="RecipientPosition" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="RecipientEmail" class="form-label">
+                                <i class="bi bi-envelope text-info"></i>
+                                Email
+                            </label>
+                            <input asp-for="RecipientEmail" class="form-control" type="email" placeholder="email@example.com" />
+                            <span asp-validation-for="RecipientEmail" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="RecipientPhone" class="form-label">
+                                <i class="bi bi-telephone text-info"></i>
+                                Telefoni
+                            </label>
+                            <input asp-for="RecipientPhone" class="form-control" type="tel" placeholder="+355 69 123 4567" />
+                            <span asp-validation-for="RecipientPhone" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="RecipientAddress" class="form-label">
+                                <i class="bi bi-geo-alt text-info"></i>
+                                Adresa
+                            </label>
+                            <input asp-for="RecipientAddress" class="form-control" placeholder="Adresa e plotë" />
+                            <span asp-validation-for="RecipientAddress" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Document Content -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-file-earmark-text me-2"></i>
+                    Përmbajtja e Dokumentit
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label asp-for="Subject" class="form-label">
+                        <i class="bi bi-chat-left-text text-primary"></i>
+                        Subjekti <span class="text-danger">*</span>
+                    </label>
+                    <input asp-for="Subject" class="form-control" placeholder="Subjekti/Titulli i dokumentit" />
+                    <span asp-validation-for="Subject" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Content" class="form-label">
+                        <i class="bi bi-text-paragraph text-primary"></i>
+                        Përmbajtja/Përshkrimi
+                    </label>
+                    <textarea asp-for="Content" class="form-control" rows="5" placeholder="Përshkrimi i shkurtër i përmbajtjes së dokumentit..."></textarea>
+                    <span asp-validation-for="Content" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Signature Information -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-pen me-2"></i>
+                    Informacioni i Firmosjes
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="SignedBy" class="form-label">
+                                <i class="bi bi-person-check text-dark"></i>
+                                Firmëtari <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="SignedBy" class="form-control" placeholder="Emri i personit që firmos" />
+                            <span asp-validation-for="SignedBy" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="SignerPosition" class="form-label">
+                                <i class="bi bi-award text-dark"></i>
+                                Pozicioni i Firmëtarit
+                            </label>
+                            <input asp-for="SignerPosition" class="form-control" placeholder="p.sh. Drejtor i Përgjithshëm" />
+                            <span asp-validation-for="SignerPosition" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="SignedDate" class="form-label">
+                                <i class="bi bi-calendar-event text-dark"></i>
+                                Data e Firmosjes
+                            </label>
+                            <input asp-for="SignedDate" class="form-control" type="date" />
+                            <span asp-validation-for="SignedDate" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Classification & Details -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="bi bi-shield-lock me-2"></i>
+                    Klasifikimi dhe Detajet
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="ClassificationId" class="form-label">
+                                <i class="bi bi-lock text-warning"></i>
+                                Klasifikimi <span class="text-danger">*</span>
+                            </label>
+                            <select asp-for="ClassificationId" class="form-select" asp-items="ViewBag.Classifications">
+                                <option value="">-- Zgjidh Klasifikimin --</option>
+                            </select>
+                            <span asp-validation-for="ClassificationId" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mb-3">
+                            <label asp-for="Status" class="form-label">
+                                Statusi <span class="text-danger">*</span>
+                            </label>
+                            <select asp-for="Status" class="form-select" asp-items="Html.GetEnumSelectList<DocumentStatus>()">
+                            </select>
+                            <span asp-validation-for="Status" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mb-3">
+                            <label asp-for="Priority" class="form-label">
+                                Prioriteti <span class="text-danger">*</span>
+                            </label>
+                            <select asp-for="Priority" class="form-select" asp-items="Html.GetEnumSelectList<Priority>()">
+                            </select>
+                            <span asp-validation-for="Priority" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delivery Information -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-truck me-2"></i>
+                    Informacioni i Dërgesës
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label asp-for="DeliveryMethod" class="form-label">
+                                <i class="bi bi-send text-secondary"></i>
+                                Mënyra e Dërgesës <span class="text-danger">*</span>
+                            </label>
+                            <select asp-for="DeliveryMethod" class="form-select" asp-items="Html.GetEnumSelectList<DeliveryMethod>()">
+                            </select>
+                            <span asp-validation-for="DeliveryMethod" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label asp-for="SentDate" class="form-label">
+                                <i class="bi bi-calendar-event text-secondary"></i>
+                                Data e Dërgimit
+                            </label>
+                            <input asp-for="SentDate" class="form-control" type="date" />
+                            <span asp-validation-for="SentDate" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label asp-for="SentTime" class="form-label">
+                                <i class="bi bi-clock text-secondary"></i>
+                                Ora e Dërgimit
+                            </label>
+                            <input asp-for="SentTime" class="form-control" type="time" />
+                            <span asp-validation-for="SentTime" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="ShipmentCompany" class="form-label">
+                                <i class="bi bi-building text-secondary"></i>
+                                Kompania e Dërgesës
+                            </label>
+                            <input asp-for="ShipmentCompany" class="form-control" placeholder="p.sh. Posta Shqiptare, DHL" />
+                            <span asp-validation-for="ShipmentCompany" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="TrackingNumber" class="form-label">
+                                <i class="bi bi-upc-scan text-secondary"></i>
+                                Numri i Gjurmimit
+                            </label>
+                            <input asp-for="TrackingNumber" class="form-control" placeholder="Tracking number" />
+                            <span asp-validation-for="TrackingNumber" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Existing Attachments -->
+        @if (Model.Attachments != null && Model.Attachments.Any())
+        {
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-paperclip me-2"></i>
+                        Shtojcat Ekzistuese (@Model.Attachments.Count)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        @foreach (var attachment in Model.Attachments)
+                        {
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">
+                                            <i class="bi bi-file-earmark-@(attachment.FileExtension == ".pdf" ? "pdf" : attachment.FileExtension == ".docx" || attachment.FileExtension == ".doc" ? "word" : "text") text-success"></i>
+                                            @attachment.OriginalFileName
+                                        </h6>
+                                        <small class="text-muted">
+                                            <i class="bi bi-hdd"></i> @attachment.FileSizeMB MB
+                                            | <i class="bi bi-calendar"></i> @attachment.UploadedDate.ToString("dd/MM/yyyy HH:mm")
+                                        </small>
+                                    </div>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="@attachment.FilePath" target="_blank" class="btn btn-outline-primary" title="Shiko">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a href="@attachment.FilePath" download class="btn btn-outline-success" title="Shkarko">
+                                            <i class="bi bi-download"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-outline-danger delete-attachment"
+                                                data-id="@attachment.AttachmentId"
+                                                data-name="@attachment.OriginalFileName"
+                                                title="Fshij">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- New File Upload -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-plus-circle me-2"></i>
+                    Shto Bashkëngjitje të Re
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="attachmentFile" class="form-label">
+                        <i class="bi bi-file-earmark-arrow-up text-dark"></i>
+                        Ngarko Skedarin e Ri
+                    </label>
+                    <input type="file" class="form-control" id="attachmentFile" name="attachmentFile" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" />
+                    <small class="text-muted">Formatet e lejuara: PDF, Word, Imazhe (max 10MB)</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Archive Copy -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">
+                    <i class="bi bi-archive me-2 text-muted"></i>
+                    Kopja për Arkiv
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-check form-switch mb-3">
+                            <input asp-for="HasArchiveCopy" class="form-check-input" type="checkbox" />
+                            <label asp-for="HasArchiveCopy" class="form-check-label">
+                                <i class="bi bi-box-seam text-muted"></i>
+                                Ka Kopje për Arkiv
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="ArchiveLocation" class="form-label">
+                                <i class="bi bi-geo-alt text-muted"></i>
+                                Vendndodhja në Arkiv
+                            </label>
+                            <input asp-for="ArchiveLocation" class="form-control" placeholder="p.sh. Arkivi B, Rafte 3" />
+                            <span asp-validation-for="ArchiveLocation" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">
+                    <i class="bi bi-sticky me-2 text-muted"></i>
+                    Shënime Shtesë
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label asp-for="Notes" class="form-label">
+                        <i class="bi bi-pencil-square text-muted"></i>
+                        Shënime/Komente
+                    </label>
+                    <textarea asp-for="Notes" class="form-control" rows="3" placeholder="Shënime ose komente shtesë për këtë dokument..."></textarea>
+                    <span asp-validation-for="Notes" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Submit Buttons -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <a asp-area="Manager" asp-controller="OutgoingDocument" asp-action="Index" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>
+                            Kthehu në Listë
+                        </a>
+                        <a asp-area="Manager" asp-controller="OutgoingDocument" asp-action="Details" asp-route-id="@Model.DocumentId" class="btn btn-outline-info">
+                            <i class="bi bi-eye me-1"></i>
+                            Shiko Detajet
+                        </a>
+                    </div>
+                    <button type="submit" class="btn btn-success btn-lg px-5">
+                        <i class="bi bi-save me-1"></i>
+                        Përditëso Dokumentin
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Delete Attachment Modal -->
+<div class="modal fade" id="deleteAttachmentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    Fshij Bashkëngjitjen
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>A jeni të sigurt që dëshironi të fshini bashkëngjitjen:</p>
+                <p class="fw-bold text-center text-success" id="deleteAttachmentName"></p>
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <strong>KUJDES:</strong> Kjo veprim nuk mund të zhbëhet!
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>
+                    Anulo
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteAttachment">
+                    <i class="bi bi-trash-fill me-1"></i>
+                    Fshij
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        $(document).ready(function() {
+            // File upload validation
+            $('#attachmentFile').on('change', function() {
+                const file = this.files[0];
+                if (file) {
+                    const fileSize = file.size / 1024 / 1024;
+                    const allowedTypes = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png'];
+                    const fileExt = '.' + file.name.split('.').pop().toLowerCase();
+
+                    if (fileSize > 10) {
+                        alert('Skedari është shumë i madh! Madhësia maksimale është 10MB.');
+                        $(this).val('');
+                        return false;
+                    }
+
+                    if (!allowedTypes.includes(fileExt)) {
+                        alert('Format i pasaktë! Formatet e lejuara janë: PDF, Word, Imazhe');
+                        $(this).val('');
+                        return false;
+                    }
+                }
+            });
+
+            // Delete attachment
+            let attachmentIdToDelete = null;
+
+            $('.delete-attachment').on('click', function() {
+                attachmentIdToDelete = $(this).data('id');
+                const attachmentName = $(this).data('name');
+                $('#deleteAttachmentName').text(attachmentName);
+                $('#deleteAttachmentModal').modal('show');
+            });
+
+            $('#confirmDeleteAttachment').on('click', function() {
+                if (attachmentIdToDelete) {
+                    $.ajax({
+                        url: '@Url.Action("DeleteAttachment", "OutgoingDocument", new { area = "Manager" })',
+                        type: 'POST',
+                        data: { id: attachmentIdToDelete },
+                        success: function(response) {
+                            if (response.success) {
+                                $('#deleteAttachmentModal').modal('hide');
+                                location.reload();
+                            } else {
+                                alert('Gabim: ' + response.message);
+                            }
+                        },
+                        error: function() {
+                            alert('Ka ndodhur një gabim gjatë fshirjes së shtojcës!');
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+}
+
+@section Styles {
+    <style>
+        .form-control:focus,
+        .form-select:focus {
+            border-color: #198754;
+            box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.15);
+        }
+
+        .card {
+            border: none;
+            border-radius: 12px;
+        }
+
+        .card-header {
+            border-radius: 12px 12px 0 0 !important;
+            font-weight: 600;
+        }
+
+        .breadcrumb-item a {
+            text-decoration: none;
+        }
+
+        .form-label {
+            font-weight: 500;
+        }
+
+        .btn-lg {
+            padding: 0.75rem 2rem;
+        }
+
+        .list-group-item {
+            border-left: none;
+            border-right: none;
+        }
+
+            .list-group-item:first-child {
+                border-top: none;
+            }
+
+            .list-group-item:last-child {
+                border-bottom: none;
+            }
+    </style>
+}

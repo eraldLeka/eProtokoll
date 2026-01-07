@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.AspNetCore.Mvc.ModelBinding;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Xml.Linq;
 
@@ -63,7 +64,7 @@ namespace eProtokoll.Models
         public DocumentStatus Status { get; set; } = DocumentStatus.Draft;
 
         [Display(Name = "Prioriteti")]
-        public Priority Priority { get; set; } = Priority.Normal;
+        public eProtokoll.Models.Priority Priority { get; set; } = eProtokoll.Models.Priority.Normal;
 
         [Display(Name = "Ka Afat")]
         public bool HasDeadline { get; set; } = false;
@@ -107,6 +108,7 @@ namespace eProtokoll.Models
         [Display(Name = "Data e Modifikimit")]
         public DateTime? ModifiedDate { get; set; }
 
+        [BindNever]
         [Required]
         [StringLength(450)]
         [Display(Name = "Krijuar nga")]
@@ -190,4 +192,3 @@ namespace eProtokoll.Models
         Urgent = 4
     }
 }
-

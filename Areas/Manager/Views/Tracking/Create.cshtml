@@ -1,0 +1,118 @@
+﻿@model eProtokoll.Models.DocumentTracking
+
+@{
+    ViewData["Title"] = "Cakto Dokument";
+}
+
+<div class="container-fluid">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-action="Index">Gjurmimi</a></li>
+            <li class="breadcrumb-item active">Cakto Dokument</li>
+        </ol>
+    </nav>
+
+    <h2 class="mb-4"><i class="bi bi-plus-circle text-purple"></i> Cakto Dokument</h2>
+
+    <form asp-action="Create" method="post">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+        <div class="card shadow-sm mb-3">
+            <div class="card-header bg-purple text-white"><h5 class="mb-0">Informacioni Bazë</h5></div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="DocumentId" class="form-label">Dokumenti <span class="text-danger">*</span></label>
+                        <select asp-for="DocumentId" class="form-select" asp-items="ViewBag.Documents" required>
+                            <option value="">-- Zgjidh Dokumentin --</option>
+                        </select>
+                        <span asp-validation-for="DocumentId" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="AssignedToUserId" class="form-label">Cakto Për <span class="text-danger">*</span></label>
+                        <select asp-for="AssignedToUserId" class="form-select" asp-items="ViewBag.Users" required>
+                            <option value="">-- Zgjidh Përdoruesin --</option>
+                        </select>
+                        <span asp-validation-for="AssignedToUserId" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label asp-for="AssignedDate" class="form-label">Data <span class="text-danger">*</span></label>
+                        <input asp-for="AssignedDate" class="form-control" type="date" />
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label asp-for="AssignedTime" class="form-label">Ora</label>
+                        <input asp-for="AssignedTime" class="form-control" type="time" />
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label asp-for="DueDate" class="form-label">Afati</label>
+                        <input asp-for="DueDate" class="form-control" type="date" />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label asp-for="Priority" class="form-label">Prioriteti</label>
+                        <select asp-for="Priority" class="form-select" asp-items="Html.GetEnumSelectList<Priority>()"></select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label asp-for="ActionType" class="form-label">Lloji i Veprimit</label>
+                        <select asp-for="ActionType" class="form-select" asp-items="Html.GetEnumSelectList<ActionType>()"></select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label asp-for="Status" class="form-label">Statusi</label>
+                        <select asp-for="Status" class="form-select" asp-items="Html.GetEnumSelectList<TrackingStatus>()"></select>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Instructions" class="form-label">Udhëzimet <span class="text-danger">*</span></label>
+                    <textarea asp-for="Instructions" class="form-control" rows="3" placeholder="Udhëzimet për punonjësin..." required></textarea>
+                    <span asp-validation-for="Instructions" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Notes" class="form-label">Shënime</label>
+                    <textarea asp-for="Notes" class="form-control" rows="2"></textarea>
+                </div>
+                <div class="form-check form-switch">
+                    <input asp-for="RequiresResponse" class="form-check-input" type="checkbox" />
+                    <label asp-for="RequiresResponse" class="form-check-label">Kërkon Përgjigje</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between">
+            <a asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Kthehu</a>
+            <button type="submit" class="btn btn-purple px-5"><i class="bi bi-save"></i> Ruaj</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
+
+@section Styles {
+    <style>
+        .text-purple {
+            color: #6f42c1 !important
+        }
+
+        .btn-purple {
+            background-color: #6f42c1;
+            border-color: #6f42c1;
+            color: #fff
+        }
+
+            .btn-purple:hover {
+                background-color: #5a32a3;
+                border-color: #5a32a3;
+                color: #fff
+            }
+
+        .bg-purple {
+            background-color: #6f42c1 !important
+        }
+    </style>
+}

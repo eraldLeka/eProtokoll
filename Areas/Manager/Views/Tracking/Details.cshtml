@@ -1,0 +1,408 @@
+﻿@model eProtokoll.Models.DocumentTracking
+
+@{
+    ViewData["Title"] = "Detajet e Gjurmimit";
+}
+
+<div class="container-fluid">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-action="Index">Gjurmimi</a></li>
+            <li class="breadcrumb-item active">Detajet</li>
+        </ol>
+    </nav>
+
+    <div class="row mb-3">
+        <div class="col-md-8">
+            <h2><i class="bi bi-geo-alt-fill text-purple"></i> Gjurmimi #@Model.TrackingId</h2>
+            <div class="d-flex gap-2 mt-2">
+                @switch (Model.Status)
+                {
+                    case TrackingStatus.Assigned:
+                        <span class="badge bg-secondary fs-6">I Caktuar</span>
+                        ; break;
+                    case TrackingStatus.Accepted:
+
+                        <span class="badge bg-info fs-6">Pranuar</span>
+                        ; break;
+                    case TrackingStatus.InProgress:
+
+                        <span class="badge bg-primary fs-6">Në Proces</span>
+                        ; break;
+                    case TrackingStatus.Completed:
+
+                        <span class="badge bg-success fs-6">Përfunduar</span>
+                        ; break;
+                    case TrackingStatus.Delegated:
+
+                        <span class="badge bg-purple fs-6">Deleguar</span>
+                        ; break;
+                }
+                @if (Model.Priority == Priority.Urgent)
+                {
+                    <span class="badge bg-danger fs-6">Urgjent</span>
+                    ;
+                }
+            </div>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="btn-group">
+                <button onclick="window.print()" class="btn btn-outline-secondary"><i class="bi bi-printer"></i></button>
+                @if (!Model.IsCompleted)
+                {
+                    <a asp-action="Delegate" asp-route-id="@Model.TrackingId" class="btn btn-purple"><i class="bi bi-arrow-right-circle"></i> Delego</a>
+                }
+                <button data-bs-toggle="modal" data-bs-target="#deleteModal" class="btn btn-danger"><i class="bi bi-trash"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Document Info -->
+            @if (Model.Document != null)
+            {
+                <div class="card shadow-sm mb-3">
+                    <div class="card-header bg-purple text-white"><h5 class="mb-0"><i class="bi bi-file-text"></i> Dokumenti</h5></div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <small class="text-muted">Protokolli</small>
+                                <h5 class="text-purple">@Model.Document.ProtocolNumber</h5>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted">Data</small>
+                                <h6>@Model.Document.ProtocolDate.ToString("dd/MM/yyyy")</h6>
+                            </div>
+                        </div>
+                        <hr />
+                        <h6>@Model.Document.Subject</h6>
+                        @if (!string.IsNullOrEmpty(Model.Document.Content))
+                        {
+                            <p class="text-muted small">@Model.Document.Content</p>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- Tracking Info -->
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-info text-white"><h5 class="mb-0"><i class="bi bi-info-circle"></i> Informacioni</h5></div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <small class="text-muted">Caktuar Për</small>
+                            <h6><i class="bi bi-person-fill text-purple"></i> @Model.AssignedToUser?.FullName</h6>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <small class="text-muted">Caktuar Nga</small>
+                            <h6><i class="bi bi-person"></i> @Model.AssignedByUser?.FullName</h6>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <small class="text-muted">Data e Caktimit</small>
+                            <h6><i class="bi bi-calendar"></i> @Model.AssignedDate.ToString("dd/MM/yyyy HH:mm")</h6>
+                        </div>
+                        <div class="col-md-6">
+                            @if (Model.DueDate.HasValue)
+                            {
+                                <small class="text-muted">Afati</small>
+                                <h6><i class="bi bi-alarm"></i> @Model.DueDate.Value.ToString("dd/MM/yyyy")</h6>
+                            }
+                        </div>
+                    </div>
+                    <hr />
+                    <div class="mb-2">
+                        <strong>Udhëzimet:</strong>
+                        <p class="bg-light p-3 rounded mt-2">@Model.Instructions</p>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.Notes))
+                    {
+                        <div>
+                            <strong>Shënime:</strong>
+                            <p class="text-muted">@Model.Notes</p>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Progress -->
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-primary text-white"><h5 class="mb-0"><i class="bi bi-activity"></i> Progresi</h5></div>
+                <div class="card-body">
+                    <div class="progress mb-3" style="height:30px">
+                        <div class="progress-bar bg-purple" style="width:@Model.CompletionPercentage%">@Model.CompletionPercentage%</div>
+                    </div>
+                    @if (Model.IsAccepted)
+                    {
+                        <p><i class="bi bi-check-circle text-success"></i> <strong>Pranuar:</strong> @Model.AcceptedDate?.ToString("dd/MM/yyyy HH:mm")</p>
+                    }
+                    @if (Model.IsInProgress)
+                    {
+                        <p><i class="bi bi-play-circle text-primary"></i> <strong>Filluar:</strong> @Model.StartedDate?.ToString("dd/MM/yyyy HH:mm")</p>
+                    }
+                    @if (Model.IsCompleted)
+                    {
+                        <div class="alert alert-success">
+                            <i class="bi bi-check-all"></i> <strong>Përfunduar:</strong> @Model.CompletedDate?.ToString("dd/MM/yyyy HH:mm")
+                            @if (!string.IsNullOrEmpty(Model.CompletionComment))
+                            {
+                                <br />
+                                <strong>Koment:</strong>
+ 
+                                @Model.CompletionComment
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Delegations -->
+            @if (Model.SubDelegations != null && Model.SubDelegations.Any())
+            {
+                <div class="card shadow-sm mb-3">
+                    <div class="card-header bg-secondary text-white"><h5 class="mb-0"><i class="bi bi-diagram-3"></i> Delegimet (@Model.SubDelegations.Count)</h5></div>
+                    <div class="card-body">
+                        @foreach (var sub in Model.SubDelegations)
+                        {
+                            <div class="card border mb-2">
+                                <div class="card-body p-2">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <strong>@sub.AssignedToUser?.FullName</strong>
+                                            <br /><small class="text-muted">@sub.AssignedDate.ToString("dd/MM/yyyy")</small>
+                                        </div>
+                                        @switch (sub.Status)
+                                        {
+                                            case TrackingStatus.Completed:
+                                                <span class="badge bg-success">Përfunduar</span>
+                                                ; break;
+                                            case TrackingStatus.InProgress:
+
+                                                <span class="badge bg-primary">Në Proces</span>
+                                                ; break;
+                                            default:
+
+                                                <span class="badge bg-secondary">@sub.Status</span>
+                                                ; break;
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-light"><h6 class="mb-0"><i class="bi bi-info-circle"></i> Detaje</h6></div>
+                <div class="card-body">
+                    <div class="mb-3 pb-3 border-bottom">
+                        <small class="text-muted">Prioriteti</small>
+                        <h6>
+                            @switch (Model.Priority)
+                            {
+                                case Priority.Urgent:
+                                    <span class="badge bg-danger">Urgjent</span>
+                                    ; break;
+                                case Priority.High:
+
+                                    <span class="badge bg-warning text-dark">I Lartë</span>
+                                    ; break;
+                                case Priority.Normal:
+
+                                    <span class="badge bg-info">Normal</span>
+                                    ; break;
+                                default:
+
+                                    <span class="badge bg-secondary">@Model.Priority</span>
+                                    ; break;
+                            }
+                        </h6>
+                    </div>
+                    <div class="mb-3 pb-3 border-bottom">
+                        <small class="text-muted">Statusi</small>
+                        <h6>
+                            @switch (Model.Status)
+                            {
+                                case TrackingStatus.Assigned:
+                                    <span class="badge bg-secondary">I Caktuar</span>
+                                    ; break;
+                                case TrackingStatus.Accepted:
+
+                                    <span class="badge bg-info">Pranuar</span>
+                                    ; break;
+                                case TrackingStatus.InProgress:
+
+                                    <span class="badge bg-primary">Në Proces</span>
+                                    ; break;
+                                case TrackingStatus.Completed:
+
+                                    <span class="badge bg-success">Përfunduar</span>
+                                    ; break;
+                                case TrackingStatus.Delegated:
+
+                                    <span class="badge bg-purple">Deleguar</span>
+                                    ; break;
+                                default:
+
+                                    <span class="badge bg-secondary">@Model.Status</span>
+                                    ; break;
+                            }
+                        </h6>
+                    </div>
+                    <div class="mb-3 pb-3 border-bottom">
+                        <small class="text-muted">Lloji i Veprimit</small>
+                        <h6>@Model.ActionType</h6>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted">Kërkon Përgjigje</small>
+                        <h6>@(Model.RequiresResponse ? "Po" : "Jo")</h6>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm bg-light">
+                <div class="card-body small">
+                    <div><strong>ID:</strong> @Model.TrackingId</div>
+                    <div><strong>Sekuenca:</strong> #@Model.SequenceNumber</div>
+                </div>
+            </div>
+
+            @if (!Model.IsCompleted)
+            {
+                <div class="card shadow-sm mt-3">
+                    <div class="card-body p-2">
+                        <div class="d-grid gap-2">
+                            @if (Model.Status == TrackingStatus.Assigned)
+                            {
+                                <button class="btn btn-sm btn-success" onclick="acceptTracking(@Model.TrackingId)">
+                                    <i class="bi bi-check-circle"></i> Prano
+                                </button>
+                            }
+                            @if (Model.Status == TrackingStatus.Accepted || Model.Status == TrackingStatus.Assigned)
+                            {
+                                <button class="btn btn-sm btn-primary" onclick="startTracking(@Model.TrackingId)">
+                                    <i class="bi bi-play-circle"></i> Fillo
+                                </button>
+                            }
+                            @if (Model.Status == TrackingStatus.InProgress)
+                            {
+                                <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#completeModal">
+                                    <i class="bi bi-check-all"></i> Përfundo
+                                </button>
+                            }
+                            <a asp-action="Delegate" asp-route-id="@Model.TrackingId" class="btn btn-sm btn-purple">
+                                <i class="bi bi-arrow-right-circle"></i> Delego
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Complete Modal -->
+<div class="modal fade" id="completeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="bi bi-check-circle"></i> Përfundo</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Koment:</label>
+                    <textarea class="form-control" id="completeComment" rows="3"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Përqindja:</label>
+                    <input type="range" class="form-range" id="completePercentage" min="0" max="100" value="100">
+                    <div class="text-center"><span class="badge bg-success fs-5" id="percentDisplay">100%</span></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anulo</button>
+                <button type="button" class="btn btn-success" onclick="confirmComplete()">Përfundo</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="bi bi-trash"></i> Fshij</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Fshij këtë gjurmim?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anulo</button>
+                <form method="post" asp-action="Delete" class="d-inline">
+                    <input type="hidden" name="id" value="@Model.TrackingId">
+                    <button type="submit" class="btn btn-danger">Fshij</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function acceptTracking(id){
+            $.post('@Url.Action("Accept")',{id:id},()=>location.reload());
+        }
+        function startTracking(id){
+            $.post('@Url.Action("Start")',{id:id},()=>location.reload());
+        }
+        function confirmComplete(){
+            const comment=$('#completeComment').val();
+            const percentage=$('#completePercentage').val();
+            $.post('@Url.Action("Complete")',{id:@Model.TrackingId,comment:comment,percentage:percentage},()=>location.reload());
+        }
+        $('#completePercentage').on('input',function(){
+            $('#percentDisplay').text($(this).val()+'%');
+        });
+    </script>
+}
+
+@section Styles {
+    <style>
+        .text-purple {
+            color: #6f42c1 !important
+        }
+
+        .btn-purple {
+            background-color: #6f42c1;
+            border-color: #6f42c1;
+            color: #fff
+        }
+
+            .btn-purple:hover {
+                background-color: #5a32a3;
+                border-color: #5a32a3;
+                color: #fff
+            }
+
+        .bg-purple {
+            background-color: #6f42c1 !important
+        }
+
+        .badge.bg-purple {
+            background-color: #6f42c1 !important
+        }
+
+        .progress-bar.bg-purple {
+            background-color: #6f42c1 !important
+        }
+    </style>
+}

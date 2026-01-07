@@ -1,0 +1,240 @@
+﻿@model IEnumerable<eProtokoll.Models.Document>
+
+@{
+    ViewData["Title"] = "Libri i Protokollit";
+}
+
+<div class="container-fluid">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-area="Manager" asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
+            <li class="breadcrumb-item active">Libri i Protokollit</li>
+        </ol>
+    </nav>
+
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="bi bi-book text-primary"></i> Libri i Protokollit</h2>
+            <p class="text-muted">Regjistri i plotë i të gjitha dokumenteve</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <button class="btn btn-outline-success" id="exportExcel"><i class="bi bi-file-excel"></i> Excel</button>
+            <button class="btn btn-outline-danger" id="exportPdf"><i class="bi bi-file-pdf"></i> PDF</button>
+        </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card shadow-sm">
+                <div class="card-body py-2">
+                    <div class="row text-center">
+                        <div class="col">
+                            <h3 class="mb-0">@ViewBag.TotalDocuments</h3>
+                            <small class="text-muted">Total</small>
+                        </div>
+                        <div class="col border-start">
+                            <h3 class="mb-0 text-primary">@ViewBag.TodayDocuments</h3>
+                            <small class="text-primary">Sot</small>
+                        </div>
+                        <div class="col border-start">
+                            <h3 class="mb-0 text-info">@ViewBag.IncomingCount</h3>
+                            <small class="text-info">Hyrëse</small>
+                        </div>
+                        <div class="col border-start">
+                            <h3 class="mb-0 text-success">@ViewBag.OutgoingCount</h3>
+                            <small class="text-success">Dalëse</small>
+                        </div>
+                        <div class="col border-start">
+                            <h3 class="mb-0 text-warning">@ViewBag.InternalCount</h3>
+                            <small class="text-warning">Brendshme</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <input type="text" class="form-control" name="searchTerm" value="@ViewBag.SearchTerm" placeholder="Kërko...">
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select" name="documentType">
+                            <option value="">Të gjitha llojet</option>
+                            <option value="Incoming" selected="@(ViewBag.SelectedDocumentType == "Incoming")">Hyrëse</option>
+                            <option value="Outgoing" selected="@(ViewBag.SelectedDocumentType == "Outgoing")">Dalëse</option>
+                            <option value="Internal" selected="@(ViewBag.SelectedDocumentType == "Internal")">Brendshme</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select" name="status">
+                            <option value="">Të gjithë statuset</option>
+                            <option value="Draft" selected="@(ViewBag.SelectedStatus == "Draft")">Draft</option>
+                            <option value="Registered" selected="@(ViewBag.SelectedStatus == "Registered")">Protokolluar</option>
+                            <option value="InProgress" selected="@(ViewBag.SelectedStatus == "InProgress")">Në Proces</option>
+                            <option value="Completed" selected="@(ViewBag.SelectedStatus == "Completed")">Përfunduar</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="input-group">
+                            <input type="date" class="form-control" name="dateFrom" value="@ViewBag.DateFrom">
+                            <span class="input-group-text">-</span>
+                            <input type="date" class="form-control" name="dateTo" value="@ViewBag.DateTo">
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search"></i> Kërko</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Protocol Book Table -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-white">
+            <h5 class="mb-0"><i class="bi bi-list"></i> Regjistri (@ViewBag.TotalItems)</h5>
+        </div>
+        <div class="card-body p-0">
+            @if (Model != null && Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width:5%">#</th>
+                                <th style="width:12%">Protokolli</th>
+                                <th style="width:10%">Lloji</th>
+                                <th style="width:30%">Subjekti</th>
+                                <th style="width:10%">Data</th>
+                                <th style="width:10%">Klasifikimi</th>
+                                <th style="width:8%">Statusi</th>
+                                <th style="width:10%">Krijuar Nga</th>
+                                <th style="width:5%">Veprime</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{int counter = (ViewBag.CurrentPage - 1) * 50 + 1;}
+                            @foreach (var doc in Model)
+                            {
+                                <tr>
+                                    <td>@counter</td>
+                                    <td>
+                                        <strong class="
+                                            @(doc.DocumentType == DocumentType.Incoming ? "text-info" : 
+                                              doc.DocumentType == DocumentType.Outgoing ? "text-success" : "text-warning")">
+                                            @doc.ProtocolNumber
+                                        </strong>
+                                    </td>
+                                    <td>
+                                        @switch (doc.DocumentType)
+                                        {
+                                            case DocumentType.Incoming:
+                                                <span class="badge bg-info"><i class="bi bi-arrow-down-circle"></i> Hyrës</span>
+                                                break;
+                                            case DocumentType.Outgoing:
+                                                <span class="badge bg-success"><i class="bi bi-arrow-up-circle"></i> Dalës</span>
+                                                break;
+                                            case DocumentType.Internal:
+                                                <span class="badge bg-warning text-dark"><i class="bi bi-arrow-left-right"></i> Brendshëm</span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="text-truncate" style="max-width:400px" title="@doc.Subject">@doc.Subject</div>
+                                    </td>
+                                    <td><small>@doc.ProtocolDate.ToString("dd/MM/yyyy")<br/>@doc.ProtocolTime.ToString(@"hh\:mm")</small></td>
+                                    <td><small>@doc.Classification?.Name</small></td>
+                                    <td>
+                                        @switch (doc.Status)
+                                        {
+                                            case DocumentStatus.Draft: <span class="badge bg-secondary">Draft</span>; break;
+                                            case DocumentStatus.Registered: <span class="badge bg-info">Protokolluar</span>; break;
+                                            case DocumentStatus.InProgress: <span class="badge bg-primary">Në Proces</span>; break;
+                                            case DocumentStatus.Completed: <span class="badge bg-success">Përfunduar</span>; break;
+                                            default: <span class="badge bg-secondary">@doc.Status</span>; break;
+                                        }
+                                    </td>
+                                    <td><small>@doc.Creator?.FullName</small></td>
+                                    <td>
+                                        <a asp-action="Details" asp-route-id="@doc.DocumentId" asp-route-type="@doc.DocumentType.ToString()"
+                                           class="btn btn-sm btn-outline-primary" title="Detajet">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                counter++;
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                @if (ViewBag.TotalPages > 1)
+                {
+                    <div class="card-footer bg-white">
+                        <nav>
+                            <ul class="pagination pagination-sm mb-0 justify-content-center">
+                                <li class="page-item @(ViewBag.CurrentPage == 1 ? "disabled" : "")">
+                                    <a class="page-link" href="@Url.Action("Index", new { 
+                                        searchTerm = ViewBag.SearchTerm, 
+                                        documentType = ViewBag.SelectedDocumentType,
+                                        status = ViewBag.SelectedStatus,
+                                        dateFrom = ViewBag.DateFrom,
+                                        dateTo = ViewBag.DateTo,
+                                        page = ViewBag.CurrentPage - 1 
+                                    })">Mbrapa</a>
+                                </li>
+                                @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                                {
+                                    <li class="page-item @(ViewBag.CurrentPage == i ? "active" : "")">
+                                        <a class="page-link" href="@Url.Action("Index", new { 
+                                            searchTerm = ViewBag.SearchTerm, 
+                                            documentType = ViewBag.SelectedDocumentType,
+                                            status = ViewBag.SelectedStatus,
+                                            dateFrom = ViewBag.DateFrom,
+                                            dateTo = ViewBag.DateTo,
+                                            page = i 
+                                        })">@i</a>
+                                    </li>
+                                }
+                                <li class="page-item @(ViewBag.CurrentPage == ViewBag.TotalPages ? "disabled" : "")">
+                                    <a class="page-link" href="@Url.Action("Index", new { 
+                                        searchTerm = ViewBag.SearchTerm, 
+                                        documentType = ViewBag.SelectedDocumentType,
+                                        status = ViewBag.SelectedStatus,
+                                        dateFrom = ViewBag.DateFrom,
+                                        dateTo = ViewBag.DateTo,
+                                        page = ViewBag.CurrentPage + 1 
+                                    })">Përpara</a>
+                                </li>
+                            </ul>
+                        </nav>
+                        <div class="text-center mt-2">
+                            <small class="text-muted">Faqja @ViewBag.CurrentPage nga @ViewBag.TotalPages (@ViewBag.TotalItems dokumente)</small>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox" style="font-size:4rem" class="text-muted"></i>
+                    <h4 class="mt-3 text-muted">Nuk ka dokumente</h4>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    $('#exportExcel, #exportPdf').click(function(){
+        alert('Eksportimi do të implementohet së shpejti!');
+    });
+</script>
+}

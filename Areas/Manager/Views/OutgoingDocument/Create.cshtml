@@ -1,0 +1,627 @@
+﻿@model eProtokoll.Models.OutgoingDocument
+
+@{
+    ViewData["Title"] = "Regjistro Dokument Dalës";
+}
+
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a asp-area="Manager" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
+            </li>
+            <li class="breadcrumb-item">
+                <a asp-area="Manager" asp-controller="OutgoingDocument" asp-action="Index">Dokumente Dalëse</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">Regjistro të Ri</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="mb-0">
+                <i class="bi bi-file-earmark-arrow-up me-2 text-success"></i>
+                Regjistro Dokument Dalës të Ri
+            </h2>
+            <p class="text-muted mt-2">Plotëso të dhënat e dokumentit që dërgohet tek institucioni i jashtëm</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-9">
+            <form asp-area="Manager" asp-controller="OutgoingDocument" asp-action="Create" method="post" enctype="multipart/form-data" id="createForm">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="All" class="alert alert-danger"></div>
+
+                <!-- Protocol Information -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-hash me-2"></i>
+                            Informacioni i Protokollimit
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label asp-for="ProtocolNumber" class="form-label">
+                                        <i class="bi bi-file-text text-success"></i>
+                                        Numri i Protokollit <span class="text-danger">*</span>
+                                    </label>
+                                    <input asp-for="ProtocolNumber"
+                                           class="form-control form-control-lg fw-bold text-success"
+                                           readonly />
+                                    <input type="hidden" asp-for="ProtocolNumber" />
+                                    <span asp-validation-for="ProtocolNumber" class="text-danger"></span>
+                                    <small class="text-muted">Gjenerohet automatikisht</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label asp-for="ProtocolDate" class="form-label">
+                                        Data e Protokollimit <span class="text-danger">*</span>
+                                    </label>
+                                    <input asp-for="ProtocolDate" class="form-control" type="date" />
+                                    <span asp-validation-for="ProtocolDate" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label asp-for="ProtocolTime" class="form-label">
+                                        Ora e Protokollimit <span class="text-danger">*</span>
+                                    </label>
+                                    <input asp-for="ProtocolTime" class="form-control" type="time" />
+                                    <span asp-validation-for="ProtocolTime" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recipient Information -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-building me-2"></i>
+                            Informacioni i Marrësit
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="InstitutionId" class="form-label">
+                                        <i class="bi bi-bank text-info"></i>
+                                        Institucioni Marrës <span class="text-danger">*</span>
+                                    </label>
+                                    <select asp-for="InstitutionId" class="form-select" asp-items="ViewBag.Institutions">
+                                        <option value="">-- Zgjidh Institucionin --</option>
+                                    </select>
+                                    <span asp-validation-for="InstitutionId" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="RecipientName" class="form-label">
+                                        <i class="bi bi-person text-info"></i>
+                                        Emri i Marrësit <span class="text-danger">*</span>
+                                    </label>
+                                    <input asp-for="RecipientName" class="form-control" placeholder="Emri i plotë i marrësit" />
+                                    <span asp-validation-for="RecipientName" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="RecipientPosition" class="form-label">
+                                        <i class="bi bi-briefcase text-info"></i>
+                                        Pozicioni i Marrësit
+                                    </label>
+                                    <input asp-for="RecipientPosition" class="form-control" placeholder="p.sh. Drejtor, Sekretar..." />
+                                    <span asp-validation-for="RecipientPosition" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="RecipientEmail" class="form-label">
+                                        <i class="bi bi-envelope text-info"></i>
+                                        Email i Marrësit
+                                    </label>
+                                    <input asp-for="RecipientEmail" class="form-control" type="email" placeholder="email@example.com" />
+                                    <span asp-validation-for="RecipientEmail" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="RecipientPhone" class="form-label">
+                                        <i class="bi bi-telephone text-info"></i>
+                                        Telefoni i Marrësit
+                                    </label>
+                                    <input asp-for="RecipientPhone" class="form-control" type="tel" placeholder="+355 69 123 4567" />
+                                    <span asp-validation-for="RecipientPhone" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="RecipientAddress" class="form-label">
+                                        <i class="bi bi-geo-alt text-info"></i>
+                                        Adresa e Plotë
+                                    </label>
+                                    <input asp-for="RecipientAddress" class="form-control" placeholder="Rruga, Nr, Qyteti" />
+                                    <span asp-validation-for="RecipientAddress" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Document Content -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-file-earmark-text me-2"></i>
+                            Përmbajtja e Dokumentit
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label asp-for="Subject" class="form-label">
+                                <i class="bi bi-chat-left-text text-primary"></i>
+                                Subjekti <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="Subject" class="form-control" placeholder="Subjekti/Titulli i dokumentit" />
+                            <span asp-validation-for="Subject" class="text-danger"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Content" class="form-label">
+                                <i class="bi bi-text-paragraph text-primary"></i>
+                                Përmbajtja/Përshkrimi
+                            </label>
+                            <textarea asp-for="Content" class="form-control" rows="5" placeholder="Përshkrimi i shkurtër i përmbajtjes së dokumentit..."></textarea>
+                            <span asp-validation-for="Content" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Signature Information -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-dark text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-pen me-2"></i>
+                            Informacioni i Firmosjes
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="SignedBy" class="form-label">
+                                        <i class="bi bi-person-check text-dark"></i>
+                                        Firmëtari <span class="text-danger">*</span>
+                                    </label>
+                                    <input asp-for="SignedBy" class="form-control" placeholder="Emri i personit që firmos" />
+                                    <span asp-validation-for="SignedBy" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="SignerPosition" class="form-label">
+                                        <i class="bi bi-award text-dark"></i>
+                                        Pozicioni i Firmëtarit
+                                    </label>
+                                    <input asp-for="SignerPosition" class="form-control" placeholder="p.sh. Drejtor i Përgjithshëm" />
+                                    <span asp-validation-for="SignerPosition" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label asp-for="SignedDate" class="form-label">
+                                        <i class="bi bi-calendar-event text-dark"></i>
+                                        Data e Firmosjes
+                                    </label>
+                                    <input asp-for="SignedDate" class="form-control" type="date" />
+                                    <span asp-validation-for="SignedDate" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check form-switch mb-3 mt-4">
+                                    <input asp-for="HasDigitalSignature" class="form-check-input" type="checkbox" />
+                                    <label asp-for="HasDigitalSignature" class="form-check-label">
+                                        <i class="bi bi-shield-check text-dark"></i>
+                                        Ka Firmë Digjitale
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check form-switch mb-3 mt-4">
+                                    <input asp-for="IsSealed" class="form-check-input" type="checkbox" />
+                                    <label asp-for="IsSealed" class="form-check-label">
+                                        <i class="bi bi-patch-check text-dark"></i>
+                                        Është i Vulosur
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Classification & Details -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">
+                            <i class="bi bi-shield-lock me-2"></i>
+                            Klasifikimi dhe Detajet
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="ClassificationId" class="form-label">
+                                        <i class="bi bi-lock text-warning"></i>
+                                        Klasifikimi <span class="text-danger">*</span>
+                                    </label>
+                                    <select asp-for="ClassificationId" class="form-select" asp-items="ViewBag.Classifications">
+                                        <option value="">-- Zgjidh Klasifikimin --</option>
+                                    </select>
+                                    <span asp-validation-for="ClassificationId" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label asp-for="Status" class="form-label">
+                                        Statusi <span class="text-danger">*</span>
+                                    </label>
+                                    <select asp-for="Status" class="form-select" asp-items="Html.GetEnumSelectList<DocumentStatus>()">
+                                    </select>
+                                    <span asp-validation-for="Status" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label asp-for="Priority" class="form-label">
+                                        Prioriteti <span class="text-danger">*</span>
+                                    </label>
+                                    <select asp-for="Priority" class="form-select" asp-items="Html.GetEnumSelectList<Priority>()">
+                                    </select>
+                                    <span asp-validation-for="Priority" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Delivery Information -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-truck me-2"></i>
+                            Informacioni i Dërgesës
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label asp-for="DeliveryMethod" class="form-label">
+                                        <i class="bi bi-send text-secondary"></i>
+                                        Mënyra e Dërgesës <span class="text-danger">*</span>
+                                    </label>
+                                    <select asp-for="DeliveryMethod" class="form-select" asp-items="Html.GetEnumSelectList<DeliveryMethod>()">
+                                    </select>
+                                    <span asp-validation-for="DeliveryMethod" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label asp-for="SentDate" class="form-label">
+                                        <i class="bi bi-calendar-event text-secondary"></i>
+                                        Data e Dërgimit
+                                    </label>
+                                    <input asp-for="SentDate" class="form-control" type="date" />
+                                    <span asp-validation-for="SentDate" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label asp-for="SentTime" class="form-label">
+                                        <i class="bi bi-clock text-secondary"></i>
+                                        Ora e Dërgimit
+                                    </label>
+                                    <input asp-for="SentTime" class="form-control" type="time" />
+                                    <span asp-validation-for="SentTime" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="ShipmentCompany" class="form-label">
+                                        <i class="bi bi-building text-secondary"></i>
+                                        Kompania e Dërgesës
+                                    </label>
+                                    <input asp-for="ShipmentCompany" class="form-control" placeholder="p.sh. Posta Shqiptare, DHL, FedEx" />
+                                    <span asp-validation-for="ShipmentCompany" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="TrackingNumber" class="form-label">
+                                        <i class="bi bi-upc-scan text-secondary"></i>
+                                        Numri i Gjurmimit (Tracking)
+                                    </label>
+                                    <input asp-for="TrackingNumber" class="form-control" placeholder="Numri i gjurmimit të dërgesës" />
+                                    <span asp-validation-for="TrackingNumber" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label asp-for="NumberOfCopies" class="form-label">
+                                        <i class="bi bi-files text-secondary"></i>
+                                        Numri i Kopjeve
+                                    </label>
+                                    <input asp-for="NumberOfCopies" class="form-control" type="number" min="1" value="1" />
+                                    <span asp-validation-for="NumberOfCopies" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check form-switch mb-3 mt-4">
+                                    <input asp-for="RequiresDeliveryConfirmation" class="form-check-input" type="checkbox" />
+                                    <label asp-for="RequiresDeliveryConfirmation" class="form-check-label">
+                                        <i class="bi bi-check-circle text-secondary"></i>
+                                        Kërkon Konfirmim
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- File Upload -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-dark text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-paperclip me-2"></i>
+                            Bashkëngjitja e Dokumentit
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="attachmentFile" class="form-label">
+                                <i class="bi bi-file-earmark-arrow-up text-dark"></i>
+                                Ngarko Skedarin
+                            </label>
+                            <input type="file" class="form-control" id="attachmentFile" name="attachmentFile" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" />
+                            <small class="text-muted">Formatet e lejuara: PDF, Word, Imazhe (max 10MB)</small>
+                        </div>
+                        <div class="alert alert-info mb-0">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>Këshillë:</strong> Ngarkoni versionin final të dokumentit që do të dërgohet.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Archive Copy -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">
+                            <i class="bi bi-archive me-2 text-muted"></i>
+                            Kopja për Arkiv
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-check form-switch mb-3">
+                                    <input asp-for="HasArchiveCopy" class="form-check-input" type="checkbox" checked />
+                                    <label asp-for="HasArchiveCopy" class="form-check-label">
+                                        <i class="bi bi-box-seam text-muted"></i>
+                                        Ka Kopje për Arkiv
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="ArchiveLocation" class="form-label">
+                                        <i class="bi bi-geo-alt text-muted"></i>
+                                        Vendndodhja në Arkiv
+                                    </label>
+                                    <input asp-for="ArchiveLocation" class="form-control" placeholder="p.sh. Arkivi B, Rafte 3, Kutia 8" />
+                                    <span asp-validation-for="ArchiveLocation" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notes -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">
+                            <i class="bi bi-sticky me-2 text-muted"></i>
+                            Shënime Shtesë
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label asp-for="Notes" class="form-label">
+                                <i class="bi bi-pencil-square text-muted"></i>
+                                Shënime/Komente
+                            </label>
+                            <textarea asp-for="Notes" class="form-control" rows="3" placeholder="Shënime ose komente shtesë për këtë dokument..."></textarea>
+                            <span asp-validation-for="Notes" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Buttons -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <a asp-area="Manager" asp-controller="OutgoingDocument" asp-action="Index" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>
+                                Kthehu
+                            </a>
+                            <button type="submit" class="btn btn-success btn-lg px-5" id="submitBtn">
+                                <i class="bi bi-save me-1"></i>
+                                Ruaj Dokumentin
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Sidebar Help -->
+        <div class="col-lg-3">
+            <div class="card shadow-sm border-success sticky-top" style="top: 20px;">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Udhëzime
+                    </h5>
+                </div>
+                <div class="card-body small">
+                    <h6 class="text-success">
+                        <i class="bi bi-lightbulb-fill"></i> Hapat për Regjistrim
+                    </h6>
+                    <ol class="ps-3">
+                        <li class="mb-2">Kontrollo numrin e protokollit (auto)</li>
+                        <li class="mb-2">Zgjidh institucionin marrës</li>
+                        <li class="mb-2">Plotëso të dhënat e marrësit</li>
+                        <li class="mb-2">Shkruaj subjektin dhe përmbajtjen</li>
+                        <li class="mb-2">Vendos firmëtarin</li>
+                        <li class="mb-2">Vendos klasifikimin e duhur</li>
+                        <li class="mb-2">Zgjidh mënyrën e dërgesës</li>
+                        <li class="mb-2">Ngarko skedarin (opsionale)</li>
+                        <li class="mb-2">Ruaj dokumentin</li>
+                    </ol>
+                    <hr />
+                    <h6 class="text-success">
+                        <i class="bi bi-exclamation-triangle-fill"></i> Fusha të Detyrueshme
+                    </h6>
+                    <ul class="ps-3">
+                        <li>Numri i Protokollit</li>
+                        <li>Institucioni Marrës</li>
+                        <li>Emri i Marrësit</li>
+                        <li>Subjekti</li>
+                        <li>Firmëtari</li>
+                        <li>Klasifikimi</li>
+                        <li>Mënyra e Dërgesës</li>
+                    </ul>
+                    <hr />
+                    <h6 class="text-success">
+                        <i class="bi bi-shield-check"></i> Mënyrat e Dërgesës
+                    </h6>
+                    <p class="mb-0 text-muted small">
+                        Zgjidhni mënyrën e duhur të dërgesës: Dorazi, Email, Postë, Kurier, Faks, etj.
+                    </p>
+                    <hr />
+                    <div class="alert alert-success mb-0 small">
+                        <i class="bi bi-person-check me-1"></i>
+                        <strong>Krijuar nga:</strong> @User.Identity?.Name
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        $(document).ready(function() {
+            console.log("✅ Page loaded - form ready");
+
+            // File upload validation
+            $('#attachmentFile').on('change', function() {
+                const file = this.files[0];
+                if (file) {
+                    const fileSize = file.size / 1024 / 1024; // in MB
+                    const allowedTypes = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png'];
+                    const fileExt = '.' + file.name.split('.').pop().toLowerCase();
+
+                    if (fileSize > 10) {
+                        alert('Skedari është shumë i madh! Madhësia maksimale është 10MB.');
+                        $(this).val('');
+                        return false;
+                    }
+
+                    if (!allowedTypes.includes(fileExt)) {
+                        alert('Format i pasaktë! Formatet e lejuara janë: PDF, Word, Imazhe');
+                        $(this).val('');
+                        return false;
+                    }
+                }
+            });
+
+            // Form submit handler
+            $('#submitBtn').on('click', function(e) {
+                console.log("🚀 Submit button clicked!");
+                console.log("Institution:", $('#InstitutionId').val());
+                console.log("RecipientName:", $('#RecipientName').val());
+                console.log("Subject:", $('#Subject').val());
+                console.log("SignedBy:", $('#SignedBy').val());
+                console.log("Classification:", $('#ClassificationId').val());
+            });
+
+            $('#createForm').on('submit', function(e) {
+                console.log("📤 Form submitting...");
+            });
+        });
+    </script>
+}
+
+@section Styles {
+    <style>
+        .form-control:focus,
+        .form-select:focus {
+            border-color: #198754;
+            box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.15);
+        }
+
+        .card {
+            border: none;
+            border-radius: 12px;
+        }
+
+        .card-header {
+            border-radius: 12px 12px 0 0 !important;
+            font-weight: 600;
+        }
+
+        .breadcrumb-item a {
+            text-decoration: none;
+        }
+
+        .sticky-top {
+            position: sticky;
+            z-index: 1020;
+        }
+
+        .form-label {
+            font-weight: 500;
+        }
+
+        .form-check-label {
+            font-weight: 500;
+        }
+
+        .btn-lg {
+            padding: 0.75rem 2rem;
+        }
+    </style>
+}
