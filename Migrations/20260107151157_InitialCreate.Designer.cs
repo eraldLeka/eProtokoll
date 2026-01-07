@@ -12,7 +12,7 @@ using eProtokoll.Data;
 namespace eProtokoll.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251228084556_InitialCreate")]
+    [Migration("20260107151157_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -351,7 +351,7 @@ namespace eProtokoll.Migrations
                             AllowDownload = true,
                             AllowPrint = true,
                             ColorCode = "#28a745",
-                            CreatedDate = new DateTime(2025, 12, 28, 9, 45, 55, 22, DateTimeKind.Local).AddTicks(5727),
+                            CreatedDate = new DateTime(2026, 1, 7, 16, 11, 55, 780, DateTimeKind.Local).AddTicks(2019),
                             Description = "Dokumente publike që mund të shihen nga të gjithë",
                             EnableAuditLog = true,
                             IsActive = true,
@@ -369,13 +369,13 @@ namespace eProtokoll.Migrations
                             AllowDownload = true,
                             AllowPrint = true,
                             ColorCode = "#17a2b8",
-                            CreatedDate = new DateTime(2025, 12, 28, 9, 45, 55, 22, DateTimeKind.Local).AddTicks(5740),
-                            Description = "Vetëm për punonjësit e autorizuar",
+                            CreatedDate = new DateTime(2026, 1, 7, 16, 11, 55, 780, DateTimeKind.Local).AddTicks(2058),
+                            Description = "Vetëm për punonjësit e autorizuar (assigned)",
                             EnableAuditLog = true,
                             IsActive = true,
                             IsDefault = false,
                             Level = 2,
-                            Name = "I Brendshëm",
+                            Name = "I kufizuar",
                             RequiresApproval = false,
                             RetentionYears = 10,
                             SortOrder = 2
@@ -386,53 +386,17 @@ namespace eProtokoll.Migrations
                             AllowCopy = false,
                             AllowDownload = false,
                             AllowPrint = false,
-                            ColorCode = "#ffc107",
-                            CreatedDate = new DateTime(2025, 12, 28, 9, 45, 55, 22, DateTimeKind.Local).AddTicks(5750),
-                            Description = "Vetëm disa punonjës të caktuar",
-                            EnableAuditLog = true,
-                            IsActive = true,
-                            IsDefault = false,
-                            Level = 3,
-                            Name = "Konfidencial",
-                            RequiresApproval = true,
-                            RetentionYears = 15,
-                            SortOrder = 3
-                        },
-                        new
-                        {
-                            ClassificationId = 4,
-                            AllowCopy = false,
-                            AllowDownload = false,
-                            AllowPrint = false,
                             ColorCode = "#fd7e14",
-                            CreatedDate = new DateTime(2025, 12, 28, 9, 45, 55, 22, DateTimeKind.Local).AddTicks(5776),
+                            CreatedDate = new DateTime(2026, 1, 7, 16, 11, 55, 780, DateTimeKind.Local).AddTicks(2070),
                             Description = "Vetëm menaxherët dhe administratorët",
                             EnableAuditLog = true,
                             IsActive = true,
                             IsDefault = false,
-                            Level = 4,
+                            Level = 3,
                             Name = "Sekret",
                             RequiresApproval = true,
                             RetentionYears = 20,
-                            SortOrder = 4
-                        },
-                        new
-                        {
-                            ClassificationId = 5,
-                            AllowCopy = false,
-                            AllowDownload = false,
-                            AllowPrint = false,
-                            ColorCode = "#dc3545",
-                            CreatedDate = new DateTime(2025, 12, 28, 9, 45, 55, 22, DateTimeKind.Local).AddTicks(5796),
-                            Description = "Vetëm administratorët",
-                            EnableAuditLog = true,
-                            IsActive = true,
-                            IsDefault = false,
-                            Level = 5,
-                            Name = "Tepër Sekret",
-                            RequiresApproval = true,
-                            RetentionYears = 30,
-                            SortOrder = 5
+                            SortOrder = 3
                         });
                 });
 
@@ -1347,7 +1311,7 @@ namespace eProtokoll.Migrations
                             ProtocolSettingsId = 1,
                             AllowManualEdit = false,
                             AutoResetYearly = true,
-                            CreatedDate = new DateTime(2025, 12, 28, 9, 45, 55, 22, DateTimeKind.Local).AddTicks(6360),
+                            CreatedDate = new DateTime(2026, 1, 7, 16, 11, 55, 780, DateTimeKind.Local).AddTicks(2657),
                             IncomingCurrentNumber = 1,
                             IncomingPrefix = "H",
                             IncomingStartNumber = 1,
@@ -1363,7 +1327,7 @@ namespace eProtokoll.Migrations
                             ProtocolNumberFormat = "{PREFIX}-{NUMBER}/{YEAR}",
                             ShowYearInNumber = true,
                             UseSeparatorSlash = true,
-                            Year = 2025
+                            Year = 2026
                         });
                 });
 

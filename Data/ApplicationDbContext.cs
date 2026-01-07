@@ -288,9 +288,9 @@ namespace eProtokoll.Data
                 new Classification
                 {
                     ClassificationId = 2,
-                    Name = "I Brendshëm",
-                    Level = AccessLevel.Internal,
-                    Description = "Vetëm për punonjësit e autorizuar",
+                    Name = "I kufizuar",
+                    Level = AccessLevel.Restricted,
+                    Description = "Vetëm për punonjësit e autorizuar (assigned)",
                     RetentionYears = 10,
                     RequiresApproval = false,
                     AllowPrint = true,
@@ -301,25 +301,10 @@ namespace eProtokoll.Data
                     IsActive = true,
                     CreatedDate = DateTime.Now
                 },
+     
                 new Classification
                 {
                     ClassificationId = 3,
-                    Name = "Konfidencial",
-                    Level = AccessLevel.Confidential,
-                    Description = "Vetëm disa punonjës të caktuar",
-                    RetentionYears = 15,
-                    RequiresApproval = true,
-                    AllowPrint = false,
-                    AllowDownload = false,
-                    AllowCopy = false,
-                    ColorCode = "#ffc107",
-                    SortOrder = 3,
-                    IsActive = true,
-                    CreatedDate = DateTime.Now
-                },
-                new Classification
-                {
-                    ClassificationId = 4,
                     Name = "Sekret",
                     Level = AccessLevel.Secret,
                     Description = "Vetëm menaxherët dhe administratorët",
@@ -329,26 +314,10 @@ namespace eProtokoll.Data
                     AllowDownload = false,
                     AllowCopy = false,
                     ColorCode = "#fd7e14",
-                    SortOrder = 4,
+                    SortOrder = 3,
                     IsActive = true,
                     CreatedDate = DateTime.Now
-                },
-                new Classification
-                {
-                    ClassificationId = 5,
-                    Name = "Tepër Sekret",
-                    Level = AccessLevel.TopSecret,
-                    Description = "Vetëm administratorët",
-                    RetentionYears = 30,
-                    RequiresApproval = true,
-                    AllowPrint = false,
-                    AllowDownload = false,
-                    AllowCopy = false,
-                    ColorCode = "#dc3545",
-                    SortOrder = 5,
-                    IsActive = true,
-                    CreatedDate = DateTime.Now
-                }
+                }        
             );
 
             // Seed ProtocolSettings për vitin aktual

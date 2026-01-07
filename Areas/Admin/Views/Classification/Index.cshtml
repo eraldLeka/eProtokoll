@@ -109,10 +109,9 @@
                     <div class="row text-center">
                         @{
                             var publicCount = Model.Count(c => c.Level == eProtokoll.Models.AccessLevel.Public);
-                            var internalCount = Model.Count(c => c.Level == eProtokoll.Models.AccessLevel.Internal);
-                            var confidentialCount = Model.Count(c => c.Level == eProtokoll.Models.AccessLevel.Confidential);
+                            var restrictedCount = Model.Count(c => c.Level == eProtokoll.Models.AccessLevel.Restricted);
                             var secretCount = Model.Count(c => c.Level == eProtokoll.Models.AccessLevel.Secret);
-                            var topSecretCount = Model.Count(c => c.Level == eProtokoll.Models.AccessLevel.TopSecret);
+                            ;
                         }
                         <div class="col">
                             <div class="p-3 border rounded">
@@ -124,29 +123,16 @@
                         <div class="col">
                             <div class="p-3 border rounded">
                                 <i class="bi bi-building text-info" style="font-size: 2rem;"></i>
-                                <h4 class="mt-2 mb-0">@internalCount</h4>
-                                <small class="text-muted">I Brendshëm</small>
+                                <h4 class="mt-2 mb-0">@restrictedCount</h4>
+                                <small class="text-muted">I Kufizuar</small>
                             </div>
                         </div>
-                        <div class="col">
-                            <div class="p-3 border rounded">
-                                <i class="bi bi-lock-fill text-warning" style="font-size: 2rem;"></i>
-                                <h4 class="mt-2 mb-0">@confidentialCount</h4>
-                                <small class="text-muted">Konfidencial</small>
-                            </div>
-                        </div>
+                        
                         <div class="col">
                             <div class="p-3 border rounded">
                                 <i class="bi bi-shield-fill-exclamation text-danger" style="font-size: 2rem;"></i>
                                 <h4 class="mt-2 mb-0">@secretCount</h4>
                                 <small class="text-muted">Sekret</small>
-                            </div>
-                        </div>
-                        <div class="col">
-                            <div class="p-3 border rounded">
-                                <i class="bi bi-shield-fill-x text-dark" style="font-size: 2rem;"></i>
-                                <h4 class="mt-2 mb-0">@topSecretCount</h4>
-                                <small class="text-muted">Tepër Sekret</small>
                             </div>
                         </div>
                     </div>
@@ -278,28 +264,18 @@
                                                     Publik
                                                 </span>
                                                 break;
-                                            case eProtokoll.Models.AccessLevel.Internal:
+                                            case eProtokoll.Models.AccessLevel.Restricted:
                                                 <span class="badge bg-info">
                                                     <i class="bi bi-building me-1"></i>
-                                                    I Brendshëm
+                                                    I Kufizuar
                                                 </span>
                                                 break;
-                                            case eProtokoll.Models.AccessLevel.Confidential:
-                                                <span class="badge bg-warning text-dark">
-                                                    <i class="bi bi-lock-fill me-1"></i>
-                                                    Konfidencial
-                                                </span>
+                                            
                                                 break;
                                             case eProtokoll.Models.AccessLevel.Secret:
                                                 <span class="badge bg-danger">
                                                     <i class="bi bi-shield-fill-exclamation me-1"></i>
                                                     Sekret
-                                                </span>
-                                                break;
-                                            case eProtokoll.Models.AccessLevel.TopSecret:
-                                                <span class="badge bg-dark">
-                                                    <i class="bi bi-shield-fill-x me-1"></i>
-                                                    Tepër Sekret
                                                 </span>
                                                 break;
                                         }

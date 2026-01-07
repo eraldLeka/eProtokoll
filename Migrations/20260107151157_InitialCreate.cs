@@ -751,17 +751,15 @@ namespace eProtokoll.Migrations
                 columns: new[] { "ClassificationId", "AllowCopy", "AllowDownload", "AllowPrint", "ColorCode", "CreatedBy", "CreatedDate", "Description", "EnableAuditLog", "IsActive", "IsDefault", "Level", "MinimumRoleRequired", "ModifiedBy", "ModifiedDate", "Name", "RequiresApproval", "RetentionYears", "SortOrder" },
                 values: new object[,]
                 {
-                    { 1, true, true, true, "#28a745", null, new DateTime(2025, 12, 28, 9, 45, 55, 22, DateTimeKind.Local).AddTicks(5727), "Dokumente publike që mund të shihen nga të gjithë", true, true, true, 1, null, null, null, "Publik", false, 5, 1 },
-                    { 2, true, true, true, "#17a2b8", null, new DateTime(2025, 12, 28, 9, 45, 55, 22, DateTimeKind.Local).AddTicks(5740), "Vetëm për punonjësit e autorizuar", true, true, false, 2, null, null, null, "I Brendshëm", false, 10, 2 },
-                    { 3, false, false, false, "#ffc107", null, new DateTime(2025, 12, 28, 9, 45, 55, 22, DateTimeKind.Local).AddTicks(5750), "Vetëm disa punonjës të caktuar", true, true, false, 3, null, null, null, "Konfidencial", true, 15, 3 },
-                    { 4, false, false, false, "#fd7e14", null, new DateTime(2025, 12, 28, 9, 45, 55, 22, DateTimeKind.Local).AddTicks(5776), "Vetëm menaxherët dhe administratorët", true, true, false, 4, null, null, null, "Sekret", true, 20, 4 },
-                    { 5, false, false, false, "#dc3545", null, new DateTime(2025, 12, 28, 9, 45, 55, 22, DateTimeKind.Local).AddTicks(5796), "Vetëm administratorët", true, true, false, 5, null, null, null, "Tepër Sekret", true, 30, 5 }
+                    { 1, true, true, true, "#28a745", null, new DateTime(2026, 1, 7, 16, 11, 55, 780, DateTimeKind.Local).AddTicks(2019), "Dokumente publike që mund të shihen nga të gjithë", true, true, true, 1, null, null, null, "Publik", false, 5, 1 },
+                    { 2, true, true, true, "#17a2b8", null, new DateTime(2026, 1, 7, 16, 11, 55, 780, DateTimeKind.Local).AddTicks(2058), "Vetëm për punonjësit e autorizuar (assigned)", true, true, false, 2, null, null, null, "I kufizuar", false, 10, 2 },
+                    { 3, false, false, false, "#fd7e14", null, new DateTime(2026, 1, 7, 16, 11, 55, 780, DateTimeKind.Local).AddTicks(2070), "Vetëm menaxherët dhe administratorët", true, true, false, 3, null, null, null, "Sekret", true, 20, 3 }
                 });
 
             migrationBuilder.InsertData(
                 table: "ProtocolSettings",
                 columns: new[] { "ProtocolSettingsId", "AllowManualEdit", "AutoResetYearly", "ClosedBy", "ClosedDate", "CreatedBy", "CreatedDate", "FiscalYearEnd", "FiscalYearStart", "IncomingCurrentNumber", "IncomingEndNumber", "IncomingPrefix", "IncomingStartNumber", "IncomingSuffix", "InstitutionAddress", "InstitutionCode", "InstitutionEmail", "InstitutionName", "InstitutionPhone", "InstitutionWebsite", "InternalCurrentNumber", "InternalEndNumber", "InternalPrefix", "InternalStartNumber", "InternalSuffix", "IsActive", "IsClosed", "ModifiedBy", "ModifiedDate", "Notes", "NumberPadding", "OutgoingCurrentNumber", "OutgoingEndNumber", "OutgoingPrefix", "OutgoingStartNumber", "OutgoingSuffix", "ProtocolNumberFormat", "ShowYearInNumber", "UseSeparatorSlash", "Year" },
-                values: new object[] { 1, false, true, null, null, null, new DateTime(2025, 12, 28, 9, 45, 55, 22, DateTimeKind.Local).AddTicks(6360), null, null, 1, null, "H", 1, null, null, null, null, null, null, null, 1, null, "B", 1, null, true, false, null, null, null, 4, 1, null, "D", 1, null, "{PREFIX}-{NUMBER}/{YEAR}", true, true, 2025 });
+                values: new object[] { 1, false, true, null, null, null, new DateTime(2026, 1, 7, 16, 11, 55, 780, DateTimeKind.Local).AddTicks(2657), null, null, 1, null, "H", 1, null, null, null, null, null, null, null, 1, null, "B", 1, null, true, false, null, null, null, 4, 1, null, "D", 1, null, "{PREFIX}-{NUMBER}/{YEAR}", true, true, 2026 });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",

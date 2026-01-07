@@ -88,16 +88,11 @@ namespace eProtokoll.Models
         [Display(Name = "Publik", Description = "Të gjithë mund ta shohin")]
         Public = 1,
 
-        [Display(Name = "I Brendshëm", Description = "Vetëm punonjësit e autorizuar")]
-        Internal = 2,
-
-        [Display(Name = "Konfidencial", Description = "Vetëm disa punonjës të caktuar")]
-        Confidential = 3,
+        [Display(Name = "I Kufizuar", Description = "Vetëm punonjësit e autorizuar")]
+        Restricted = 2,
 
         [Display(Name = "Sekret", Description = "Vetëm menaxherët dhe administratorët")]
-        Secret = 4,
+        Secret = 3,
 
-        [Display(Name = "Tepër Sekret", Description = "Vetëm administratorët")]
-        TopSecret = 5
     }
 }
