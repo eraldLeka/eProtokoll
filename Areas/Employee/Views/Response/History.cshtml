@@ -1,0 +1,156 @@
+﻿@model List<DocumentResponse>
+@using eProtokoll.Models
+@{
+    ViewData["Title"] = "Historiku i Përgjigjes";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-clock-history"></i> Historiku i Përgjigjes
+                        <span class="badge bg-secondary ms-2">@Model.Count</span>
+                    </h5>
+                    <a asp-controller="Task" asp-action="Index" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-list-task"></i> Task-et
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    @if (Model != null && Model.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Dokumenti</th>
+                                        <th>Subjekti i Përgjigjes</th>
+                                        <th>Data</th>
+                                        <th>Statusi</th>
+                                        <th>Aprovuar Nga</th>
+                                        <th class="text-end">Veprime</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var response in Model)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <strong>@response.Tracking.Document.ProtocolNumber</strong>
+                                                <br />
+                                                <small class="text-muted">
+                                                    @response.Tracking.Document.Subject.Substring(0, Math.Min(50, response.Tracking.Document.Subject.Length))...
+                                                </small>
+                                            </td>
+                                            <td>
+                                                @response.ResponseSubject
+                                                @if (!string.IsNullOrEmpty(response.ResponseNotes))
+                                                {
+                                                    <br />
+                                                    <small class="text-muted">
+                                                        <i class="bi bi-sticky"></i> @response.ResponseNotes.Substring(0, Math.Min(40, response.ResponseNotes.Length))...
+                                                    </small>
+                                                }
+                                            </td>
+                                            <td>
+                                                <small>
+                                                    @response.CreatedDate.ToString("dd/MM/yyyy HH:mm")
+                                                    <br />
+                                                    <span class="text-muted">v@response.VersionNumber</span>
+                                                </small>
+                                            </td>
+                                            <td>
+                                                @switch (response.Status)
+                                                {
+                                                    case ResponseStatus.Draft:
+                                                        <span class="badge bg-secondary">Draft</span>
+                                                        break;
+                                                    case ResponseStatus.Submitted:
+                                                        <span class="badge bg-warning text-dark">
+                                                            <i class="bi bi-clock"></i> Në pritje
+                                                        </span>
+                                                        break;
+                                                    case ResponseStatus.Approved:
+                                                        <span class="badge bg-success">
+                                                            <i class="bi bi-check-circle"></i> Aprovuar
+                                                        </span>
+                                                        @if (response.ApprovedDate.HasValue)
+                                                        {
+                                                            <br />
+                                                            <small class="text-muted">@response.ApprovedDate.Value.ToString("dd/MM/yyyy")</small>
+                                                        }
+                                                        break;
+                                                    case ResponseStatus.Rejected:
+                                                        <span class="badge bg-danger">
+                                                            <i class="bi bi-x-circle"></i> Refuzuar
+                                                        </span>
+                                                        @if (!string.IsNullOrEmpty(response.RejectionReason))
+                                                        {
+                                                            <br />
+                                                            <small class="text-danger" title="@response.RejectionReason">
+                                                                @response.RejectionReason.Substring(0, Math.Min(30, response.RejectionReason.Length))...
+                                                            </small>
+                                                        }
+                                                        break;
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (response.ApprovedByUser != null)
+                                                {
+                                                    <text>@response.ApprovedByUser.FirstName @response.ApprovedByUser.LastName</text>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">-</span>
+                                                }
+                                            </td>
+                                            <td class="text-end">
+                                                <a asp-action="Download" asp-route-id="@response.ResponseId"
+                                                   class="btn btn-sm btn-outline-primary" title="Shkarko PDF">
+                                                    <i class="bi bi-download"></i>
+                                                </a>
+                                                <a asp-controller="Task" asp-action="Details"
+                                                   asp-route-id="@response.TrackingId"
+                                                   class="btn btn-sm btn-outline-secondary" title="Detaje">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+                            <p class="text-muted mt-3">Nuk keni ende përgjigje të ngarkuara.</p>
+                            <a asp-controller="Task" asp-action="Index" asp-route-filter="inprogress"
+                               class="btn btn-primary">
+                                <i class="bi bi-list-task"></i> Shiko Task-et Aktive
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .card {
+            border-radius: 12px;
+        }
+
+        .table tbody tr {
+            transition: background-color .2s;
+        }
+
+            .table tbody tr:hover {
+                background-color: rgba(13, 110, 253, .05);
+            }
+    </style>
+}

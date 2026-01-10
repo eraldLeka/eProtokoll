@@ -1,0 +1,288 @@
+﻿@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="container-fluid">
+    <!-- Welcome Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="mb-1">
+                <i class="bi bi-house-door me-2 text-primary"></i>
+                Mirë se vini
+            </h2>
+            <p class="text-muted">Përmbledhja e aktivitetit - @DateTime.Now.ToString("dd MMMM yyyy")</p>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1 text-uppercase small">Të Reja</h6>
+                            <h2 class="mb-0 fw-bold text-warning">@ViewBag.PendingTasks</h2>
+                            <small class="text-warning"><i class="bi bi-inbox"></i> Për tu pranuar</small>
+                        </div>
+                        <div class="stat-icon bg-warning-subtle text-warning">
+                            <i class="bi bi-inbox-fill"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1 text-uppercase small">Në Proces</h6>
+                            <h2 class="mb-0 fw-bold text-primary">@ViewBag.InProgressTasks</h2>
+                            <small class="text-primary"><i class="bi bi-arrow-repeat"></i> Aktive</small>
+                        </div>
+                        <div class="stat-icon bg-primary-subtle text-primary">
+                            <i class="bi bi-arrow-repeat"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1 text-uppercase small">Këtë Javë</h6>
+                            <h2 class="mb-0 fw-bold text-success">@ViewBag.CompletedThisWeek</h2>
+                            <small class="text-success"><i class="bi bi-check-circle"></i> Përfunduar</small>
+                        </div>
+                        <div class="stat-icon bg-success-subtle text-success">
+                            <i class="bi bi-check-circle-fill"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm stat-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1 text-uppercase small">Të Vonuara</h6>
+                            <h2 class="mb-0 fw-bold text-danger">@ViewBag.OverdueTasks</h2>
+                            <small class="text-danger"><i class="bi bi-exclamation-triangle"></i> Urgjente</small>
+                        </div>
+                        <div class="stat-icon bg-danger-subtle text-danger">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Type Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">📋 Për Njoftim</h6>
+                            <h3 class="mb-0 fw-bold text-info">@ViewBag.ForInformationCount</h3>
+                            <small class="text-muted">Dokumente informuese</small>
+                        </div>
+                        <div class="stat-icon bg-info-subtle text-info">
+                            <i class="bi bi-info-circle-fill"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">✍️ Për Përgjigje</h6>
+                            <h3 class="mb-0 fw-bold text-warning">@ViewBag.ForResponseCount</h3>
+                            <small class="text-muted">Kërkojnë response workflow</small>
+                        </div>
+                        <div class="stat-icon bg-warning-subtle text-warning">
+                            <i class="bi bi-pencil-fill"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overdue Alert -->
+    @if (ViewBag.OverdueTasks > 0)
+    {
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="alert alert-danger border-0 shadow-sm d-flex align-items-center">
+                    <i class="bi bi-exclamation-triangle-fill me-3" style="font-size: 2rem;"></i>
+                    <div>
+                        <h5 class="alert-heading mb-1">⚠️ Paralajmërim - Task të Vonuara</h5>
+                        <p class="mb-0">
+                            Keni <strong>@ViewBag.OverdueTasks</strong> task që kanë kaluar afatin.
+                            <a asp-controller="Task" asp-action="Index" asp-route-filter="overdue" class="alert-link fw-bold">
+                                Shiko tani <i class="bi bi-arrow-right"></i>
+                            </a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Quick Actions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-lightning-charge me-2 text-primary"></i>
+                        Veprime të Shpejta
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <a asp-controller="Task" asp-action="Index" asp-route-filter="pending"
+                               class="btn btn-warning btn-lg w-100 d-flex align-items-center justify-content-between">
+                                <div>
+                                    <i class="bi bi-inbox-fill me-2"></i>
+                                    <strong>Task Të Reja</strong>
+                                    <br />
+                                    <small>Shiko të gjitha pending</small>
+                                </div>
+                                <span class="badge bg-dark fs-5">@ViewBag.PendingTasks</span>
+                            </a>
+                        </div>
+
+                        <div class="col-md-4">
+                            <a asp-controller="Task" asp-action="Index" asp-route-filter="inprogress"
+                               class="btn btn-primary btn-lg w-100 d-flex align-items-center justify-content-between">
+                                <div>
+                                    <i class="bi bi-arrow-repeat me-2"></i>
+                                    <strong>Në Proces</strong>
+                                    <br />
+                                    <small>Task aktive</small>
+                                </div>
+                                <span class="badge bg-dark fs-5">@ViewBag.InProgressTasks</span>
+                            </a>
+                        </div>
+
+                        <div class="col-md-4">
+                            <a asp-controller="Task" asp-action="Index" asp-route-filter="overdue"
+                               class="btn btn-danger btn-lg w-100 d-flex align-items-center justify-content-between">
+                                <div>
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                    <strong>Të Vonuara</strong>
+                                    <br />
+                                    <small>Urgjente!</small>
+                                </div>
+                                <span class="badge bg-dark fs-5">@ViewBag.OverdueTasks</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <a asp-controller="Task" asp-action="Index"
+                               class="btn btn-outline-dark btn-lg w-100">
+                                <i class="bi bi-list-task me-2"></i>
+                                Të Gjitha Task-et
+                            </a>
+                        </div>
+
+                        <div class="col-md-6">
+                            <a asp-controller="Response" asp-action="History"
+                               class="btn btn-outline-secondary btn-lg w-100">
+                                <i class="bi bi-clock-history me-2"></i>
+                                Historiku i Përgjigjes
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .stat-card {
+            transition: transform .2s, box-shadow .2s;
+        }
+
+            .stat-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 .5rem 1rem rgba(0,0,0,.15) !important;
+            }
+
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .card {
+            border-radius: 12px;
+        }
+
+        .card-header {
+            border-radius: 12px 12px 0 0 !important;
+            border-bottom: 1px solid rgba(0,0,0,.05);
+        }
+
+        .bg-primary-subtle {
+            background-color: rgba(13,110,253,.1) !important;
+        }
+
+        .bg-success-subtle {
+            background-color: rgba(25,135,84,.1) !important;
+        }
+
+        .bg-danger-subtle {
+            background-color: rgba(220,53,69,.1) !important;
+        }
+
+        .bg-warning-subtle {
+            background-color: rgba(255,193,7,.1) !important;
+        }
+
+        .bg-info-subtle {
+            background-color: rgba(13,202,240,.1) !important;
+        }
+
+        .alert {
+            border-radius: 12px;
+        }
+
+        .btn-lg {
+            padding: 1rem;
+            text-align: left;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 .25rem .5rem rgba(0,0,0,.15);
+            transition: all .2s;
+        }
+    </style>
+}

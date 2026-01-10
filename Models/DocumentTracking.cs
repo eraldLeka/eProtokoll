@@ -165,8 +165,11 @@ namespace eProtokoll.Models
         [Display(Name = "Modifikuar nga")]
         public string? ModifiedBy { get; set; }
 
+
         // Navigation Properties për delegimet e shumta
         public virtual ICollection<DocumentTracking>? SubDelegations { get; set; }
+        [Display(Name = "Përgjigjet")]
+        public virtual ICollection<DocumentResponse>? Responses { get; set; }
     }
 
     /// <summary>

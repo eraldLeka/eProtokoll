@@ -28,6 +28,10 @@ namespace eProtokoll.Data
         public DbSet<Deadline> Deadlines { get; set; }
         public DbSet<DocumentAttachment> DocumentAttachments { get; set; }
 
+        public DbSet<DocumentResponse> DocumentResponses { get; set; }
+
+
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

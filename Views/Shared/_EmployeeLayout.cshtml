@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - eProtokoll Manager</title>
+    <title>@ViewData["Title"] - eProtokoll Punonjës</title>
 
     <!-- Bootstrap 5 nga CDN -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -35,15 +35,15 @@
         }
 
             .sidebar .nav-link:hover {
-                color: #198754;
+                color: #0d6efd;
                 background-color: #f8f9fa;
-                border-left-color: #198754;
+                border-left-color: #0d6efd;
             }
 
             .sidebar .nav-link.active {
-                color: #198754;
-                border-left-color: #198754;
-                background-color: #d1e7dd;
+                color: #0d6efd;
+                border-left-color: #0d6efd;
+                background-color: #cfe2ff;
             }
 
             .sidebar .nav-link i {
@@ -63,10 +63,10 @@
 </head>
 <body>
     <!-- Top Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-success">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" asp-area="Manager" asp-controller="Dashboard" asp-action="Index">
-                <i class="bi bi-file-earmark-text"></i> eProtokoll - Menaxher
+            <a class="navbar-brand" asp-area="Employee" asp-controller="Dashboard" asp-action="Index">
+                <i class="bi bi-file-earmark-text"></i> eProtokoll - Punonjës
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -76,17 +76,17 @@
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown">
                             <i class="bi bi-bell"></i>
-                            <span class="badge bg-danger">3</span>
+                            <span class="badge bg-danger">2</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><h6 class="dropdown-header">Njoftime</h6></li>
-                            <li><a class="dropdown-item" href="#"><i class="bi bi-exclamation-circle text-danger"></i> 2 afate të vonuara</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="bi bi-calendar text-warning"></i> 1 afat sot</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-exclamation-circle text-danger"></i> 1 task i vonuar</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-inbox text-info"></i> 1 task i ri</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item text-center" href="#">Shiko të gjitha</a></li>
                         </ul>
                     </li>
-                   
+                  
                 </ul>
             </div>
         </div>
@@ -98,75 +98,46 @@
             <nav id="sidebar" class="col-md-3 col-lg-2 d-md-block bg-light sidebar">
                 <div class="position-sticky pt-3">
                     <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
-                        <span>MENAXHIM DOKUMENTESH</span>
+                        <span>TASK-ET E MIA</span>
                     </h6>
                     <ul class="nav flex-column">
                         <li class="nav-item">
-                            <a class="nav-link" asp-area="Manager" asp-controller="Dashboard" asp-action="Index">
+                            <a class="nav-link" asp-area="Employee" asp-controller="Dashboard" asp-action="Index">
                                 <i class="bi bi-speedometer2"></i> Dashboard
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" asp-area="Manager" asp-controller="IncomingDocument" asp-action="Index">
-                                <i class="bi bi-arrow-down-circle"></i> Dokumente Hyrëse
+                            <a class="nav-link" asp-area="Employee" asp-controller="Task" asp-action="Index">
+                                <i class="bi bi-list-task"></i> Të Gjitha Task-et
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" asp-area="Manager" asp-controller="OutgoingDocument" asp-action="Index">
-                                <i class="bi bi-arrow-up-circle"></i> Dokumente Dalëse
+                            <a class="nav-link" asp-area="Employee" asp-controller="Task" asp-action="Index" asp-route-filter="pending">
+                                <i class="bi bi-inbox"></i> Task Të Reja
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" asp-area="Manager" asp-controller="InternalDocument" asp-action="Index">
-                                <i class="bi bi-arrow-left-right"></i> Dokumente të Brendshme
+                            <a class="nav-link" asp-area="Employee" asp-controller="Task" asp-action="Index" asp-route-filter="inprogress">
+                                <i class="bi bi-arrow-repeat"></i> Në Proces
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-area="Employee" asp-controller="Task" asp-action="Index" asp-route-filter="overdue">
+                                <i class="bi bi-exclamation-triangle"></i> Të Vonuara
                             </a>
                         </li>
                     </ul>
 
                     <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
-                        <span>GJURMIMI & AFATET</span>
+                        <span>PËRGJIGJE DOKUMENTESH</span>
                     </h6>
                     <ul class="nav flex-column mb-2">
                         <li class="nav-item">
-                            <a class="nav-link" asp-area="Manager" asp-controller="Tracking" asp-action="Index">
-                                <i class="bi bi-geo-alt"></i> Gjurmimi i Dokumenteve
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="Manager" asp-controller="Deadline" asp-action="Index">
-                                <i class="bi bi-calendar-check"></i> Afatet
+                            <a class="nav-link" asp-area="Employee" asp-controller="Response" asp-action="History">
+                                <i class="bi bi-clock-history"></i> Historiku i Përgjigjes
                             </a>
                         </li>
                     </ul>
-
-                    <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
-                        <span>PROTOKOLLI & RAPORTE</span>
-                    </h6>
-                    <ul class="nav flex-column mb-2">
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="Manager" asp-controller="ProtocolBook" asp-action="Index">
-                                <i class="bi bi-book"></i> Libër Protokolli
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="Manager" asp-controller="Report" asp-action="Index">
-                                <i class="bi bi-bar-chart"></i> Raporte Statistikore
-                            </a>
-                        </li>
-                    </ul>
-
-                    <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
-                        <span>VEGLAT</span>
-                    </h6>
-                    <ul class="nav flex-column mb-2">
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Scanner" asp-action="Index">
-                                <i class="bi bi-scanner"></i> Skanimi
-                            </a>
-                        </li>
-                        
-                    </ul>
-
                     <hr>
                     <ul class="nav flex-column mb-2">
                         <li class="nav-item">
@@ -218,6 +189,43 @@
 
                 @RenderBody()
             </main>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div class="modal fade" id="helpModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="bi bi-question-circle"></i> Ndihmë - Workflow i Task-eve</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <h6>📋 Si të përdorni sistemin:</h6>
+                    <ol class="small">
+                        <li><strong>Dashboard</strong> - Shikoni statistikat e task-eve tuaja</li>
+                        <li><strong>Task Të Reja</strong> - Pranoni ose refuzoni task-et e reja</li>
+                        <li><strong>Në Proces</strong> - Task-et që jeni duke punuar</li>
+                        <li>
+                            <strong>Krijo Përgjigje</strong>:
+                            <ul>
+                                <li>Shkarkoni dokumentin origjinal</li>
+                                <li>Hartoni përgjigjen në Word (offline)</li>
+                                <li>Printoni dhe merrni firmën e menaxherit</li>
+                                <li>Skanoni dokumentin e firmosur</li>
+                                <li>Ngarkoni PDF-në në sistem</li>
+                                <li>Dërgoni për approval</li>
+                            </ul>
+                        </li>
+                        <li><strong>Historiku</strong> - Shikoni përgjigjet e kaluara</li>
+                    </ol>
+                    <hr>
+                    <p class="small mb-0"><i class="bi bi-info-circle text-primary"></i> Për pyetje shtesë, kontaktoni menaxherin tuaj.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Mbyll</button>
+                </div>
+            </div>
         </div>
     </div>
 
