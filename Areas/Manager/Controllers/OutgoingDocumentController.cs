@@ -1,20 +1,22 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
-using eProtokoll.Data;
 using eProtokoll.Models;
+using Microsoft.Data.SqlClient;
+using System.Data;
+using System.Text;
+using eProtokoll.Services.Mappers;
 
 namespace eProtokoll.Areas.Manager.Controllers
 {
     [Area("Manager")]
     public class OutgoingDocumentController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly string _connectionString;
         private readonly IWebHostEnvironment _environment;
 
-        public OutgoingDocumentController(ApplicationDbContext context, IWebHostEnvironment environment)
+        public OutgoingDocumentController(IConfiguration configuration, IWebHostEnvironment environment)
         {
-            _context = context;
+            _connectionString = configuration.GetConnectionString("DefaultConnection");
             _environment = environment;
         }
 
@@ -23,97 +25,231 @@ namespace eProtokoll.Areas.Manager.Controllers
             string institution = "", DateTime? dateFrom = null, DateTime? dateTo = null, int page = 1)
         {
             var pageSize = 20;
-            var query = _context.OutgoingDocuments
-                .Include(d => d.Institution)
-                .Include(d => d.Classification)
-                .Include(d => d.Creator)
-                .AsQueryable();
+            var documents = new List<OutgoingDocument>();
 
-            // Search
-            if (!string.IsNullOrEmpty(searchTerm))
+            using (var connection = new SqlConnection(_connectionString))
             {
-                query = query.Where(d =>
-                    d.ProtocolNumber.Contains(searchTerm) ||
-                    d.Subject.Contains(searchTerm) ||
-                    d.RecipientName.Contains(searchTerm) ||
-                    (d.Content != null && d.Content.Contains(searchTerm)));
-            }
+                await connection.OpenAsync();
 
-            // Filter by status
-            if (!string.IsNullOrEmpty(status) && Enum.TryParse<DocumentStatus>(status, out var docStatus))
-            {
-                query = query.Where(d => d.Status == docStatus);
-            }
+                // Build dynamic query
+                var queryBuilder = new StringBuilder(@"
+                    SELECT d.*, 
+                        i.Name as InstitutionName, i.ShortName as InstitutionShortName,
+                        c.Name as ClassificationName, c.ColorCode,
+                        u.UserName as CreatorUserName, u.FirstName as CreatorFirstName, u.LastName as CreatorLastName
+                    FROM Documents d
+                    LEFT JOIN Institutions i ON d.InstitutionId = i.InstitutionId
+                    LEFT JOIN Classifications c ON d.ClassificationId = c.ClassificationId
+                    LEFT JOIN AspNetUsers u ON d.CreatedBy = u.Id
+                    WHERE d.DocumentType = 2");
 
-            // Filter by priority
-            if (!string.IsNullOrEmpty(priority) && Enum.TryParse<Priority>(priority, out var docPriority))
-            {
-                query = query.Where(d => d.Priority == docPriority);
-            }
+                var parameters = new List<SqlParameter>();
 
-            // Filter by institution
-            if (!string.IsNullOrEmpty(institution) && int.TryParse(institution, out var institutionId))
-            {
-                query = query.Where(d => d.InstitutionId == institutionId);
-            }
-
-            // Filter by date range
-            if (dateFrom.HasValue)
-            {
-                query = query.Where(d => d.SentDate.HasValue && d.SentDate.Value >= dateFrom.Value);
-            }
-
-            if (dateTo.HasValue)
-            {
-                query = query.Where(d => d.SentDate.HasValue && d.SentDate.Value <= dateTo.Value);
-            }
-
-            // Total count and paging
-            var totalItems = await query.CountAsync();
-            var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
-            var documents = await query
-                .OrderByDescending(d => d.CreatedDate)
-                .ThenByDescending(d => d.SentDate)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
-
-            // ViewBag for filters and dropdowns
-            ViewBag.SearchTerm = searchTerm;
-            ViewBag.SelectedStatus = status;
-            ViewBag.SelectedPriority = priority;
-            ViewBag.SelectedInstitution = institution;
-            ViewBag.DateFrom = dateFrom?.ToString("yyyy-MM-dd");
-            ViewBag.DateTo = dateTo?.ToString("yyyy-MM-dd");
-            ViewBag.CurrentPage = page;
-            ViewBag.TotalPages = totalPages;
-            ViewBag.TotalItems = totalItems;
-
-            ViewBag.Institutions = await _context.Institutions
-                .Where(i => i.IsActive)
-                .OrderBy(i => i.Name)
-                .Select(i => new SelectListItem
+                // Search filter
+                if (!string.IsNullOrEmpty(searchTerm))
                 {
-                    Value = i.InstitutionId.ToString(),
-                    Text = i.Name
-                })
-                .ToListAsync();
+                    queryBuilder.Append(@" AND (d.ProtocolNumber LIKE @SearchTerm 
+                        OR d.Subject LIKE @SearchTerm 
+                        OR d.RecipientName LIKE @SearchTerm
+                        OR d.Content LIKE @SearchTerm)");
+                    parameters.Add(new SqlParameter("@SearchTerm", $"%{searchTerm}%"));
+                }
 
-            // Statistics
-            ViewBag.TotalOutgoing = await _context.OutgoingDocuments.CountAsync();
+                // Status filter
+                if (!string.IsNullOrEmpty(status) && Enum.TryParse<DocumentStatus>(status, out var docStatus))
+                {
+                    queryBuilder.Append(" AND d.Status = @Status");
+                    parameters.Add(new SqlParameter("@Status", (int)docStatus));
+                }
 
-            var today = DateTime.Now.Date;
-            ViewBag.TodayOutgoing = await _context.OutgoingDocuments
-                .Where(d => d.SentDate.HasValue && d.SentDate.Value.Date == today)
-                .CountAsync();
+                // Priority filter
+                if (!string.IsNullOrEmpty(priority) && Enum.TryParse<Priority>(priority, out var docPriority))
+                {
+                    queryBuilder.Append(" AND d.Priority = @Priority");
+                    parameters.Add(new SqlParameter("@Priority", (int)docPriority));
+                }
 
-            ViewBag.PendingSend = await _context.OutgoingDocuments
-                .Where(d => d.Status == DocumentStatus.Pending || d.Status == DocumentStatus.Draft)
-                .CountAsync();
+                // Institution filter
+                if (!string.IsNullOrEmpty(institution) && int.TryParse(institution, out var institutionId))
+                {
+                    queryBuilder.Append(" AND d.InstitutionId = @InstitutionId");
+                    parameters.Add(new SqlParameter("@InstitutionId", institutionId));
+                }
 
-            ViewBag.Sent = await _context.OutgoingDocuments
-                .Where(d => d.ShipmentStatus == ShipmentStatus.Delivered)
-                .CountAsync();
+                // Date range filters
+                if (dateFrom.HasValue)
+                {
+                    queryBuilder.Append(" AND d.SentDate >= @DateFrom");
+                    parameters.Add(new SqlParameter("@DateFrom", dateFrom.Value));
+                }
+
+                if (dateTo.HasValue)
+                {
+                    queryBuilder.Append(" AND d.SentDate <= @DateTo");
+                    parameters.Add(new SqlParameter("@DateTo", dateTo.Value));
+                }
+
+                // Get total count - build separate count query
+                var countQueryBuilder = new StringBuilder(@"
+                    SELECT COUNT(*) 
+                    FROM Documents d
+                    LEFT JOIN Institutions i ON d.InstitutionId = i.InstitutionId
+                    LEFT JOIN Classifications c ON d.ClassificationId = c.ClassificationId
+                    LEFT JOIN AspNetUsers u ON d.CreatedBy = u.Id
+                    WHERE d.DocumentType = 2");
+
+                // Apply same filters as main query
+                if (!string.IsNullOrEmpty(searchTerm))
+                {
+                    countQueryBuilder.Append(@" AND (d.ProtocolNumber LIKE @SearchTerm 
+                        OR d.Subject LIKE @SearchTerm 
+                        OR d.RecipientName LIKE @SearchTerm
+                        OR d.Content LIKE @SearchTerm)");
+                }
+
+                if (!string.IsNullOrEmpty(status) && Enum.TryParse<DocumentStatus>(status, out var _))
+                {
+                    countQueryBuilder.Append(" AND d.Status = @Status");
+                }
+
+                if (!string.IsNullOrEmpty(priority) && Enum.TryParse<Priority>(priority, out var _))
+                {
+                    countQueryBuilder.Append(" AND d.Priority = @Priority");
+                }
+
+                if (!string.IsNullOrEmpty(institution) && int.TryParse(institution, out var _))
+                {
+                    countQueryBuilder.Append(" AND d.InstitutionId = @InstitutionId");
+                }
+
+                if (dateFrom.HasValue)
+                {
+                    countQueryBuilder.Append(" AND d.SentDate >= @DateFrom");
+                }
+
+                if (dateTo.HasValue)
+                {
+                    countQueryBuilder.Append(" AND d.SentDate <= @DateTo");
+                }
+
+                int totalItems;
+                using (var countCommand = new SqlCommand(countQueryBuilder.ToString(), connection))
+                {
+                    countCommand.Parameters.AddRange(parameters.ToArray());
+                    var result = await countCommand.ExecuteScalarAsync();
+                    totalItems = result != null ? Convert.ToInt32(result) : 0;
+                }
+
+                var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+
+                // Add sorting and pagination
+                queryBuilder.Append(@" ORDER BY d.CreatedDate DESC, d.SentDate DESC
+                    OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY");
+
+                parameters.Add(new SqlParameter("@Offset", (page - 1) * pageSize));
+                parameters.Add(new SqlParameter("@PageSize", pageSize));
+
+                // Execute main query
+                using (var command = new SqlCommand(queryBuilder.ToString(), connection))
+                {
+                    command.Parameters.AddRange(parameters.ToArray());
+
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            var document = DocumentMapper.MapToOutgoingDocument(reader);
+
+                            // Populate Institution
+                            if (!reader.IsDBNull(reader.GetOrdinal("InstitutionName")))
+                            {
+                                document.Institution = new Institution
+                                {
+                                    InstitutionId = document.InstitutionId,
+                                    Name = reader.GetString(reader.GetOrdinal("InstitutionName")),
+                                    ShortName = reader.IsDBNull(reader.GetOrdinal("InstitutionShortName"))
+                                        ? null
+                                        : reader.GetString(reader.GetOrdinal("InstitutionShortName"))
+                                };
+                            }
+
+                            // Populate Classification
+                            if (!reader.IsDBNull(reader.GetOrdinal("ClassificationName")))
+                            {
+                                document.Classification = new Classification
+                                {
+                                    ClassificationId = document.ClassificationId,
+                                    Name = reader.GetString(reader.GetOrdinal("ClassificationName")),
+                                    ColorCode = reader.IsDBNull(reader.GetOrdinal("ColorCode"))
+                                        ? null
+                                        : reader.GetString(reader.GetOrdinal("ColorCode"))
+                                };
+                            }
+
+                            // Populate Creator
+                            if (!reader.IsDBNull(reader.GetOrdinal("CreatorUserName")))
+                            {
+                                document.Creator = new ApplicationUser
+                                {
+                                    UserName = reader.GetString(reader.GetOrdinal("CreatorUserName")),
+                                    FirstName = reader.GetString(reader.GetOrdinal("CreatorFirstName")),
+                                    LastName = reader.GetString(reader.GetOrdinal("CreatorLastName"))
+                                };
+                            }
+
+                            documents.Add(document);
+                        }
+                    }
+                }
+
+                // ViewBag for filters
+                ViewBag.SearchTerm = searchTerm;
+                ViewBag.SelectedStatus = status;
+                ViewBag.SelectedPriority = priority;
+                ViewBag.SelectedInstitution = institution;
+                ViewBag.DateFrom = dateFrom?.ToString("yyyy-MM-dd");
+                ViewBag.DateTo = dateTo?.ToString("yyyy-MM-dd");
+                ViewBag.CurrentPage = page;
+                ViewBag.TotalPages = totalPages;
+                ViewBag.TotalItems = totalItems;
+
+                // Load institutions for dropdown
+                var institutions = new List<SelectListItem>();
+                var queryInst = "SELECT InstitutionId, Name FROM Institutions WHERE IsActive = 1 ORDER BY Name";
+                using (var command = new SqlCommand(queryInst, connection))
+                {
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            institutions.Add(new SelectListItem
+                            {
+                                Value = reader.GetInt32(0).ToString(),
+                                Text = reader.GetString(1)
+                            });
+                        }
+                    }
+                }
+                ViewBag.Institutions = institutions;
+
+                // Statistics
+                ViewBag.TotalOutgoing = await ExecuteCountQuery(connection, "SELECT COUNT(*) FROM Documents WHERE DocumentType = 2");
+
+                var queryToday = "SELECT COUNT(*) FROM Documents WHERE DocumentType = 2 AND CAST(SentDate AS DATE) = @Today";
+                using (var command = new SqlCommand(queryToday, connection))
+                {
+                    command.Parameters.AddWithValue("@Today", DateTime.Now.Date);
+                    ViewBag.TodayOutgoing = (int)await command.ExecuteScalarAsync();
+                }
+
+                var queryPendingSend = @"SELECT COUNT(*) FROM Documents 
+                    WHERE DocumentType = 2 AND (Status = 4 OR Status = 1)";
+                ViewBag.PendingSend = await ExecuteCountQuery(connection, queryPendingSend);
+
+                var querySent = @"SELECT COUNT(*) FROM Documents 
+                    WHERE DocumentType = 2 AND ShipmentStatus = 3";
+                ViewBag.Sent = await ExecuteCountQuery(connection, querySent);
+            }
 
             return View(documents);
         }
@@ -152,52 +288,113 @@ namespace eProtokoll.Areas.Manager.Controllers
         {
             if (ModelState.IsValid)
             {
-                // Set metadata
-                model.CreatedDate = DateTime.Now;
-                model.CreatedBy = User.Identity.Name;
-                model.DocumentType = DocumentType.Outgoing;
-
-                // Handle file upload
-                if (attachmentFile != null && attachmentFile.Length > 0)
+                using (var connection = new SqlConnection(_connectionString))
                 {
-                    var uploadsFolder = Path.Combine(_environment.WebRootPath, "uploads", "outgoing");
-                    Directory.CreateDirectory(uploadsFolder);
-
-                    var uniqueFileName = $"{Guid.NewGuid()}_{attachmentFile.FileName}";
-                    var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-                    using (var fileStream = new FileStream(filePath, FileMode.Create))
+                    await connection.OpenAsync();
+                    using (var transaction = connection.BeginTransaction())
                     {
-                        await attachmentFile.CopyToAsync(fileStream);
+                        try
+                        {
+                            // Set metadata
+                            model.CreatedDate = DateTime.Now;
+                            model.CreatedBy = User.Identity.Name;
+                            model.DocumentType = DocumentType.Outgoing;
+
+                            // Insert OutgoingDocument
+                            var query = @"INSERT INTO Documents (
+                                ProtocolNumber, ProtocolDate, ProtocolTime, DocumentType, Subject, Content,
+                                ReferenceNumber, ReferenceDate, ClassificationId, Status, Priority,
+                                HasDeadline, DeadlineDate, Notes, PageCount, Language, IsScanned,
+                                HasAttachments, IsArchived, ArchivedDate, ArchivedBy, CreatedDate, CreatedBy,
+                                ModifiedDate, ModifiedBy, InstitutionId, RecipientName, RecipientPosition,
+                                RecipientEmail, RecipientPhone, RecipientAddress, SentDate, SentTime,
+                                DeliveryMethod, ShipmentCompany, TrackingNumber, SignedBy, SignerPosition,
+                                SignedDate, HasArchiveCopy, ArchiveLocation, ShipmentStatus, NumberOfCopies,
+                                IsDeliveryConfirmed, ConfirmationDate, ConfirmedBy
+                            ) OUTPUT INSERTED.DocumentId VALUES (
+                                @ProtocolNumber, @ProtocolDate, @ProtocolTime, @DocumentType, @Subject, @Content,
+                                @ReferenceNumber, @ReferenceDate, @ClassificationId, @Status, @Priority,
+                                @HasDeadline, @DeadlineDate, @Notes, @PageCount, @Language, @IsScanned,
+                                @HasAttachments, @IsArchived, @ArchivedDate, @ArchivedBy, @CreatedDate, @CreatedBy,
+                                @ModifiedDate, @ModifiedBy, @InstitutionId, @RecipientName, @RecipientPosition,
+                                @RecipientEmail, @RecipientPhone, @RecipientAddress, @SentDate, @SentTime,
+                                @DeliveryMethod, @ShipmentCompany, @TrackingNumber, @SignedBy, @SignerPosition,
+                                @SignedDate, @HasArchiveCopy, @ArchiveLocation, @ShipmentStatus, @NumberOfCopies,
+                                @IsDeliveryConfirmed, @ConfirmationDate, @ConfirmedBy
+                            )";
+
+                            int documentId;
+                            using (var command = new SqlCommand(query, connection, transaction))
+                            {
+                                AddOutgoingDocumentParameters(command, model);
+                                documentId = (int)await command.ExecuteScalarAsync();
+                            }
+
+                            // Handle file upload
+                            if (attachmentFile != null && attachmentFile.Length > 0)
+                            {
+                                var uploadsFolder = Path.Combine(_environment.WebRootPath, "uploads", "outgoing");
+                                Directory.CreateDirectory(uploadsFolder);
+
+                                var uniqueFileName = $"{Guid.NewGuid()}_{attachmentFile.FileName}";
+                                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                                {
+                                    await attachmentFile.CopyToAsync(fileStream);
+                                }
+
+                                // Insert attachment
+                                var attachmentQuery = @"INSERT INTO DocumentAttachments (
+                                    DocumentId, FileName, OriginalFileName, FilePath, FileSize, FileExtension,
+                                    ContentType, UploadedDate, UploadedBy, Category, IsVirusScanned,
+                                    AllowDownload, AllowPrint, DisplayOrder, IsPrimaryDocument
+                                ) VALUES (
+                                    @DocumentId, @FileName, @OriginalFileName, @FilePath, @FileSize, @FileExtension,
+                                    @ContentType, @UploadedDate, @UploadedBy, @Category, @IsVirusScanned,
+                                    @AllowDownload, @AllowPrint, @DisplayOrder, @IsPrimaryDocument
+                                )";
+
+                                using (var attachCommand = new SqlCommand(attachmentQuery, connection, transaction))
+                                {
+                                    attachCommand.Parameters.AddWithValue("@DocumentId", documentId);
+                                    attachCommand.Parameters.AddWithValue("@FileName", uniqueFileName);
+                                    attachCommand.Parameters.AddWithValue("@OriginalFileName", attachmentFile.FileName);
+                                    attachCommand.Parameters.AddWithValue("@FilePath", $"/uploads/outgoing/{uniqueFileName}");
+                                    attachCommand.Parameters.AddWithValue("@FileSize", attachmentFile.Length);
+                                    attachCommand.Parameters.AddWithValue("@FileExtension", Path.GetExtension(attachmentFile.FileName));
+                                    attachCommand.Parameters.AddWithValue("@ContentType", attachmentFile.ContentType);
+                                    attachCommand.Parameters.AddWithValue("@UploadedDate", DateTime.Now);
+                                    attachCommand.Parameters.AddWithValue("@UploadedBy", User.Identity.Name);
+                                    attachCommand.Parameters.AddWithValue("@Category", (int)FileCategory.Document);
+                                    attachCommand.Parameters.AddWithValue("@IsVirusScanned", false);
+                                    attachCommand.Parameters.AddWithValue("@AllowDownload", true);
+                                    attachCommand.Parameters.AddWithValue("@AllowPrint", true);
+                                    attachCommand.Parameters.AddWithValue("@DisplayOrder", 1);
+                                    attachCommand.Parameters.AddWithValue("@IsPrimaryDocument", true);
+                                    await attachCommand.ExecuteNonQueryAsync();
+                                }
+
+                                // Update HasAttachments
+                                var updateQuery = "UPDATE Documents SET HasAttachments = 1 WHERE DocumentId = @DocumentId";
+                                using (var updateCommand = new SqlCommand(updateQuery, connection, transaction))
+                                {
+                                    updateCommand.Parameters.AddWithValue("@DocumentId", documentId);
+                                    await updateCommand.ExecuteNonQueryAsync();
+                                }
+                            }
+
+                            transaction.Commit();
+                            TempData["SuccessMessage"] = $"Dokumenti dalës '{model.ProtocolNumber}' u regjistrua me sukses!";
+                            return RedirectToAction(nameof(Index));
+                        }
+                        catch (Exception)
+                        {
+                            transaction.Rollback();
+                            throw;
+                        }
                     }
-
-                    var attachment = new DocumentAttachment
-                    {
-                        FileName = uniqueFileName,
-                        OriginalFileName = attachmentFile.FileName,
-                        FilePath = $"/uploads/outgoing/{uniqueFileName}",
-                        FileSize = attachmentFile.Length,
-                        FileExtension = Path.GetExtension(attachmentFile.FileName),
-                        ContentType = attachmentFile.ContentType,
-                        UploadedDate = DateTime.Now,
-                        UploadedBy = User.Identity.Name,
-                        Category = FileCategory.Document,
-                        IsVirusScanned = false,
-                        AllowDownload = true,
-                        AllowPrint = true,
-                        DisplayOrder = 1,
-                        IsPrimaryDocument = true
-                    };
-
-                    model.Attachments = new List<DocumentAttachment> { attachment };
-                    model.HasAttachments = true;
                 }
-
-                _context.OutgoingDocuments.Add(model);
-                await _context.SaveChangesAsync();
-
-                TempData["SuccessMessage"] = $"Dokumenti dalës '{model.ProtocolNumber}' u regjistrua me sukses!";
-                return RedirectToAction(nameof(Index));
             }
 
             await LoadDropdowns();
@@ -209,9 +406,43 @@ namespace eProtokoll.Areas.Manager.Controllers
         {
             if (id == null) return NotFound();
 
-            var document = await _context.OutgoingDocuments
-                .Include(d => d.Attachments)
-                .FirstOrDefaultAsync(d => d.DocumentId == id);
+            OutgoingDocument document = null;
+
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                var query = "SELECT * FROM Documents WHERE DocumentId = @DocumentId AND DocumentType = 2";
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@DocumentId", id.Value);
+
+                    await connection.OpenAsync();
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        if (await reader.ReadAsync())
+                        {
+                            document = DocumentMapper.MapToOutgoingDocument(reader);
+                        }
+                    }
+                }
+
+                if (document != null)
+                {
+                    // Load attachments
+                    document.Attachments = new List<DocumentAttachment>();
+                    var attachQuery = "SELECT * FROM DocumentAttachments WHERE DocumentId = @DocumentId";
+                    using (var command = new SqlCommand(attachQuery, connection))
+                    {
+                        command.Parameters.AddWithValue("@DocumentId", id.Value);
+                        using (var reader = await command.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                document.Attachments.Add(AttachmentMapper.MapToDocumentAttachment(reader));
+                            }
+                        }
+                    }
+                }
+            }
 
             if (document == null) return NotFound();
 
@@ -228,79 +459,147 @@ namespace eProtokoll.Areas.Manager.Controllers
 
             if (ModelState.IsValid)
             {
-                var existingDoc = await _context.OutgoingDocuments
-                    .Include(d => d.Attachments)
-                    .FirstOrDefaultAsync(d => d.DocumentId == id);
-
-                if (existingDoc == null) return NotFound();
-
-                // Update properties
-                existingDoc.InstitutionId = model.InstitutionId;
-                existingDoc.RecipientName = model.RecipientName;
-                existingDoc.RecipientPosition = model.RecipientPosition;
-                existingDoc.RecipientEmail = model.RecipientEmail;
-                existingDoc.RecipientPhone = model.RecipientPhone;
-                existingDoc.RecipientAddress = model.RecipientAddress;
-                existingDoc.Subject = model.Subject;
-                existingDoc.Content = model.Content;
-                existingDoc.SentDate = model.SentDate;
-                existingDoc.SentTime = model.SentTime;
-                existingDoc.DeliveryMethod = model.DeliveryMethod;
-                existingDoc.ClassificationId = model.ClassificationId;
-                existingDoc.Status = model.Status;
-                existingDoc.Priority = model.Priority;
-                existingDoc.HasArchiveCopy = model.HasArchiveCopy;
-                existingDoc.ArchiveLocation = model.ArchiveLocation;
-                existingDoc.ShipmentCompany = model.ShipmentCompany;
-                existingDoc.TrackingNumber = model.TrackingNumber;
-                existingDoc.SignedBy = model.SignedBy;
-                existingDoc.SignerPosition = model.SignerPosition;
-                existingDoc.SignedDate = model.SignedDate;
-                existingDoc.ShipmentStatus = model.ShipmentStatus;
-                existingDoc.Notes = model.Notes;
-                existingDoc.ModifiedDate = DateTime.Now;
-                existingDoc.ModifiedBy = User.Identity.Name;
-
-                // Handle new file upload
-                if (attachmentFile != null && attachmentFile.Length > 0)
+                using (var connection = new SqlConnection(_connectionString))
                 {
-                    var uploadsFolder = Path.Combine(_environment.WebRootPath, "uploads", "outgoing");
-                    Directory.CreateDirectory(uploadsFolder);
-
-                    var uniqueFileName = $"{Guid.NewGuid()}_{attachmentFile.FileName}";
-                    var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-                    using (var fileStream = new FileStream(filePath, FileMode.Create))
+                    await connection.OpenAsync();
+                    using (var transaction = connection.BeginTransaction())
                     {
-                        await attachmentFile.CopyToAsync(fileStream);
+                        try
+                        {
+                            // Update OutgoingDocument
+                            var query = @"UPDATE Documents SET
+                                InstitutionId = @InstitutionId,
+                                RecipientName = @RecipientName,
+                                RecipientPosition = @RecipientPosition,
+                                RecipientEmail = @RecipientEmail,
+                                RecipientPhone = @RecipientPhone,
+                                RecipientAddress = @RecipientAddress,
+                                Subject = @Subject,
+                                Content = @Content,
+                                SentDate = @SentDate,
+                                SentTime = @SentTime,
+                                DeliveryMethod = @DeliveryMethod,
+                                ClassificationId = @ClassificationId,
+                                Status = @Status,
+                                Priority = @Priority,
+                                HasArchiveCopy = @HasArchiveCopy,
+                                ArchiveLocation = @ArchiveLocation,
+                                ShipmentCompany = @ShipmentCompany,
+                                TrackingNumber = @TrackingNumber,
+                                SignedBy = @SignedBy,
+                                SignerPosition = @SignerPosition,
+                                SignedDate = @SignedDate,
+                                ShipmentStatus = @ShipmentStatus,
+                                Notes = @Notes,
+                                ModifiedDate = @ModifiedDate,
+                                ModifiedBy = @ModifiedBy
+                                WHERE DocumentId = @DocumentId AND DocumentType = 2";
+
+                            using (var command = new SqlCommand(query, connection, transaction))
+                            {
+                                command.Parameters.AddWithValue("@DocumentId", id);
+                                command.Parameters.AddWithValue("@InstitutionId", model.InstitutionId);
+                                command.Parameters.AddWithValue("@RecipientName", model.RecipientName);
+                                command.Parameters.AddWithValue("@RecipientPosition", (object)model.RecipientPosition ?? DBNull.Value);
+                                command.Parameters.AddWithValue("@RecipientEmail", (object)model.RecipientEmail ?? DBNull.Value);
+                                command.Parameters.AddWithValue("@RecipientPhone", (object)model.RecipientPhone ?? DBNull.Value);
+                                command.Parameters.AddWithValue("@RecipientAddress", (object)model.RecipientAddress ?? DBNull.Value);
+                                command.Parameters.AddWithValue("@Subject", model.Subject);
+                                command.Parameters.AddWithValue("@Content", (object)model.Content ?? DBNull.Value);
+                                command.Parameters.AddWithValue("@SentDate", (object)model.SentDate ?? DBNull.Value);
+                                command.Parameters.AddWithValue("@SentTime", (object)model.SentTime ?? DBNull.Value);
+                                command.Parameters.AddWithValue("@DeliveryMethod", (int)model.DeliveryMethod);
+                                command.Parameters.AddWithValue("@ClassificationId", model.ClassificationId);
+                                command.Parameters.AddWithValue("@Status", (int)model.Status);
+                                command.Parameters.AddWithValue("@Priority", (int)model.Priority);
+                                command.Parameters.AddWithValue("@HasArchiveCopy", model.HasArchiveCopy);
+                                command.Parameters.AddWithValue("@ArchiveLocation", (object)model.ArchiveLocation ?? DBNull.Value);
+                                command.Parameters.AddWithValue("@ShipmentCompany", (object)model.ShipmentCompany ?? DBNull.Value);
+                                command.Parameters.AddWithValue("@TrackingNumber", (object)model.TrackingNumber ?? DBNull.Value);
+                                command.Parameters.AddWithValue("@SignedBy", (object)model.SignedBy ?? DBNull.Value);
+                                command.Parameters.AddWithValue("@SignerPosition", (object)model.SignerPosition ?? DBNull.Value);
+                                command.Parameters.AddWithValue("@SignedDate", (object)model.SignedDate ?? DBNull.Value);
+                                command.Parameters.AddWithValue("@ShipmentStatus", (int)model.ShipmentStatus);
+                                command.Parameters.AddWithValue("@Notes", (object)model.Notes ?? DBNull.Value);
+                                command.Parameters.AddWithValue("@ModifiedDate", DateTime.Now);
+                                command.Parameters.AddWithValue("@ModifiedBy", User.Identity.Name);
+
+                                await command.ExecuteNonQueryAsync();
+                            }
+
+                            // Handle new file upload
+                            if (attachmentFile != null && attachmentFile.Length > 0)
+                            {
+                                var uploadsFolder = Path.Combine(_environment.WebRootPath, "uploads", "outgoing");
+                                Directory.CreateDirectory(uploadsFolder);
+
+                                var uniqueFileName = $"{Guid.NewGuid()}_{attachmentFile.FileName}";
+                                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                                {
+                                    await attachmentFile.CopyToAsync(fileStream);
+                                }
+
+                                // Get current attachment count
+                                var countQuery = "SELECT COUNT(*) FROM DocumentAttachments WHERE DocumentId = @DocumentId";
+                                int attachmentCount;
+                                using (var countCommand = new SqlCommand(countQuery, connection, transaction))
+                                {
+                                    countCommand.Parameters.AddWithValue("@DocumentId", id);
+                                    attachmentCount = (int)await countCommand.ExecuteScalarAsync();
+                                }
+
+                                // Insert attachment
+                                var attachmentQuery = @"INSERT INTO DocumentAttachments (
+                                    DocumentId, FileName, OriginalFileName, FilePath, FileSize, FileExtension,
+                                    ContentType, UploadedDate, UploadedBy, Category, IsVirusScanned,
+                                    AllowDownload, AllowPrint, DisplayOrder
+                                ) VALUES (
+                                    @DocumentId, @FileName, @OriginalFileName, @FilePath, @FileSize, @FileExtension,
+                                    @ContentType, @UploadedDate, @UploadedBy, @Category, @IsVirusScanned,
+                                    @AllowDownload, @AllowPrint, @DisplayOrder
+                                )";
+
+                                using (var attachCommand = new SqlCommand(attachmentQuery, connection, transaction))
+                                {
+                                    attachCommand.Parameters.AddWithValue("@DocumentId", id);
+                                    attachCommand.Parameters.AddWithValue("@FileName", uniqueFileName);
+                                    attachCommand.Parameters.AddWithValue("@OriginalFileName", attachmentFile.FileName);
+                                    attachCommand.Parameters.AddWithValue("@FilePath", $"/uploads/outgoing/{uniqueFileName}");
+                                    attachCommand.Parameters.AddWithValue("@FileSize", attachmentFile.Length);
+                                    attachCommand.Parameters.AddWithValue("@FileExtension", Path.GetExtension(attachmentFile.FileName));
+                                    attachCommand.Parameters.AddWithValue("@ContentType", attachmentFile.ContentType);
+                                    attachCommand.Parameters.AddWithValue("@UploadedDate", DateTime.Now);
+                                    attachCommand.Parameters.AddWithValue("@UploadedBy", User.Identity?.Name ?? "System");
+                                    attachCommand.Parameters.AddWithValue("@Category", (int)FileCategory.Document);
+                                    attachCommand.Parameters.AddWithValue("@IsVirusScanned", false);
+                                    attachCommand.Parameters.AddWithValue("@AllowDownload", true);
+                                    attachCommand.Parameters.AddWithValue("@AllowPrint", true);
+                                    attachCommand.Parameters.AddWithValue("@DisplayOrder", attachmentCount + 1);
+                                    await attachCommand.ExecuteNonQueryAsync();
+                                }
+
+                                // Update HasAttachments
+                                var updateQuery = "UPDATE Documents SET HasAttachments = 1 WHERE DocumentId = @DocumentId";
+                                using (var updateCommand = new SqlCommand(updateQuery, connection, transaction))
+                                {
+                                    updateCommand.Parameters.AddWithValue("@DocumentId", id);
+                                    await updateCommand.ExecuteNonQueryAsync();
+                                }
+                            }
+
+                            transaction.Commit();
+                            TempData["SuccessMessage"] = $"Dokumenti '{model.ProtocolNumber}' u përditësua me sukses!";
+                            return RedirectToAction(nameof(Index));
+                        }
+                        catch (Exception)
+                        {
+                            transaction.Rollback();
+                            throw;
+                        }
                     }
-
-                    var attachment = new DocumentAttachment
-                    {
-                        DocumentId = existingDoc.DocumentId,
-                        FileName = uniqueFileName,
-                        OriginalFileName = attachmentFile.FileName,
-                        FilePath = $"/uploads/outgoing/{uniqueFileName}",
-                        FileSize = attachmentFile.Length,
-                        FileExtension = Path.GetExtension(attachmentFile.FileName),
-                        ContentType = attachmentFile.ContentType,
-                        UploadedDate = DateTime.Now,
-                        UploadedBy = User.Identity?.Name ?? "System",
-                        Category = FileCategory.Document,
-                        IsVirusScanned = false,
-                        AllowDownload = true,
-                        AllowPrint = true,
-                        DisplayOrder = (existingDoc.Attachments?.Count ?? 0) + 1
-                    };
-
-                    existingDoc.Attachments ??= new List<DocumentAttachment>();
-                    existingDoc.Attachments.Add(attachment);
-                    existingDoc.HasAttachments = true;
                 }
-
-                await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = $"Dokumenti '{existingDoc.ProtocolNumber}' u përditësua me sukses!";
-                return RedirectToAction(nameof(Index));
             }
 
             await LoadDropdowns(model.InstitutionId, model.ClassificationId);
@@ -312,18 +611,152 @@ namespace eProtokoll.Areas.Manager.Controllers
         {
             if (id == null) return NotFound();
 
-            var document = await _context.OutgoingDocuments
-                .Include(d => d.Institution)
-                .Include(d => d.Classification)
-                .Include(d => d.Creator)
-                .Include(d => d.Attachments)
-                .Include(d => d.Trackings)
-                    .ThenInclude(t => t.AssignedToUser)
-                .Include(d => d.Deadlines)
-                    .ThenInclude(dl => dl.ResponsibleUser)
-                .FirstOrDefaultAsync(d => d.DocumentId == id);
+            OutgoingDocument document = null;
 
-            if (document == null) return NotFound();
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+
+                // Main document with JOINs
+                var query = @"SELECT d.*, 
+                    i.Name as InstitutionName, i.ShortName as InstitutionShortName, i.Adress as InstitutionAdress,
+                    c.Name as ClassificationName, c.ColorCode, c.Level as ClassificationLevel,
+                    u.UserName as CreatorUserName, u.FirstName as CreatorFirstName, u.LastName as CreatorLastName
+                    FROM Documents d
+                    LEFT JOIN Institutions i ON d.InstitutionId = i.InstitutionId
+                    LEFT JOIN Classifications c ON d.ClassificationId = c.ClassificationId
+                    LEFT JOIN AspNetUsers u ON d.CreatedBy = u.Id
+                    WHERE d.DocumentId = @DocumentId AND d.DocumentType = 2";
+
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@DocumentId", id.Value);
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        if (await reader.ReadAsync())
+                        {
+                            document = DocumentMapper.MapToOutgoingDocument(reader);
+
+                            // Populate Institution
+                            if (!reader.IsDBNull(reader.GetOrdinal("InstitutionName")))
+                            {
+                                document.Institution = new Institution
+                                {
+                                    InstitutionId = document.InstitutionId,
+                                    Name = reader.GetString(reader.GetOrdinal("InstitutionName")),
+                                    ShortName = reader.IsDBNull(reader.GetOrdinal("InstitutionShortName"))
+                                        ? null
+                                        : reader.GetString(reader.GetOrdinal("InstitutionShortName")),
+                                    Adress = reader.IsDBNull(reader.GetOrdinal("InstitutionAdress"))
+                                        ? null
+                                        : reader.GetString(reader.GetOrdinal("InstitutionAdress"))
+                                };
+                            }
+
+                            // Populate Classification
+                            if (!reader.IsDBNull(reader.GetOrdinal("ClassificationName")))
+                            {
+                                document.Classification = new Classification
+                                {
+                                    ClassificationId = document.ClassificationId,
+                                    Name = reader.GetString(reader.GetOrdinal("ClassificationName")),
+                                    ColorCode = reader.IsDBNull(reader.GetOrdinal("ColorCode"))
+                                        ? null
+                                        : reader.GetString(reader.GetOrdinal("ColorCode")),
+                                };
+                            }
+
+                            // Populate Creator
+                            if (!reader.IsDBNull(reader.GetOrdinal("CreatorUserName")))
+                            {
+                                document.Creator = new ApplicationUser
+                                {
+                                    UserName = reader.GetString(reader.GetOrdinal("CreatorUserName")),
+                                    FirstName = reader.GetString(reader.GetOrdinal("CreatorFirstName")),
+                                    LastName = reader.GetString(reader.GetOrdinal("CreatorLastName"))
+                                };
+                            }
+                        }
+                    }
+                }
+
+                if (document == null) return NotFound();
+
+                // Attachments
+                document.Attachments = new List<DocumentAttachment>();
+                var attachQuery = "SELECT * FROM DocumentAttachments WHERE DocumentId = @DocumentId ORDER BY DisplayOrder";
+                using (var command = new SqlCommand(attachQuery, connection))
+                {
+                    command.Parameters.AddWithValue("@DocumentId", id.Value);
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            document.Attachments.Add(AttachmentMapper.MapToDocumentAttachment(reader));
+                        }
+                    }
+                }
+
+                // Trackings
+                document.Trackings = new List<DocumentTracking>();
+                var trackQuery = @"SELECT dt.*, 
+                    u.UserName as AssignedToUserName, u.FirstName as AssignedToFirstName, u.LastName as AssignedToLastName
+                    FROM DocumentTrackings dt
+                    LEFT JOIN AspNetUsers u ON dt.AssignedTo = u.Id
+                    WHERE dt.DocumentId = @DocumentId
+                    ORDER BY dt.CreatedDate DESC";
+                using (var command = new SqlCommand(trackQuery, connection))
+                {
+                    command.Parameters.AddWithValue("@DocumentId", id.Value);
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            var tracking = TrackingMapper.MapToDocumentTracking(reader);
+                            if (!reader.IsDBNull(reader.GetOrdinal("AssignedToUserName")))
+                            {
+                                tracking.AssignedToUser = new ApplicationUser
+                                {
+                                    UserName = reader.GetString(reader.GetOrdinal("AssignedToUserName")),
+                                    FirstName = reader.GetString(reader.GetOrdinal("AssignedToFirstName")),
+                                    LastName = reader.GetString(reader.GetOrdinal("AssignedToLastName"))
+                                };
+                            }
+                            document.Trackings.Add(tracking);
+                        }
+                    }
+                }
+
+                // Deadlines
+                document.Deadlines = new List<Deadline>();
+                var deadlineQuery = @"SELECT d.*, 
+                    u.UserName as ResponsibleUserName, u.FirstName as ResponsibleFirstName, u.LastName as ResponsibleLastName
+                    FROM Deadlines d
+                    LEFT JOIN AspNetUsers u ON d.ResponsibleUserId = u.Id
+                    WHERE d.DocumentId = @DocumentId
+                    ORDER BY d.DueDate";
+                using (var command = new SqlCommand(deadlineQuery, connection))
+                {
+                    command.Parameters.AddWithValue("@DocumentId", id.Value);
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            var deadline = DeadlineMapper.MapToDeadline(reader);
+                            if (!reader.IsDBNull(reader.GetOrdinal("ResponsibleUserName")))
+                            {
+                                deadline.ResponsibleUser = new ApplicationUser
+                                {
+                                    UserName = reader.GetString(reader.GetOrdinal("ResponsibleUserName")),
+                                    FirstName = reader.GetString(reader.GetOrdinal("ResponsibleFirstName")),
+                                    LastName = reader.GetString(reader.GetOrdinal("ResponsibleLastName"))
+                                };
+                            }
+                            document.Deadlines.Add(deadline);
+                        }
+                    }
+                }
+            }
 
             return View(document);
         }
@@ -332,22 +765,38 @@ namespace eProtokoll.Areas.Manager.Controllers
         [HttpPost]
         public async Task<IActionResult> MarkAsSent(int id)
         {
-            var document = await _context.OutgoingDocuments.FindAsync(id);
-            if (document == null)
-                return Json(new { success = false, message = "Dokumenti nuk u gjet!" });
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
 
-            document.ShipmentStatus = ShipmentStatus.Delivered;
-            document.SentDate = DateTime.Now.Date;
-            document.SentTime = new TimeSpan(DateTime.Now.Hour, DateTime.Now.Minute, DateTime.Now.Second);
-            document.Status = DocumentStatus.Completed;
-            document.IsDeliveryConfirmed = true;
-            document.ConfirmationDate = DateTime.Now.Date;
-            document.ModifiedDate = DateTime.Now;
-            document.ModifiedBy = User.Identity?.Name ?? "System";
+                var query = @"UPDATE Documents SET
+                    ShipmentStatus = 3,
+                    SentDate = @SentDate,
+                    SentTime = @SentTime,
+                    Status = 5,
+                    IsDeliveryConfirmed = 1,
+                    ConfirmationDate = @ConfirmationDate,
+                    ModifiedDate = @ModifiedDate,
+                    ModifiedBy = @ModifiedBy
+                    WHERE DocumentId = @DocumentId AND DocumentType = 2";
 
-            await _context.SaveChangesAsync();
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@DocumentId", id);
+                    command.Parameters.AddWithValue("@SentDate", DateTime.Now.Date);
+                    command.Parameters.AddWithValue("@SentTime", new TimeSpan(DateTime.Now.Hour, DateTime.Now.Minute, DateTime.Now.Second));
+                    command.Parameters.AddWithValue("@ConfirmationDate", DateTime.Now.Date);
+                    command.Parameters.AddWithValue("@ModifiedDate", DateTime.Now);
+                    command.Parameters.AddWithValue("@ModifiedBy", User.Identity?.Name ?? "System");
 
-            return Json(new { success = true, message = "Dokumenti u shënua si i dërguar!" });
+                    var rowsAffected = await command.ExecuteNonQueryAsync();
+
+                    if (rowsAffected > 0)
+                        return Json(new { success = true, message = "Dokumenti u shënua si i dërguar!" });
+                    else
+                        return Json(new { success = false, message = "Dokumenti nuk u gjet!" });
+                }
+            }
         }
 
         // POST: Manager/OutgoingDocument/Delete/5
@@ -355,21 +804,45 @@ namespace eProtokoll.Areas.Manager.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var document = await _context.OutgoingDocuments
-                .Include(d => d.Attachments)
-                .FirstOrDefaultAsync(d => d.DocumentId == id);
-
-            if (document == null)
+            using (var connection = new SqlConnection(_connectionString))
             {
-                TempData["ErrorMessage"] = "Dokumenti nuk u gjet!";
-                return RedirectToAction(nameof(Index));
-            }
+                await connection.OpenAsync();
 
-            try
-            {
-                if (document.Attachments != null)
+                // Get attachments first
+                var attachments = new List<DocumentAttachment>();
+                var queryAttach = "SELECT * FROM DocumentAttachments WHERE DocumentId = @DocumentId";
+                using (var command = new SqlCommand(queryAttach, connection))
                 {
-                    foreach (var attachment in document.Attachments)
+                    command.Parameters.AddWithValue("@DocumentId", id);
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            attachments.Add(AttachmentMapper.MapToDocumentAttachment(reader));
+                        }
+                    }
+                }
+
+                // Get protocol number
+                string protocolNumber = null;
+                var queryProto = "SELECT ProtocolNumber FROM Documents WHERE DocumentId = @DocumentId AND DocumentType = 2";
+                using (var command = new SqlCommand(queryProto, connection))
+                {
+                    command.Parameters.AddWithValue("@DocumentId", id);
+                    var result = await command.ExecuteScalarAsync();
+                    protocolNumber = result?.ToString();
+                }
+
+                if (string.IsNullOrEmpty(protocolNumber))
+                {
+                    TempData["ErrorMessage"] = "Dokumenti nuk u gjet!";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                try
+                {
+                    // Delete physical files
+                    foreach (var attachment in attachments)
                     {
                         var filePath = Path.Combine(_environment.WebRootPath, attachment.FilePath.TrimStart('/'));
                         if (System.IO.File.Exists(filePath))
@@ -377,15 +850,21 @@ namespace eProtokoll.Areas.Manager.Controllers
                             System.IO.File.Delete(filePath);
                         }
                     }
-                }
 
-                _context.OutgoingDocuments.Remove(document);
-                await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = $"Dokumenti '{document.ProtocolNumber}' u fshi me sukses!";
-            }
-            catch (Exception ex)
-            {
-                TempData["ErrorMessage"] = $"Gabim gjatë fshirjes: {ex.Message}";
+                    // Delete from database
+                    var query = "DELETE FROM Documents WHERE DocumentId = @DocumentId AND DocumentType = 2";
+                    using (var command = new SqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@DocumentId", id);
+                        await command.ExecuteNonQueryAsync();
+                    }
+
+                    TempData["SuccessMessage"] = $"Dokumenti '{protocolNumber}' u fshi me sukses!";
+                }
+                catch (Exception ex)
+                {
+                    TempData["ErrorMessage"] = $"Gabim gjatë fshirjes: {ex.Message}";
+                }
             }
 
             return RedirectToAction(nameof(Index));
@@ -395,26 +874,48 @@ namespace eProtokoll.Areas.Manager.Controllers
         [HttpPost]
         public async Task<IActionResult> DeleteAttachment(int id)
         {
-            var attachment = await _context.DocumentAttachments.FindAsync(id);
-            if (attachment == null)
-                return Json(new { success = false, message = "Shtojca nuk u gjet!" });
-
-            try
+            using (var connection = new SqlConnection(_connectionString))
             {
-                var filePath = Path.Combine(_environment.WebRootPath, attachment.FilePath.TrimStart('/'));
-                if (System.IO.File.Exists(filePath))
+                await connection.OpenAsync();
+
+                DocumentAttachment attachment = null;
+                var query = "SELECT * FROM DocumentAttachments WHERE AttachmentId = @AttachmentId";
+                using (var command = new SqlCommand(query, connection))
                 {
-                    System.IO.File.Delete(filePath);
+                    command.Parameters.AddWithValue("@AttachmentId", id);
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        if (await reader.ReadAsync())
+                        {
+                            attachment = AttachmentMapper.MapToDocumentAttachment(reader);
+                        }
+                    }
                 }
 
-                _context.DocumentAttachments.Remove(attachment);
-                await _context.SaveChangesAsync();
+                if (attachment == null)
+                    return Json(new { success = false, message = "Shtojca nuk u gjet!" });
 
-                return Json(new { success = true, message = "Shtojca u fshi me sukses!" });
-            }
-            catch (Exception ex)
-            {
-                return Json(new { success = false, message = $"Gabim: {ex.Message}" });
+                try
+                {
+                    var filePath = Path.Combine(_environment.WebRootPath, attachment.FilePath.TrimStart('/'));
+                    if (System.IO.File.Exists(filePath))
+                    {
+                        System.IO.File.Delete(filePath);
+                    }
+
+                    var deleteQuery = "DELETE FROM DocumentAttachments WHERE AttachmentId = @AttachmentId";
+                    using (var command = new SqlCommand(deleteQuery, connection))
+                    {
+                        command.Parameters.AddWithValue("@AttachmentId", id);
+                        await command.ExecuteNonQueryAsync();
+                    }
+
+                    return Json(new { success = true, message = "Shtojca u fshi me sukses!" });
+                }
+                catch (Exception ex)
+                {
+                    return Json(new { success = false, message = $"Gabim: {ex.Message}" });
+                }
             }
         }
 
@@ -422,82 +923,223 @@ namespace eProtokoll.Areas.Manager.Controllers
 
         private async Task<string> GenerateProtocolNumber()
         {
-            var settings = await _context.ProtocolSettings.FirstOrDefaultAsync();
-            var currentYear = DateTime.Now.Year;
-
-            if (settings == null)
+            using (var connection = new SqlConnection(_connectionString))
             {
-                settings = new ProtocolSettings
+                await connection.OpenAsync();
+                using (var transaction = connection.BeginTransaction())
                 {
-                    Year = currentYear,
-                    IncomingPrefix = "H",
-                    IncomingStartNumber = 1,
-                    IncomingCurrentNumber = 0,
-                    OutgoingPrefix = "D",
-                    OutgoingStartNumber = 1,
-                    OutgoingCurrentNumber = 0,
-                    InternalPrefix = "B",
-                    InternalStartNumber = 1,
-                    InternalCurrentNumber = 0,
-                    ProtocolNumberFormat = "{PREFIX}-{NUMBER}/{YEAR}",
-                    NumberPadding = 4,
-                    AutoResetYearly = true,
-                    ShowYearInNumber = true,
-                    UseSeparatorSlash = true,
-                    IsActive = true
-                };
-                _context.ProtocolSettings.Add(settings);
-                await _context.SaveChangesAsync();
+                    try
+                    {
+                        ProtocolSettings settings = null;
+                        var currentYear = DateTime.Now.Year;
+
+                        // Get settings
+                        var query = "SELECT * FROM ProtocolSettings WHERE ProtocolSettingsId = 1";
+                        using (var command = new SqlCommand(query, connection, transaction))
+                        {
+                            using (var reader = await command.ExecuteReaderAsync())
+                            {
+                                if (await reader.ReadAsync())
+                                {
+                                    settings = ProtocolSettingsMapper.MapToProtocolSettings(reader);
+                                }
+                            }
+                        }
+
+                        if (settings == null)
+                        {
+                            // Create default settings
+                            var insertQuery = @"INSERT INTO ProtocolSettings (
+                                Year, IncomingPrefix, IncomingStartNumber, IncomingCurrentNumber,
+                                OutgoingPrefix, OutgoingStartNumber, OutgoingCurrentNumber,
+                                InternalPrefix, InternalStartNumber, InternalCurrentNumber,
+                                ProtocolNumberFormat, NumberPadding, AutoResetYearly, ShowYearInNumber,
+                                UseSeparatorSlash, IsActive
+                            ) VALUES (
+                                @Year, 'H', 1, 0, 'D', 1, 0, 'B', 1, 0,
+                                '{PREFIX}-{NUMBER}/{YEAR}', 4, 1, 1, 1, 1
+                            )";
+
+                            using (var command = new SqlCommand(insertQuery, connection, transaction))
+                            {
+                                command.Parameters.AddWithValue("@Year", currentYear);
+                                await command.ExecuteNonQueryAsync();
+                            }
+
+                            // Reload settings
+                            query = "SELECT * FROM ProtocolSettings WHERE ProtocolSettingsId = 1";
+                            using (var command = new SqlCommand(query, connection, transaction))
+                            {
+                                using (var reader = await command.ExecuteReaderAsync())
+                                {
+                                    if (await reader.ReadAsync())
+                                    {
+                                        settings = ProtocolSettingsMapper.MapToProtocolSettings(reader);
+                                    }
+                                }
+                            }
+                        }
+
+                        // Check for year reset
+                        if (settings.AutoResetYearly && settings.Year != currentYear)
+                        {
+                            var resetQuery = @"UPDATE ProtocolSettings SET
+                                Year = @Year,
+                                IncomingCurrentNumber = @ResetNumber,
+                                OutgoingCurrentNumber = @ResetNumber,
+                                InternalCurrentNumber = @ResetNumber
+                                WHERE ProtocolSettingsId = 1";
+
+                            using (var command = new SqlCommand(resetQuery, connection, transaction))
+                            {
+                                command.Parameters.AddWithValue("@Year", currentYear);
+                                command.Parameters.AddWithValue("@ResetNumber", settings.OutgoingStartNumber - 1);
+                                await command.ExecuteNonQueryAsync();
+                            }
+
+                            settings.Year = currentYear;
+                            settings.OutgoingCurrentNumber = settings.OutgoingStartNumber - 1;
+                        }
+
+                        // Increment number
+                        var updateQuery = @"UPDATE ProtocolSettings SET 
+                            OutgoingCurrentNumber = OutgoingCurrentNumber + 1 
+                            WHERE ProtocolSettingsId = 1";
+
+                        using (var command = new SqlCommand(updateQuery, connection, transaction))
+                        {
+                            await command.ExecuteNonQueryAsync();
+                        }
+
+                        settings.OutgoingCurrentNumber++;
+
+                        transaction.Commit();
+
+                        // Generate protocol number
+                        var number = settings.OutgoingCurrentNumber.ToString(new string('0', settings.NumberPadding));
+
+                        var protocolNumber = settings.ProtocolNumberFormat
+                            .Replace("{PREFIX}", settings.OutgoingPrefix ?? "D")
+                            .Replace("{NUMBER}", number)
+                            .Replace("{YEAR}", settings.ShowYearInNumber ? currentYear.ToString() : "")
+                            .Replace("{SUFFIX}", settings.OutgoingSuffix ?? "");
+
+                        return protocolNumber.Replace("//", "/").Replace("--", "-").Trim('-', '/');
+                    }
+                    catch (Exception)
+                    {
+                        transaction.Rollback();
+                        throw;
+                    }
+                }
             }
-
-            if (settings.AutoResetYearly && settings.Year != currentYear)
-            {
-                settings.Year = currentYear;
-                settings.IncomingCurrentNumber = settings.IncomingStartNumber - 1;
-                settings.OutgoingCurrentNumber = settings.OutgoingStartNumber - 1;
-                settings.InternalCurrentNumber = settings.InternalStartNumber - 1;
-            }
-
-            settings.OutgoingCurrentNumber++;
-            await _context.SaveChangesAsync();
-
-            var number = settings.OutgoingCurrentNumber.ToString(new string('0', settings.NumberPadding));
-
-            var protocolNumber = settings.ProtocolNumberFormat
-                .Replace("{PREFIX}", settings.OutgoingPrefix ?? "D")
-                .Replace("{NUMBER}", number)
-                .Replace("{YEAR}", settings.ShowYearInNumber ? currentYear.ToString() : "")
-                .Replace("{SUFFIX}", settings.OutgoingSuffix ?? "");
-
-            return protocolNumber.Replace("//", "/").Replace("--", "-").Trim('-', '/');
         }
 
         private async Task LoadDropdowns(int? selectedInstitutionId = null, int? selectedClassificationId = null)
         {
-            ViewBag.Institutions = new SelectList(
-                await _context.Institutions
-                    .Where(i => i.IsActive)
-                    .OrderBy(i => i.Name)
-                    .ToListAsync(),
-                "InstitutionId",
-                "Name",
-                selectedInstitutionId
-            );
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
 
-            ViewBag.Classifications = new SelectList(
-                await _context.Classifications
-                    .Where(c => c.IsActive)
-                    .OrderBy(c => c.Name)
-                    .ToListAsync(),
-                "ClassificationId",
-                "Name",
-                selectedClassificationId
-            );
+                // Load Institutions
+                var institutions = new List<Institution>();
+                var queryInst = "SELECT InstitutionId, Name FROM Institutions WHERE IsActive = 1 ORDER BY Name";
+                using (var command = new SqlCommand(queryInst, connection))
+                {
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            institutions.Add(new Institution
+                            {
+                                InstitutionId = reader.GetInt32(reader.GetOrdinal("InstitutionId")),
+                                Name = reader.GetString(reader.GetOrdinal("Name"))
+                            });
+                        }
+                    }
+                }
+
+                ViewBag.Institutions = new SelectList(institutions, "InstitutionId", "Name", selectedInstitutionId);
+
+                // Load Classifications
+                var classifications = new List<Classification>();
+                var queryClass = "SELECT ClassificationId, Name FROM Classifications WHERE IsActive = 1 ORDER BY Name";
+                using (var command = new SqlCommand(queryClass, connection))
+                {
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            classifications.Add(new Classification
+                            {
+                                ClassificationId = reader.GetInt32(reader.GetOrdinal("ClassificationId")),
+                                Name = reader.GetString(reader.GetOrdinal("Name"))
+                            });
+                        }
+                    }
+                }
+
+                ViewBag.Classifications = new SelectList(classifications, "ClassificationId", "Name", selectedClassificationId);
+            }
         }
 
-        private async Task<bool> DocumentExists(int id)
+        private async Task<int> ExecuteCountQuery(SqlConnection connection, string query)
         {
-            return await _context.OutgoingDocuments.AnyAsync(d => d.DocumentId == id);
+            using (var command = new SqlCommand(query, connection))
+            {
+                var result = await command.ExecuteScalarAsync();
+                return result != null ? (int)result : 0;
+            }
+        }
+
+        private void AddOutgoingDocumentParameters(SqlCommand command, OutgoingDocument model)
+        {
+            command.Parameters.AddWithValue("@ProtocolNumber", model.ProtocolNumber);
+            command.Parameters.AddWithValue("@ProtocolDate", model.ProtocolDate);
+            command.Parameters.AddWithValue("@ProtocolTime", model.ProtocolTime);
+            command.Parameters.AddWithValue("@DocumentType", (int)DocumentType.Outgoing);
+            command.Parameters.AddWithValue("@Subject", model.Subject);
+            command.Parameters.AddWithValue("@Content", (object)model.Content ?? DBNull.Value);
+            command.Parameters.AddWithValue("@ReferenceNumber", (object)model.ReferenceNumber ?? DBNull.Value);
+            command.Parameters.AddWithValue("@ReferenceDate", (object)model.ReferenceDate ?? DBNull.Value);
+            command.Parameters.AddWithValue("@ClassificationId", model.ClassificationId);
+            command.Parameters.AddWithValue("@Status", (int)model.Status);
+            command.Parameters.AddWithValue("@Priority", (int)model.Priority);
+            command.Parameters.AddWithValue("@HasDeadline", model.HasDeadline);
+            command.Parameters.AddWithValue("@DeadlineDate", (object)model.DeadlineDate ?? DBNull.Value);
+            command.Parameters.AddWithValue("@Notes", (object)model.Notes ?? DBNull.Value);
+            command.Parameters.AddWithValue("@PageCount", (object)model.PageCount ?? DBNull.Value);
+            command.Parameters.AddWithValue("@Language", (object)model.Language ?? DBNull.Value);
+            command.Parameters.AddWithValue("@IsScanned", model.IsScanned);
+            command.Parameters.AddWithValue("@HasAttachments", false);
+            command.Parameters.AddWithValue("@IsArchived", model.IsArchived);
+            command.Parameters.AddWithValue("@ArchivedDate", (object)model.ArchivedDate ?? DBNull.Value);
+            command.Parameters.AddWithValue("@ArchivedBy", (object)model.ArchivedBy ?? DBNull.Value);
+            command.Parameters.AddWithValue("@CreatedDate", model.CreatedDate);
+            command.Parameters.AddWithValue("@CreatedBy", model.CreatedBy);
+            command.Parameters.AddWithValue("@ModifiedDate", (object)model.ModifiedDate ?? DBNull.Value);
+            command.Parameters.AddWithValue("@ModifiedBy", (object)model.ModifiedBy ?? DBNull.Value);
+            command.Parameters.AddWithValue("@InstitutionId", model.InstitutionId);
+            command.Parameters.AddWithValue("@RecipientName", model.RecipientName);
+            command.Parameters.AddWithValue("@RecipientPosition", (object)model.RecipientPosition ?? DBNull.Value);
+            command.Parameters.AddWithValue("@RecipientEmail", (object)model.RecipientEmail ?? DBNull.Value);
+            command.Parameters.AddWithValue("@RecipientPhone", (object)model.RecipientPhone ?? DBNull.Value);
+            command.Parameters.AddWithValue("@RecipientAddress", (object)model.RecipientAddress ?? DBNull.Value);
+            command.Parameters.AddWithValue("@SentDate", (object)model.SentDate ?? DBNull.Value);
+            command.Parameters.AddWithValue("@SentTime", (object)model.SentTime ?? DBNull.Value);
+            command.Parameters.AddWithValue("@DeliveryMethod", (int)model.DeliveryMethod);
+            command.Parameters.AddWithValue("@ShipmentCompany", (object)model.ShipmentCompany ?? DBNull.Value);
+            command.Parameters.AddWithValue("@TrackingNumber", (object)model.TrackingNumber ?? DBNull.Value);
+            command.Parameters.AddWithValue("@SignedBy", (object)model.SignedBy ?? DBNull.Value);
+            command.Parameters.AddWithValue("@SignerPosition", (object)model.SignerPosition ?? DBNull.Value);
+            command.Parameters.AddWithValue("@SignedDate", (object)model.SignedDate ?? DBNull.Value);
+            command.Parameters.AddWithValue("@HasArchiveCopy", model.HasArchiveCopy);
+            command.Parameters.AddWithValue("@ArchiveLocation", (object)model.ArchiveLocation ?? DBNull.Value);
+            command.Parameters.AddWithValue("@ShipmentStatus", (int)model.ShipmentStatus);
+            command.Parameters.AddWithValue("@NumberOfCopies", (object)model.NumberOfCopies ?? DBNull.Value);
+            command.Parameters.AddWithValue("@IsDeliveryConfirmed", model.IsDeliveryConfirmed);
+            command.Parameters.AddWithValue("@ConfirmationDate", (object)model.ConfirmationDate ?? DBNull.Value);
+            command.Parameters.AddWithValue("@ConfirmedBy", (object)model.ConfirmedBy ?? DBNull.Value);
         }
     }
 }

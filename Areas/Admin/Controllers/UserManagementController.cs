@@ -1,24 +1,25 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using eProtokoll.Data;
 using eProtokoll.Models;
+using Microsoft.Data.SqlClient;
+using System.Data;
+using eProtokoll.Services.Mappers;
 
 namespace eProtokoll.Areas.Admin.Controllers
 {
     [Area("Admin")]
     public class UserManagementController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly string _connectionString;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
 
         public UserManagementController(
-            ApplicationDbContext context,
+            IConfiguration configuration,
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager)
         {
-            _context = context;
+            _connectionString = configuration.GetConnectionString("DefaultConnection");
             _userManager = userManager;
             _signInManager = signInManager;
         }
@@ -26,31 +27,54 @@ namespace eProtokoll.Areas.Admin.Controllers
         // GET: Admin/UserManagement
         public async Task<IActionResult> Index(string searchTerm = "", string role = "", string status = "")
         {
-            var query = _userManager.Users.AsQueryable();
+            var users = new List<ApplicationUser>();
 
-            if (!string.IsNullOrEmpty(searchTerm))
+            using (var connection = new SqlConnection(_connectionString))
             {
-                query = query.Where(u =>
-                    u.FirstName.Contains(searchTerm) ||
-                    u.LastName.Contains(searchTerm) ||
-                    u.Email.Contains(searchTerm) ||
-                    u.UserName.Contains(searchTerm));
-            }
+                var query = "SELECT * FROM AspNetUsers WHERE 1=1";
+                var parameters = new List<SqlParameter>();
 
-            if (!string.IsNullOrEmpty(role) && Enum.TryParse<ApplicationUser.UserRole>(role, out var userRole))
-            {
-                query = query.Where(u => u.Role == userRole);
-            }
+                // Search filter
+                if (!string.IsNullOrEmpty(searchTerm))
+                {
+                    query += @" AND (FirstName LIKE @SearchTerm 
+                        OR LastName LIKE @SearchTerm 
+                        OR Email LIKE @SearchTerm 
+                        OR UserName LIKE @SearchTerm)";
+                    parameters.Add(new SqlParameter("@SearchTerm", $"%{searchTerm}%"));
+                }
 
-            if (!string.IsNullOrEmpty(status))
-            {
-                bool isActive = status.ToLower() == "active";
-                query = query.Where(u => u.IsActive == isActive);
-            }
+                // Role filter
+                if (!string.IsNullOrEmpty(role) && Enum.TryParse<ApplicationUser.UserRole>(role, out var userRole))
+                {
+                    query += " AND Role = @Role";
+                    parameters.Add(new SqlParameter("@Role", (int)userRole));
+                }
 
-            var users = await query
-                .OrderByDescending(u => u.CreatedDate)
-                .ToListAsync();
+                // Status filter
+                if (!string.IsNullOrEmpty(status))
+                {
+                    bool isActive = status.ToLower() == "active";
+                    query += " AND IsActive = @IsActive";
+                    parameters.Add(new SqlParameter("@IsActive", isActive));
+                }
+
+                query += " ORDER BY CreatedDate DESC";
+
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddRange(parameters.ToArray());
+
+                    await connection.OpenAsync();
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            users.Add(UserMapper.MapToApplicationUser(reader));
+                        }
+                    }
+                }
+            }
 
             ViewBag.SearchTerm = searchTerm;
             ViewBag.SelectedRole = role;
@@ -103,7 +127,7 @@ namespace eProtokoll.Areas.Admin.Controllers
             }
             else
             {
-                var existingUsername = await _userManager.FindByNameAsync(model.UserName);
+                var existingUsername = await FindByUsernameAsync(model.UserName);
                 if (existingUsername != null)
                 {
                     ModelState.AddModelError(nameof(model.UserName), "Ky emër përdoruesi është i zënë!");
@@ -119,7 +143,7 @@ namespace eProtokoll.Areas.Admin.Controllers
             }
             else
             {
-                var existingEmail = await _userManager.FindByEmailAsync(model.Email);
+                var existingEmail = await FindByEmailAsync(model.Email);
                 if (existingEmail != null)
                 {
                     ModelState.AddModelError(nameof(model.Email), "Ky email është i regjistruar tashmë!");
@@ -234,7 +258,7 @@ namespace eProtokoll.Areas.Admin.Controllers
             // Valido email nëse është ndryshuar
             if (user.Email != model.Email)
             {
-                var existingEmail = await _userManager.FindByEmailAsync(model.Email);
+                var existingEmail = await FindByEmailAsync(model.Email);
                 if (existingEmail != null && existingEmail.Id != user.Id)
                 {
                     ModelState.AddModelError(nameof(model.Email), "Ky email është i regjistruar tashmë!");
@@ -245,7 +269,7 @@ namespace eProtokoll.Areas.Admin.Controllers
             // Valido username nëse është ndryshuar
             if (user.UserName != model.UserName)
             {
-                var existingUsername = await _userManager.FindByNameAsync(model.UserName);
+                var existingUsername = await FindByUsernameAsync(model.UserName);
                 if (existingUsername != null && existingUsername.Id != user.Id)
                 {
                     ModelState.AddModelError(nameof(model.UserName), "Ky emër përdoruesi është i zënë!");
@@ -320,7 +344,7 @@ namespace eProtokoll.Areas.Admin.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            var hasDocuments = await _context.Documents.AnyAsync(d => d.CreatedBy == id);
+            var hasDocuments = await CheckUserHasDocuments(id);
             if (hasDocuments)
             {
                 TempData["ErrorMessage"] = $"Nuk mund të fshihet! Përdoruesi '{user.FullName}' ka dokumente të lidhura.";
@@ -430,6 +454,70 @@ namespace eProtokoll.Areas.Admin.Controllers
             catch (Exception ex)
             {
                 return Json(new { success = false, message = $"Gabim: {ex.Message}" });
+            }
+        }
+
+        // Helper method - Find user by username (ADO.NET)
+        private async Task<ApplicationUser> FindByUsernameAsync(string username)
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                var query = "SELECT * FROM AspNetUsers WHERE UserName = @UserName";
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@UserName", username);
+
+                    await connection.OpenAsync();
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        if (await reader.ReadAsync())
+                        {
+                            return UserMapper.MapToApplicationUser(reader);
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        // Helper method - Find user by email (ADO.NET)
+        private async Task<ApplicationUser> FindByEmailAsync(string email)
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                var query = "SELECT * FROM AspNetUsers WHERE Email = @Email";
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@Email", email);
+
+                    await connection.OpenAsync();
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        if (await reader.ReadAsync())
+                        {
+                            return UserMapper.MapToApplicationUser(reader);
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        // Helper method - Check if user has documents (ADO.NET)
+        private async Task<bool> CheckUserHasDocuments(string userId)
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                var query = "SELECT COUNT(*) FROM Documents WHERE CreatedBy = @UserId";
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@UserId", userId);
+
+                    await connection.OpenAsync();
+                    var result = await command.ExecuteScalarAsync();
+                    int count = result != null ? Convert.ToInt32(result) : 0;
+                    return count > 0;
+                }
             }
         }
     }

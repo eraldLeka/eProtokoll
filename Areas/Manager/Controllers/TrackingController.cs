@@ -1,19 +1,21 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
-using eProtokoll.Data;
 using eProtokoll.Models;
+using Microsoft.Data.SqlClient;
+using System.Data;
+using System.Text;
+using eProtokoll.Services.Mappers;
 
 namespace eProtokoll.Areas.Manager.Controllers
 {
     [Area("Manager")]
     public class TrackingController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly string _connectionString;
 
-        public TrackingController(ApplicationDbContext context)
+        public TrackingController(IConfiguration configuration)
         {
-            _context = context;
+            _connectionString = configuration.GetConnectionString("DefaultConnection");
         }
 
         // GET: Manager/Tracking
@@ -21,100 +23,236 @@ namespace eProtokoll.Areas.Manager.Controllers
             string assignedTo = "", DateTime? dateFrom = null, DateTime? dateTo = null, int page = 1)
         {
             var pageSize = 20;
-            var query = _context.DocumentTrackings
-                .Include(t => t.Document)
-                .Include(t => t.AssignedToUser)
-                .Include(t => t.AssignedByUser)
-                .AsQueryable();
+            var trackings = new List<DocumentTracking>();
 
-            // Search
-            if (!string.IsNullOrEmpty(searchTerm))
+            using (var connection = new SqlConnection(_connectionString))
             {
-                query = query.Where(t =>
-                    t.Instructions.Contains(searchTerm) ||
-                    (t.Document != null && t.Document.ProtocolNumber.Contains(searchTerm)) ||
-                    (t.Document != null && t.Document.Subject.Contains(searchTerm)));
+                await connection.OpenAsync();
+
+                // Build dynamic query
+                var queryBuilder = new StringBuilder(@"
+                    SELECT dt.*, 
+                        d.ProtocolNumber, d.Subject, d.DocumentType,
+                        uat.UserName as AssignedToUserName, uat.FirstName as AssignedToFirstName, uat.LastName as AssignedToLastName,
+                        uab.UserName as AssignedByUserName, uab.FirstName as AssignedByFirstName, uab.LastName as AssignedByLastName
+                    FROM DocumentTrackings dt
+                    LEFT JOIN Documents d ON dt.DocumentId = d.DocumentId
+                    LEFT JOIN AspNetUsers uat ON dt.AssignedTo = uat.Id
+                    LEFT JOIN AspNetUsers uab ON dt.AssignedBy = uab.Id
+                    WHERE 1=1");
+
+                var parameters = new List<SqlParameter>();
+
+                // Search filter
+                if (!string.IsNullOrEmpty(searchTerm))
+                {
+                    queryBuilder.Append(@" AND (dt.Instructions LIKE @SearchTerm 
+                        OR d.ProtocolNumber LIKE @SearchTerm 
+                        OR d.Subject LIKE @SearchTerm)");
+                    parameters.Add(new SqlParameter("@SearchTerm", $"%{searchTerm}%"));
+                }
+
+                // Status filter
+                if (!string.IsNullOrEmpty(status) && Enum.TryParse<TrackingStatus>(status, out var trackStatus))
+                {
+                    queryBuilder.Append(" AND dt.Status = @Status");
+                    parameters.Add(new SqlParameter("@Status", (int)trackStatus));
+                }
+
+                // Priority filter
+                if (!string.IsNullOrEmpty(priority) && Enum.TryParse<Priority>(priority, out var trackPriority))
+                {
+                    queryBuilder.Append(" AND dt.Priority = @Priority");
+                    parameters.Add(new SqlParameter("@Priority", (int)trackPriority));
+                }
+
+                // Assigned user filter
+                if (!string.IsNullOrEmpty(assignedTo))
+                {
+                    queryBuilder.Append(" AND dt.AssignedTo = @AssignedTo");
+                    parameters.Add(new SqlParameter("@AssignedTo", assignedTo));
+                }
+
+                // Date range filters
+                if (dateFrom.HasValue)
+                {
+                    queryBuilder.Append(" AND dt.AssignedDate >= @DateFrom");
+                    parameters.Add(new SqlParameter("@DateFrom", dateFrom.Value));
+                }
+
+                if (dateTo.HasValue)
+                {
+                    queryBuilder.Append(" AND dt.AssignedDate <= @DateTo");
+                    parameters.Add(new SqlParameter("@DateTo", dateTo.Value));
+                }
+
+                // Get total count - build separate count query
+                var countQueryBuilder = new StringBuilder(@"
+                    SELECT COUNT(*) 
+                    FROM DocumentTrackings dt
+                    LEFT JOIN Documents d ON dt.DocumentId = d.DocumentId
+                    WHERE 1=1");
+
+                // Apply same filters
+                if (!string.IsNullOrEmpty(searchTerm))
+                {
+                    countQueryBuilder.Append(@" AND (dt.Instructions LIKE @SearchTerm 
+                        OR d.ProtocolNumber LIKE @SearchTerm 
+                        OR d.Subject LIKE @SearchTerm)");
+                }
+
+                if (!string.IsNullOrEmpty(status) && Enum.TryParse<TrackingStatus>(status, out var _))
+                {
+                    countQueryBuilder.Append(" AND dt.Status = @Status");
+                }
+
+                if (!string.IsNullOrEmpty(priority) && Enum.TryParse<Priority>(priority, out var _))
+                {
+                    countQueryBuilder.Append(" AND dt.Priority = @Priority");
+                }
+
+                if (!string.IsNullOrEmpty(assignedTo))
+                {
+                    countQueryBuilder.Append(" AND dt.AssignedTo = @AssignedTo");
+                }
+
+                if (dateFrom.HasValue)
+                {
+                    countQueryBuilder.Append(" AND dt.AssignedDate >= @DateFrom");
+                }
+
+                if (dateTo.HasValue)
+                {
+                    countQueryBuilder.Append(" AND dt.AssignedDate <= @DateTo");
+                }
+
+                int totalItems;
+                using (var countCommand = new SqlCommand(countQueryBuilder.ToString(), connection))
+                {
+                    countCommand.Parameters.AddRange(parameters.ToArray());
+                    var result = await countCommand.ExecuteScalarAsync();
+                    totalItems = result != null ? Convert.ToInt32(result) : 0;
+                }
+
+                var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+
+                // Add sorting and pagination
+                queryBuilder.Append(@" ORDER BY dt.AssignedDate DESC
+                    OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY");
+
+                parameters.Add(new SqlParameter("@Offset", (page - 1) * pageSize));
+                parameters.Add(new SqlParameter("@PageSize", pageSize));
+
+                // Execute main query
+                using (var command = new SqlCommand(queryBuilder.ToString(), connection))
+                {
+                    command.Parameters.AddRange(parameters.ToArray());
+
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            var tracking = TrackingMapper.MapToDocumentTracking(reader);
+
+                            // Populate Document
+                            if (!reader.IsDBNull(reader.GetOrdinal("ProtocolNumber")))
+                            {
+                                tracking.Document = new Document
+                                {
+                                    DocumentId = tracking.DocumentId,
+                                    ProtocolNumber = reader.GetString(reader.GetOrdinal("ProtocolNumber")),
+                                    Subject = reader.GetString(reader.GetOrdinal("Subject")),
+                                    DocumentType = (DocumentType)reader.GetInt32(reader.GetOrdinal("DocumentType"))
+                                };
+                            }
+
+                            // Populate AssignedToUser
+                            if (!reader.IsDBNull(reader.GetOrdinal("AssignedToUserName")))
+                            {
+                                tracking.AssignedToUser = new ApplicationUser
+                                {
+                                    UserName = reader.GetString(reader.GetOrdinal("AssignedToUserName")),
+                                    FirstName = reader.GetString(reader.GetOrdinal("AssignedToFirstName")),
+                                    LastName = reader.GetString(reader.GetOrdinal("AssignedToLastName"))
+                                };
+                            }
+
+                            // Populate AssignedByUser
+                            if (!reader.IsDBNull(reader.GetOrdinal("AssignedByUserName")))
+                            {
+                                tracking.AssignedByUser = new ApplicationUser
+                                {
+                                    UserName = reader.GetString(reader.GetOrdinal("AssignedByUserName")),
+                                    FirstName = reader.GetString(reader.GetOrdinal("AssignedByFirstName")),
+                                    LastName = reader.GetString(reader.GetOrdinal("AssignedByLastName"))
+                                };
+                            }
+
+                            trackings.Add(tracking);
+                        }
+                    }
+                }
+
+                // ViewBag for filters
+                ViewBag.SearchTerm = searchTerm;
+                ViewBag.SelectedStatus = status;
+                ViewBag.SelectedPriority = priority;
+                ViewBag.SelectedAssignedTo = assignedTo;
+                ViewBag.DateFrom = dateFrom?.ToString("yyyy-MM-dd");
+                ViewBag.DateTo = dateTo?.ToString("yyyy-MM-dd");
+                ViewBag.CurrentPage = page;
+                ViewBag.TotalPages = totalPages;
+                ViewBag.TotalItems = totalItems;
+
+                // Load users for filter dropdown
+                var users = new List<ApplicationUser>();
+                var queryUsers = "SELECT Id, UserName, FirstName, LastName FROM AspNetUsers WHERE IsActive = 1 ORDER BY FirstName, LastName";
+                using (var command = new SqlCommand(queryUsers, connection))
+                {
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            users.Add(new ApplicationUser
+                            {
+                                Id = reader.GetString(reader.GetOrdinal("Id")),
+                                UserName = reader.GetString(reader.GetOrdinal("UserName")),
+                                FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                                LastName = reader.GetString(reader.GetOrdinal("LastName"))
+                            });
+                        }
+                    }
+                }
+                ViewBag.Users = new SelectList(users, "Id", "FullName");
+
+                // Statistics
+                ViewBag.TotalTrackings = await ExecuteCountQuery(connection, "SELECT COUNT(*) FROM DocumentTrackings");
+
+                var queryToday = "SELECT COUNT(*) FROM DocumentTrackings WHERE CAST(AssignedDate AS DATE) = @Today";
+                using (var command = new SqlCommand(queryToday, connection))
+                {
+                    command.Parameters.AddWithValue("@Today", DateTime.Now.Date);
+                    ViewBag.TodayAssigned = (int)await command.ExecuteScalarAsync();
+                }
+
+                var queryPending = @"SELECT COUNT(*) FROM DocumentTrackings 
+                    WHERE Status IN (1, 2)"; // Assigned or Accepted
+                ViewBag.Pending = await ExecuteCountQuery(connection, queryPending);
+
+                var queryInProgress = @"SELECT COUNT(*) FROM DocumentTrackings WHERE Status = 3"; // InProgress
+                ViewBag.InProgress = await ExecuteCountQuery(connection, queryInProgress);
+
+                var queryCompleted = @"SELECT COUNT(*) FROM DocumentTrackings WHERE Status = 4"; // Completed
+                ViewBag.Completed = await ExecuteCountQuery(connection, queryCompleted);
+
+                var queryOverdue = @"SELECT COUNT(*) FROM DocumentTrackings 
+                    WHERE DueDate < @Now AND IsCompleted = 0";
+                using (var command = new SqlCommand(queryOverdue, connection))
+                {
+                    command.Parameters.AddWithValue("@Now", DateTime.Now);
+                    ViewBag.Overdue = (int)await command.ExecuteScalarAsync();
+                }
             }
-
-            // Filter by status
-            if (!string.IsNullOrEmpty(status) && Enum.TryParse<TrackingStatus>(status, out var trackStatus))
-            {
-                query = query.Where(t => t.Status == trackStatus);
-            }
-
-            // Filter by priority
-            if (!string.IsNullOrEmpty(priority) && Enum.TryParse<Priority>(priority, out var trackPriority))
-            {
-                query = query.Where(t => t.Priority == trackPriority);
-            }
-
-            // Filter by assigned user
-            if (!string.IsNullOrEmpty(assignedTo))
-            {
-                query = query.Where(t => t.AssignedToUserId == assignedTo);
-            }
-
-            // Filter by date range
-            if (dateFrom.HasValue)
-            {
-                query = query.Where(t => t.AssignedDate >= dateFrom.Value);
-            }
-
-            if (dateTo.HasValue)
-            {
-                query = query.Where(t => t.AssignedDate <= dateTo.Value);
-            }
-
-            // Total count and paging
-            var totalItems = await query.CountAsync();
-            var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
-            var trackings = await query
-                .OrderByDescending(t => t.AssignedDate)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
-
-            // ViewBag for filters
-            ViewBag.SearchTerm = searchTerm;
-            ViewBag.SelectedStatus = status;
-            ViewBag.SelectedPriority = priority;
-            ViewBag.SelectedAssignedTo = assignedTo;
-            ViewBag.DateFrom = dateFrom?.ToString("yyyy-MM-dd");
-            ViewBag.DateTo = dateTo?.ToString("yyyy-MM-dd");
-            ViewBag.CurrentPage = page;
-            ViewBag.TotalPages = totalPages;
-            ViewBag.TotalItems = totalItems;
-
-            // Load users for filter dropdown
-            var users = await _context.Users
-                .OrderBy(u => u.FirstName)
-                .ThenBy(u => u.LastName)
-                .ToListAsync();
-            ViewBag.Users = new SelectList(users, "Id", "FullName");
-
-            // Statistics
-            ViewBag.TotalTrackings = await _context.DocumentTrackings.CountAsync();
-
-            var today = DateTime.Now.Date;
-            ViewBag.TodayAssigned = await _context.DocumentTrackings
-                .Where(t => t.AssignedDate.Date == today)
-                .CountAsync();
-
-            ViewBag.Pending = await _context.DocumentTrackings
-                .Where(t => t.Status == TrackingStatus.Assigned || t.Status == TrackingStatus.Accepted)
-                .CountAsync();
-
-            ViewBag.InProgress = await _context.DocumentTrackings
-                .Where(t => t.Status == TrackingStatus.InProgress)
-                .CountAsync();
-
-            ViewBag.Completed = await _context.DocumentTrackings
-                .Where(t => t.Status == TrackingStatus.Completed)
-                .CountAsync();
-
-            ViewBag.Overdue = await _context.DocumentTrackings
-                .Where(t => t.DueDate.HasValue && t.DueDate.Value < DateTime.Now && !t.IsCompleted)
-                .CountAsync();
 
             return View(trackings);
         }
@@ -134,14 +272,37 @@ namespace eProtokoll.Areas.Manager.Controllers
 
             if (documentId.HasValue)
             {
-                var document = await _context.Documents
-                    .Include(d => d.Classification)
-                    .FirstOrDefaultAsync(d => d.DocumentId == documentId.Value);
-
-                if (document != null)
+                using (var connection = new SqlConnection(_connectionString))
                 {
-                    tracking.DocumentId = documentId.Value;
-                    ViewBag.Document = document;
+                    await connection.OpenAsync();
+
+                    var query = @"SELECT d.*, c.Name as ClassificationName 
+                        FROM Documents d
+                        LEFT JOIN Classifications c ON d.ClassificationId = c.ClassificationId
+                        WHERE d.DocumentId = @DocumentId";
+
+                    using (var command = new SqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@DocumentId", documentId.Value);
+                        using (var reader = await command.ExecuteReaderAsync())
+                        {
+                            if (await reader.ReadAsync())
+                            {
+                                var document = DocumentMapper.MapToDocument(reader);
+                                if (!reader.IsDBNull(reader.GetOrdinal("ClassificationName")))
+                                {
+                                    document.Classification = new Classification
+                                    {
+                                        ClassificationId = document.ClassificationId,
+                                        Name = reader.GetString(reader.GetOrdinal("ClassificationName"))
+                                    };
+                                }
+
+                                tracking.DocumentId = documentId.Value;
+                                ViewBag.Document = document;
+                            }
+                        }
+                    }
                 }
             }
 
@@ -156,29 +317,81 @@ namespace eProtokoll.Areas.Manager.Controllers
         {
             if (ModelState.IsValid)
             {
-                // Set metadata
-                model.AssignedByUserId = User.Identity.Name;
-                model.IsActive = true;
-
-                // Calculate sequence number for this document
-                var maxSequence = await _context.DocumentTrackings
-                    .Where(t => t.DocumentId == model.DocumentId)
-                    .MaxAsync(t => (int?)t.SequenceNumber) ?? 0;
-                model.SequenceNumber = maxSequence + 1;
-
-                _context.DocumentTrackings.Add(model);
-                await _context.SaveChangesAsync();
-
-                // Update document status
-                var document = await _context.Documents.FindAsync(model.DocumentId);
-                if (document != null && document.Status == DocumentStatus.Draft)
+                using (var connection = new SqlConnection(_connectionString))
                 {
-                    document.Status = DocumentStatus.InProgress;
-                    await _context.SaveChangesAsync();
-                }
+                    await connection.OpenAsync();
+                    using (var transaction = connection.BeginTransaction())
+                    {
+                        try
+                        {
+                            // Set metadata
+                            model.AssignedByUserId = User.Identity.Name;
+                            model.IsActive = true;
 
-                TempData["SuccessMessage"] = "Dokumenti u caktua me sukses!";
-                return RedirectToAction(nameof(Index));
+                            // Calculate sequence number
+                            var maxSeqQuery = "SELECT ISNULL(MAX(SequenceNumber), 0) FROM DocumentTrackings WHERE DocumentId = @DocumentId";
+                            int maxSequence;
+                            using (var seqCommand = new SqlCommand(maxSeqQuery, connection, transaction))
+                            {
+                                seqCommand.Parameters.AddWithValue("@DocumentId", model.DocumentId);
+                                maxSequence = (int)await seqCommand.ExecuteScalarAsync();
+                            }
+                            model.SequenceNumber = maxSequence + 1;
+
+                            // Insert tracking
+                            var query = @"INSERT INTO DocumentTrackings (
+                                DocumentId, AssignedTo, AssignedBy, AssignedDate, AssignedTime, DueDate, DueTime,
+                                Priority, Status, ActionType, Instructions, Notes, SequenceNumber, IsActive,
+                                IsAccepted, IsInProgress, IsCompleted, IsDelegated
+                            ) VALUES (
+                                @DocumentId, @AssignedTo, @AssignedBy, @AssignedDate, @AssignedTime, @DueDate,
+                                @Priority, @Status, @ActionType, @Instructions, @Notes, @SequenceNumber, @IsActive,
+                                @IsAccepted, @IsInProgress, @IsCompleted, @IsDelegated
+                            )";
+
+                            using (var command = new SqlCommand(query, connection, transaction))
+                            {
+                                command.Parameters.AddWithValue("@DocumentId", model.DocumentId);
+                                command.Parameters.AddWithValue("@AssignedTo", model.AssignedToUserId);
+                                command.Parameters.AddWithValue("@AssignedBy", model.AssignedByUserId);
+                                command.Parameters.AddWithValue("@AssignedDate", model.AssignedDate);
+                                command.Parameters.AddWithValue("@AssignedTime", model.AssignedTime);
+                                command.Parameters.AddWithValue("@DueDate", (object)model.DueDate ?? DBNull.Value);
+                                command.Parameters.AddWithValue("@Priority", (int)model.Priority);
+                                command.Parameters.AddWithValue("@Status", (int)model.Status);
+                                command.Parameters.AddWithValue("@ActionType", (int)model.ActionType);
+                                command.Parameters.AddWithValue("@Instructions", (object)model.Instructions ?? DBNull.Value);
+                                command.Parameters.AddWithValue("@Notes", (object)model.Notes ?? DBNull.Value);
+                                command.Parameters.AddWithValue("@SequenceNumber", model.SequenceNumber);
+                                command.Parameters.AddWithValue("@IsActive", model.IsActive);
+                                command.Parameters.AddWithValue("@IsAccepted", model.IsAccepted);
+                                command.Parameters.AddWithValue("@IsInProgress", model.IsInProgress);
+                                command.Parameters.AddWithValue("@IsCompleted", model.IsCompleted);
+                                command.Parameters.AddWithValue("@IsDelegated", model.IsDelegated);
+
+                                await command.ExecuteNonQueryAsync();
+                            }
+
+                            // Update document status if draft
+                            var updateDocQuery = @"UPDATE Documents SET Status = 3 
+                                WHERE DocumentId = @DocumentId AND Status = 1";
+                            using (var updateCommand = new SqlCommand(updateDocQuery, connection, transaction))
+                            {
+                                updateCommand.Parameters.AddWithValue("@DocumentId", model.DocumentId);
+                                await updateCommand.ExecuteNonQueryAsync();
+                            }
+
+                            transaction.Commit();
+                            TempData["SuccessMessage"] = "Dokumenti u caktua me sukses!";
+                            return RedirectToAction(nameof(Index));
+                        }
+                        catch (Exception)
+                        {
+                            transaction.Rollback();
+                            throw;
+                        }
+                    }
+                }
             }
 
             await LoadDropdowns();
@@ -190,21 +403,175 @@ namespace eProtokoll.Areas.Manager.Controllers
         {
             if (id == null) return NotFound();
 
-            var tracking = await _context.DocumentTrackings
-                .Include(t => t.Document)
-                    .ThenInclude(d => d.Classification)
-                .Include(t => t.Document)
-                    .ThenInclude(d => d.Attachments)
-                .Include(t => t.AssignedToUser)
-                .Include(t => t.AssignedByUser)
-                .Include(t => t.DelegatedToTracking)
-                    .ThenInclude(dt => dt.AssignedToUser)
-                .Include(t => t.ParentTracking)
-                .Include(t => t.SubDelegations)
-                    .ThenInclude(sd => sd.AssignedToUser)
-                .FirstOrDefaultAsync(t => t.TrackingId == id);
+            DocumentTracking tracking = null;
 
-            if (tracking == null) return NotFound();
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+
+                // Main tracking with JOINs
+                var query = @"SELECT dt.*, 
+                    d.ProtocolNumber, d.Subject, d.DocumentType, d.ClassificationId,
+                    c.Name as ClassificationName,
+                    uat.UserName as AssignedToUserName, uat.FirstName as AssignedToFirstName, uat.LastName as AssignedToLastName,
+                    uab.UserName as AssignedByUserName, uab.FirstName as AssignedByFirstName, uab.LastName as AssignedByLastName
+                    FROM DocumentTrackings dt
+                    LEFT JOIN Documents d ON dt.DocumentId = d.DocumentId
+                    LEFT JOIN Classifications c ON d.ClassificationId = c.ClassificationId
+                    LEFT JOIN AspNetUsers uat ON dt.AssignedTo = uat.Id
+                    LEFT JOIN AspNetUsers uab ON dt.AssignedBy = uab.Id
+                    WHERE dt.TrackingId = @TrackingId";
+
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@TrackingId", id.Value);
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        if (await reader.ReadAsync())
+                        {
+                            tracking = TrackingMapper.MapToDocumentTracking(reader);
+
+                            // Populate Document
+                            if (!reader.IsDBNull(reader.GetOrdinal("ProtocolNumber")))
+                            {
+                                tracking.Document = new Document
+                                {
+                                    DocumentId = tracking.DocumentId,
+                                    ProtocolNumber = reader.GetString(reader.GetOrdinal("ProtocolNumber")),
+                                    Subject = reader.GetString(reader.GetOrdinal("Subject")),
+                                    DocumentType = (DocumentType)reader.GetInt32(reader.GetOrdinal("DocumentType")),
+                                    ClassificationId = reader.GetInt32(reader.GetOrdinal("ClassificationId"))
+                                };
+
+                                if (!reader.IsDBNull(reader.GetOrdinal("ClassificationName")))
+                                {
+                                    tracking.Document.Classification = new Classification
+                                    {
+                                        ClassificationId = tracking.Document.ClassificationId,
+                                        Name = reader.GetString(reader.GetOrdinal("ClassificationName"))
+                                    };
+                                }
+                            }
+
+                            // Populate AssignedToUser
+                            if (!reader.IsDBNull(reader.GetOrdinal("AssignedToUserName")))
+                            {
+                                tracking.AssignedToUser = new ApplicationUser
+                                {
+                                    UserName = reader.GetString(reader.GetOrdinal("AssignedToUserName")),
+                                    FirstName = reader.GetString(reader.GetOrdinal("AssignedToFirstName")),
+                                    LastName = reader.GetString(reader.GetOrdinal("AssignedToLastName"))
+                                };
+                            }
+
+                            // Populate AssignedByUser
+                            if (!reader.IsDBNull(reader.GetOrdinal("AssignedByUserName")))
+                            {
+                                tracking.AssignedByUser = new ApplicationUser
+                                {
+                                    UserName = reader.GetString(reader.GetOrdinal("AssignedByUserName")),
+                                    FirstName = reader.GetString(reader.GetOrdinal("AssignedByFirstName")),
+                                    LastName = reader.GetString(reader.GetOrdinal("AssignedByLastName"))
+                                };
+                            }
+                        }
+                    }
+                }
+
+                if (tracking == null) return NotFound();
+
+                // Load document attachments
+                var attachQuery = "SELECT * FROM DocumentAttachments WHERE DocumentId = @DocumentId ORDER BY DisplayOrder";
+                tracking.Document.Attachments = new List<DocumentAttachment>();
+                using (var command = new SqlCommand(attachQuery, connection))
+                {
+                    command.Parameters.AddWithValue("@DocumentId", tracking.DocumentId);
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            tracking.Document.Attachments.Add(AttachmentMapper.MapToDocumentAttachment(reader));
+                        }
+                    }
+                }
+
+                // Load delegated tracking
+                if (tracking.DelegatedToTrackingId.HasValue)
+                {
+                    var delegQuery = @"SELECT dt.*, u.UserName, u.FirstName, u.LastName
+                        FROM DocumentTrackings dt
+                        LEFT JOIN AspNetUsers u ON dt.AssignedTo = u.Id
+                        WHERE dt.TrackingId = @TrackingId";
+
+                    using (var command = new SqlCommand(delegQuery, connection))
+                    {
+                        command.Parameters.AddWithValue("@TrackingId", tracking.DelegatedToTrackingId.Value);
+                        using (var reader = await command.ExecuteReaderAsync())
+                        {
+                            if (await reader.ReadAsync())
+                            {
+                                tracking.DelegatedToTracking = TrackingMapper.MapToDocumentTracking(reader);
+                                if (!reader.IsDBNull(reader.GetOrdinal("UserName")))
+                                {
+                                    tracking.DelegatedToTracking.AssignedToUser = new ApplicationUser
+                                    {
+                                        UserName = reader.GetString(reader.GetOrdinal("UserName")),
+                                        FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                                        LastName = reader.GetString(reader.GetOrdinal("LastName"))
+                                    };
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Load parent tracking
+                if (tracking.ParentTrackingId.HasValue)
+                {
+                    var parentQuery = "SELECT * FROM DocumentTrackings WHERE TrackingId = @TrackingId";
+                    using (var command = new SqlCommand(parentQuery, connection))
+                    {
+                        command.Parameters.AddWithValue("@TrackingId", tracking.ParentTrackingId.Value);
+                        using (var reader = await command.ExecuteReaderAsync())
+                        {
+                            if (await reader.ReadAsync())
+                            {
+                                tracking.ParentTracking = TrackingMapper.MapToDocumentTracking(reader);
+                            }
+                        }
+                    }
+                }
+
+                // Load sub-delegations
+                tracking.SubDelegations = new List<DocumentTracking>();
+                var subQuery = @"SELECT dt.*, u.UserName, u.FirstName, u.LastName
+                    FROM DocumentTrackings dt
+                    LEFT JOIN AspNetUsers u ON dt.AssignedTo = u.Id
+                    WHERE dt.ParentTrackingId = @TrackingId
+                    ORDER BY dt.AssignedDate DESC";
+
+                using (var command = new SqlCommand(subQuery, connection))
+                {
+                    command.Parameters.AddWithValue("@TrackingId", id.Value);
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            var subTracking = TrackingMapper.MapToDocumentTracking(reader);
+                            if (!reader.IsDBNull(reader.GetOrdinal("UserName")))
+                            {
+                                subTracking.AssignedToUser = new ApplicationUser
+                                {
+                                    UserName = reader.GetString(reader.GetOrdinal("UserName")),
+                                    FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                                    LastName = reader.GetString(reader.GetOrdinal("LastName"))
+                                };
+                            }
+                            tracking.SubDelegations.Add(subTracking);
+                        }
+                    }
+                }
+            }
 
             return View(tracking);
         }
@@ -213,59 +580,103 @@ namespace eProtokoll.Areas.Manager.Controllers
         [HttpPost]
         public async Task<IActionResult> Accept(int id)
         {
-            var tracking = await _context.DocumentTrackings.FindAsync(id);
-            if (tracking == null)
-                return Json(new { success = false, message = "Gjurmimi nuk u gjet!" });
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
 
-            tracking.IsAccepted = true;
-            tracking.AcceptedDate = DateTime.Now;
-            tracking.Status = TrackingStatus.Accepted;
-            tracking.ModifiedDate = DateTime.Now;
-            tracking.ModifiedBy = User.Identity?.Name ?? "System";
+                var query = @"UPDATE DocumentTrackings SET
+                    IsAccepted = 1,
+                    AcceptedDate = @AcceptedDate,
+                    Status = 2,
+                    ModifiedDate = @ModifiedDate,
+                    ModifiedBy = @ModifiedBy
+                    WHERE TrackingId = @TrackingId";
 
-            await _context.SaveChangesAsync();
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@TrackingId", id);
+                    command.Parameters.AddWithValue("@AcceptedDate", DateTime.Now);
+                    command.Parameters.AddWithValue("@ModifiedDate", DateTime.Now);
+                    command.Parameters.AddWithValue("@ModifiedBy", User.Identity?.Name ?? "System");
 
-            return Json(new { success = true, message = "Gjurmimi u pranua me sukses!" });
+                    var rowsAffected = await command.ExecuteNonQueryAsync();
+
+                    if (rowsAffected > 0)
+                        return Json(new { success = true, message = "Gjurmimi u pranua me sukses!" });
+                    else
+                        return Json(new { success = false, message = "Gjurmimi nuk u gjet!" });
+                }
+            }
         }
 
         // POST: Manager/Tracking/Start/5
         [HttpPost]
         public async Task<IActionResult> Start(int id)
         {
-            var tracking = await _context.DocumentTrackings.FindAsync(id);
-            if (tracking == null)
-                return Json(new { success = false, message = "Gjurmimi nuk u gjet!" });
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
 
-            tracking.IsInProgress = true;
-            tracking.StartedDate = DateTime.Now;
-            tracking.Status = TrackingStatus.InProgress;
-            tracking.ModifiedDate = DateTime.Now;
-            tracking.ModifiedBy = User.Identity?.Name ?? "System";
+                var query = @"UPDATE DocumentTrackings SET
+                    IsInProgress = 1,
+                    StartedDate = @StartedDate,
+                    Status = 3,
+                    ModifiedDate = @ModifiedDate,
+                    ModifiedBy = @ModifiedBy
+                    WHERE TrackingId = @TrackingId";
 
-            await _context.SaveChangesAsync();
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@TrackingId", id);
+                    command.Parameters.AddWithValue("@StartedDate", DateTime.Now);
+                    command.Parameters.AddWithValue("@ModifiedDate", DateTime.Now);
+                    command.Parameters.AddWithValue("@ModifiedBy", User.Identity?.Name ?? "System");
 
-            return Json(new { success = true, message = "Gjurmimi u nis me sukses!" });
+                    var rowsAffected = await command.ExecuteNonQueryAsync();
+
+                    if (rowsAffected > 0)
+                        return Json(new { success = true, message = "Gjurmimi u nis me sukses!" });
+                    else
+                        return Json(new { success = false, message = "Gjurmimi nuk u gjet!" });
+                }
+            }
         }
 
         // POST: Manager/Tracking/Complete/5
         [HttpPost]
         public async Task<IActionResult> Complete(int id, string comment, int percentage)
         {
-            var tracking = await _context.DocumentTrackings.FindAsync(id);
-            if (tracking == null)
-                return Json(new { success = false, message = "Gjurmimi nuk u gjet!" });
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
 
-            tracking.IsCompleted = true;
-            tracking.CompletedDate = DateTime.Now;
-            tracking.CompletionComment = comment;
-            tracking.CompletionPercentage = percentage;
-            tracking.Status = TrackingStatus.Completed;
-            tracking.ModifiedDate = DateTime.Now;
-            tracking.ModifiedBy = User.Identity?.Name ?? "System";
+                var query = @"UPDATE DocumentTrackings SET
+                    IsCompleted = 1,
+                    CompletedDate = @CompletedDate,
+                    CompletionComment = @CompletionComment,
+                    CompletionPercentage = @CompletionPercentage,
+                    Status = 4,
+                    ModifiedDate = @ModifiedDate,
+                    ModifiedBy = @ModifiedBy
+                    WHERE TrackingId = @TrackingId";
 
-            await _context.SaveChangesAsync();
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@TrackingId", id);
+                    command.Parameters.AddWithValue("@CompletedDate", DateTime.Now);
+                    command.Parameters.AddWithValue("@CompletionComment", (object)comment ?? DBNull.Value);
+                    command.Parameters.AddWithValue("@CompletionPercentage", percentage);
+                    command.Parameters.AddWithValue("@ModifiedDate", DateTime.Now);
+                    command.Parameters.AddWithValue("@ModifiedBy", User.Identity?.Name ?? "System");
 
-            return Json(new { success = true, message = "Gjurmimi u përfundua me sukses!" });
+                    var rowsAffected = await command.ExecuteNonQueryAsync();
+
+                    if (rowsAffected > 0)
+                        return Json(new { success = true, message = "Gjurmimi u përfundua me sukses!" });
+                    else
+                        return Json(new { success = false, message = "Gjurmimi nuk u gjet!" });
+                }
+            }
         }
 
         // GET: Manager/Tracking/Delegate/5
@@ -273,10 +684,52 @@ namespace eProtokoll.Areas.Manager.Controllers
         {
             if (id == null) return NotFound();
 
-            var parentTracking = await _context.DocumentTrackings
-                .Include(t => t.Document)
-                .Include(t => t.AssignedToUser)
-                .FirstOrDefaultAsync(t => t.TrackingId == id);
+            DocumentTracking parentTracking = null;
+
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+
+                var query = @"SELECT dt.*, 
+                    d.ProtocolNumber, d.Subject,
+                    u.UserName, u.FirstName, u.LastName
+                    FROM DocumentTrackings dt
+                    LEFT JOIN Documents d ON dt.DocumentId = d.DocumentId
+                    LEFT JOIN AspNetUsers u ON dt.AssignedTo = u.Id
+                    WHERE dt.TrackingId = @TrackingId";
+
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@TrackingId", id.Value);
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        if (await reader.ReadAsync())
+                        {
+                            parentTracking = TrackingMapper.MapToDocumentTracking(reader);
+
+                            if (!reader.IsDBNull(reader.GetOrdinal("ProtocolNumber")))
+                            {
+                                parentTracking.Document = new Document
+                                {
+                                    DocumentId = parentTracking.DocumentId,
+                                    ProtocolNumber = reader.GetString(reader.GetOrdinal("ProtocolNumber")),
+                                    Subject = reader.GetString(reader.GetOrdinal("Subject"))
+                                };
+                            }
+
+                            if (!reader.IsDBNull(reader.GetOrdinal("UserName")))
+                            {
+                                parentTracking.AssignedToUser = new ApplicationUser
+                                {
+                                    UserName = reader.GetString(reader.GetOrdinal("UserName")),
+                                    FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                                    LastName = reader.GetString(reader.GetOrdinal("LastName"))
+                                };
+                            }
+                        }
+                    }
+                }
+            }
 
             if (parentTracking == null) return NotFound();
 
@@ -304,36 +757,95 @@ namespace eProtokoll.Areas.Manager.Controllers
         {
             if (ModelState.IsValid)
             {
-                // Set metadata
-                model.AssignedByUserId = User.Identity.Name;
-                model.IsActive = true;
-
-                // Calculate sequence number
-                var maxSequence = await _context.DocumentTrackings
-                    .Where(t => t.DocumentId == model.DocumentId)
-                    .MaxAsync(t => (int?)t.SequenceNumber) ?? 0;
-                model.SequenceNumber = maxSequence + 1;
-
-                _context.DocumentTrackings.Add(model);
-
-                // Update parent tracking
-                if (model.ParentTrackingId.HasValue)
+                using (var connection = new SqlConnection(_connectionString))
                 {
-                    var parentTracking = await _context.DocumentTrackings.FindAsync(model.ParentTrackingId.Value);
-                    if (parentTracking != null)
+                    await connection.OpenAsync();
+                    using (var transaction = connection.BeginTransaction())
                     {
-                        parentTracking.IsDelegated = true;
-                        parentTracking.DelegatedToTrackingId = model.TrackingId;
-                        parentTracking.Status = TrackingStatus.Delegated;
-                        parentTracking.ModifiedDate = DateTime.Now;
-                        parentTracking.ModifiedBy = User.Identity?.Name ?? "System";
+                        try
+                        {
+                            // Set metadata
+                            model.AssignedByUserId = User.Identity.Name;
+                            model.IsActive = true;
+
+                            // Calculate sequence number
+                            var maxSeqQuery = "SELECT ISNULL(MAX(SequenceNumber), 0) FROM DocumentTrackings WHERE DocumentId = @DocumentId";
+                            int maxSequence;
+                            using (var seqCommand = new SqlCommand(maxSeqQuery, connection, transaction))
+                            {
+                                seqCommand.Parameters.AddWithValue("@DocumentId", model.DocumentId);
+                                maxSequence = (int)await seqCommand.ExecuteScalarAsync();
+                            }
+                            model.SequenceNumber = maxSequence + 1;
+
+                            // Insert new tracking
+                            var insertQuery = @"INSERT INTO DocumentTrackings (
+                                DocumentId, AssignedTo, AssignedBy, AssignedDate, AssignedTime, DueDate,
+                                Priority, Status, ActionType, Instructions, Notes, SequenceNumber, IsActive,
+                                ParentTrackingId, IsAccepted, IsInProgress, IsCompleted, IsDelegated
+                            ) OUTPUT INSERTED.TrackingId VALUES (
+                                @DocumentId, @AssignedTo, @AssignedBy, @AssignedDate, @AssignedTime, @DueDate, @DueTime,
+                                @Priority, @Status, @ActionType, @Instructions, @Notes, @SequenceNumber, @IsActive,
+                                @ParentTrackingId, @IsAccepted, @IsInProgress, @IsCompleted, @IsDelegated
+                            )";
+
+                            int newTrackingId;
+                            using (var command = new SqlCommand(insertQuery, connection, transaction))
+                            {
+                                command.Parameters.AddWithValue("@DocumentId", model.DocumentId);
+                                command.Parameters.AddWithValue("@AssignedTo", model.AssignedToUserId);
+                                command.Parameters.AddWithValue("@AssignedBy", model.AssignedByUserId);
+                                command.Parameters.AddWithValue("@AssignedDate", model.AssignedDate);
+                                command.Parameters.AddWithValue("@AssignedTime", model.AssignedTime);
+                                command.Parameters.AddWithValue("@DueDate", (object)model.DueDate ?? DBNull.Value);
+                                command.Parameters.AddWithValue("@Priority", (int)model.Priority);
+                                command.Parameters.AddWithValue("@Status", (int)model.Status);
+                                command.Parameters.AddWithValue("@ActionType", (int)model.ActionType);
+                                command.Parameters.AddWithValue("@Instructions", (object)model.Instructions ?? DBNull.Value);
+                                command.Parameters.AddWithValue("@Notes", (object)model.Notes ?? DBNull.Value);
+                                command.Parameters.AddWithValue("@SequenceNumber", model.SequenceNumber);
+                                command.Parameters.AddWithValue("@IsActive", model.IsActive);
+                                command.Parameters.AddWithValue("@ParentTrackingId", (object)model.ParentTrackingId ?? DBNull.Value);
+                                command.Parameters.AddWithValue("@IsAccepted", false);
+                                command.Parameters.AddWithValue("@IsInProgress", false);
+                                command.Parameters.AddWithValue("@IsCompleted", false);
+                                command.Parameters.AddWithValue("@IsDelegated", false);
+
+                                newTrackingId = (int)await command.ExecuteScalarAsync();
+                            }
+
+                            // Update parent tracking
+                            if (model.ParentTrackingId.HasValue)
+                            {
+                                var updateQuery = @"UPDATE DocumentTrackings SET
+                                    IsDelegated = 1,
+                                    DelegatedToTrackingId = @DelegatedToTrackingId,
+                                    Status = 5,
+                                    ModifiedDate = @ModifiedDate,
+                                    ModifiedBy = @ModifiedBy
+                                    WHERE TrackingId = @TrackingId";
+
+                                using (var updateCommand = new SqlCommand(updateQuery, connection, transaction))
+                                {
+                                    updateCommand.Parameters.AddWithValue("@TrackingId", model.ParentTrackingId.Value);
+                                    updateCommand.Parameters.AddWithValue("@DelegatedToTrackingId", newTrackingId);
+                                    updateCommand.Parameters.AddWithValue("@ModifiedDate", DateTime.Now);
+                                    updateCommand.Parameters.AddWithValue("@ModifiedBy", User.Identity?.Name ?? "System");
+                                    await updateCommand.ExecuteNonQueryAsync();
+                                }
+                            }
+
+                            transaction.Commit();
+                            TempData["SuccessMessage"] = "Dokumenti u delegua me sukses!";
+                            return RedirectToAction(nameof(Index));
+                        }
+                        catch (Exception)
+                        {
+                            transaction.Rollback();
+                            throw;
+                        }
                     }
                 }
-
-                await _context.SaveChangesAsync();
-
-                TempData["SuccessMessage"] = "Dokumenti u delegua me sukses!";
-                return RedirectToAction(nameof(Index));
             }
 
             await LoadDropdowns();
@@ -344,19 +856,33 @@ namespace eProtokoll.Areas.Manager.Controllers
         [HttpPost]
         public async Task<IActionResult> Cancel(int id, string reason)
         {
-            var tracking = await _context.DocumentTrackings.FindAsync(id);
-            if (tracking == null)
-                return Json(new { success = false, message = "Gjurmimi nuk u gjet!" });
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
 
-            tracking.Status = TrackingStatus.Cancelled;
-            tracking.IsActive = false;
-            tracking.Notes = $"Anulluar: {reason}";
-            tracking.ModifiedDate = DateTime.Now;
-            tracking.ModifiedBy = User.Identity?.Name ?? "System";
+                var query = @"UPDATE DocumentTrackings SET
+                    Status = 6,
+                    IsActive = 0,
+                    Notes = @Notes,
+                    ModifiedDate = @ModifiedDate,
+                    ModifiedBy = @ModifiedBy
+                    WHERE TrackingId = @TrackingId";
 
-            await _context.SaveChangesAsync();
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@TrackingId", id);
+                    command.Parameters.AddWithValue("@Notes", $"Anulluar: {reason}");
+                    command.Parameters.AddWithValue("@ModifiedDate", DateTime.Now);
+                    command.Parameters.AddWithValue("@ModifiedBy", User.Identity?.Name ?? "System");
 
-            return Json(new { success = true, message = "Gjurmimi u anullua me sukses!" });
+                    var rowsAffected = await command.ExecuteNonQueryAsync();
+
+                    if (rowsAffected > 0)
+                        return Json(new { success = true, message = "Gjurmimi u anullua me sukses!" });
+                    else
+                        return Json(new { success = false, message = "Gjurmimi nuk u gjet!" });
+                }
+            }
         }
 
         // POST: Manager/Tracking/Delete/5
@@ -364,23 +890,28 @@ namespace eProtokoll.Areas.Manager.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var tracking = await _context.DocumentTrackings.FindAsync(id);
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
 
-            if (tracking == null)
-            {
-                TempData["ErrorMessage"] = "Gjurmimi nuk u gjet!";
-                return RedirectToAction(nameof(Index));
-            }
+                try
+                {
+                    var query = "DELETE FROM DocumentTrackings WHERE TrackingId = @TrackingId";
+                    using (var command = new SqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@TrackingId", id);
+                        var rowsAffected = await command.ExecuteNonQueryAsync();
 
-            try
-            {
-                _context.DocumentTrackings.Remove(tracking);
-                await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = "Gjurmimi u fshi me sukses!";
-            }
-            catch (Exception ex)
-            {
-                TempData["ErrorMessage"] = $"Gabim gjatë fshirjes: {ex.Message}";
+                        if (rowsAffected > 0)
+                            TempData["SuccessMessage"] = "Gjurmimi u fshi me sukses!";
+                        else
+                            TempData["ErrorMessage"] = "Gjurmimi nuk u gjet!";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    TempData["ErrorMessage"] = $"Gabim gjatë fshirjes: {ex.Message}";
+                }
             }
 
             return RedirectToAction(nameof(Index));
@@ -390,36 +921,68 @@ namespace eProtokoll.Areas.Manager.Controllers
 
         private async Task LoadDropdowns(int? selectedDocumentId = null, string? selectedUserId = null)
         {
-            // Documents dropdown
-            var documents = await _context.Documents
-                .OrderByDescending(d => d.CreatedDate)
-                .Take(100) // Limit to recent 100 documents
-                .ToListAsync();
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
 
-            ViewBag.Documents = new SelectList(
-                documents.Select(d => new
+                // Load recent documents
+                var documents = new List<dynamic>();
+                var queryDocs = @"SELECT TOP 100 DocumentId, ProtocolNumber, Subject 
+                    FROM Documents 
+                    ORDER BY CreatedDate DESC";
+
+                using (var command = new SqlCommand(queryDocs, connection))
                 {
-                    d.DocumentId,
-                    DisplayText = $"{d.ProtocolNumber} - {d.Subject}"
-                }),
-                "DocumentId",
-                "DisplayText",
-                selectedDocumentId
-            );
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            documents.Add(new
+                            {
+                                DocumentId = reader.GetInt32(reader.GetOrdinal("DocumentId")),
+                                DisplayText = $"{reader.GetString(reader.GetOrdinal("ProtocolNumber"))} - {reader.GetString(reader.GetOrdinal("Subject"))}"
+                            });
+                        }
+                    }
+                }
 
-            // Users dropdown
-            var users = await _context.Users
-                .Where(u => u.IsActive)
-                .OrderBy(u => u.FirstName)
-                .ThenBy(u => u.LastName)
-                .ToListAsync();
+                ViewBag.Documents = new SelectList(documents, "DocumentId", "DisplayText", selectedDocumentId);
 
-            ViewBag.Users = new SelectList(users, "Id", "FullName", selectedUserId);
+                // Load active users
+                var users = new List<ApplicationUser>();
+                var queryUsers = @"SELECT Id, UserName, FirstName, LastName 
+                    FROM AspNetUsers 
+                    WHERE IsActive = 1 
+                    ORDER BY FirstName, LastName";
+
+                using (var command = new SqlCommand(queryUsers, connection))
+                {
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            users.Add(new ApplicationUser
+                            {
+                                Id = reader.GetString(reader.GetOrdinal("Id")),
+                                UserName = reader.GetString(reader.GetOrdinal("UserName")),
+                                FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                                LastName = reader.GetString(reader.GetOrdinal("LastName"))
+                            });
+                        }
+                    }
+                }
+
+                ViewBag.Users = new SelectList(users, "Id", "FullName", selectedUserId);
+            }
         }
 
-        private async Task<bool> TrackingExists(int id)
+        private async Task<int> ExecuteCountQuery(SqlConnection connection, string query)
         {
-            return await _context.DocumentTrackings.AnyAsync(t => t.TrackingId == id);
+            using (var command = new SqlCommand(query, connection))
+            {
+                var result = await command.ExecuteScalarAsync();
+                return result != null ? (int)result : 0;
+            }
         }
     }
 }

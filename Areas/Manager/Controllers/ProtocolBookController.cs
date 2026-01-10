@@ -1,18 +1,20 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using eProtokoll.Data;
 using eProtokoll.Models;
+using Microsoft.Data.SqlClient;
+using System.Data;
+using System.Text;
+using eProtokoll.Services.Mappers;
 
 namespace eProtokoll.Areas.Manager.Controllers
 {
     [Area("Manager")]
     public class ProtocolBookController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly string _connectionString;
 
-        public ProtocolBookController(ApplicationDbContext context)
+        public ProtocolBookController(IConfiguration configuration)
         {
-            _context = context;
+            _connectionString = configuration.GetConnectionString("DefaultConnection");
         }
 
         // GET: Manager/ProtocolBook
@@ -20,76 +22,187 @@ namespace eProtokoll.Areas.Manager.Controllers
             string status = "", DateTime? dateFrom = null, DateTime? dateTo = null, int page = 1)
         {
             var pageSize = 50;
-            var query = _context.Documents
-                .Include(d => d.Classification)
-                .Include(d => d.Creator)
-                .AsQueryable();
+            var documents = new List<Document>();
 
-            // Search
-            if (!string.IsNullOrEmpty(searchTerm))
+            using (var connection = new SqlConnection(_connectionString))
             {
-                query = query.Where(d =>
-                    d.ProtocolNumber.Contains(searchTerm) ||
-                    d.Subject.Contains(searchTerm) ||
-                    (d.Content != null && d.Content.Contains(searchTerm)));
+                await connection.OpenAsync();
+
+                // Build dynamic query
+                var queryBuilder = new StringBuilder(@"
+                    SELECT d.*, 
+                        c.Name as ClassificationName, c.ColorCode,
+                        u.UserName as CreatorUserName, u.FirstName as CreatorFirstName, u.LastName as CreatorLastName
+                    FROM Documents d
+                    LEFT JOIN Classifications c ON d.ClassificationId = c.ClassificationId
+                    LEFT JOIN AspNetUsers u ON d.CreatedBy = u.Id
+                    WHERE 1=1");
+
+                var parameters = new List<SqlParameter>();
+
+                // Search filter
+                if (!string.IsNullOrEmpty(searchTerm))
+                {
+                    queryBuilder.Append(@" AND (d.ProtocolNumber LIKE @SearchTerm 
+                        OR d.Subject LIKE @SearchTerm 
+                        OR d.Content LIKE @SearchTerm)");
+                    parameters.Add(new SqlParameter("@SearchTerm", $"%{searchTerm}%"));
+                }
+
+                // Document type filter
+                if (!string.IsNullOrEmpty(documentType) && Enum.TryParse<DocumentType>(documentType, out var docType))
+                {
+                    queryBuilder.Append(" AND d.DocumentType = @DocumentType");
+                    parameters.Add(new SqlParameter("@DocumentType", (int)docType));
+                }
+
+                // Status filter
+                if (!string.IsNullOrEmpty(status) && Enum.TryParse<DocumentStatus>(status, out var docStatus))
+                {
+                    queryBuilder.Append(" AND d.Status = @Status");
+                    parameters.Add(new SqlParameter("@Status", (int)docStatus));
+                }
+
+                // Date range filters
+                if (dateFrom.HasValue)
+                {
+                    queryBuilder.Append(" AND d.ProtocolDate >= @DateFrom");
+                    parameters.Add(new SqlParameter("@DateFrom", dateFrom.Value));
+                }
+
+                if (dateTo.HasValue)
+                {
+                    queryBuilder.Append(" AND d.ProtocolDate <= @DateTo");
+                    parameters.Add(new SqlParameter("@DateTo", dateTo.Value));
+                }
+
+                // Get total count for pagination - build separate count query
+                var countQueryBuilder = new StringBuilder(@"
+                    SELECT COUNT(*) 
+                    FROM Documents d
+                    LEFT JOIN Classifications c ON d.ClassificationId = c.ClassificationId
+                    LEFT JOIN AspNetUsers u ON d.CreatedBy = u.Id
+                    WHERE 1=1");
+
+                // Apply same filters as main query
+                if (!string.IsNullOrEmpty(searchTerm))
+                {
+                    countQueryBuilder.Append(@" AND (d.ProtocolNumber LIKE @SearchTerm 
+                        OR d.Subject LIKE @SearchTerm 
+                        OR d.Content LIKE @SearchTerm)");
+                }
+
+                if (!string.IsNullOrEmpty(documentType) && Enum.TryParse<DocumentType>(documentType, out var docTypeCount))
+                {
+                    countQueryBuilder.Append(" AND d.DocumentType = @DocumentType");
+                }
+
+                if (!string.IsNullOrEmpty(status) && Enum.TryParse<DocumentStatus>(status, out var docStatusCount))
+                {
+                    countQueryBuilder.Append(" AND d.Status = @Status");
+                }
+
+                if (dateFrom.HasValue)
+                {
+                    countQueryBuilder.Append(" AND d.ProtocolDate >= @DateFrom");
+                }
+
+                if (dateTo.HasValue)
+                {
+                    countQueryBuilder.Append(" AND d.ProtocolDate <= @DateTo");
+                }
+
+                int totalItems;
+                using (var countCommand = new SqlCommand(countQueryBuilder.ToString(), connection))
+                {
+                    countCommand.Parameters.AddRange(parameters.ToArray());
+                    var result = await countCommand.ExecuteScalarAsync();
+                    totalItems = result != null ? Convert.ToInt32(result) : 0;
+                }
+
+                var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+
+                // Add sorting and pagination
+                queryBuilder.Append(@" ORDER BY d.ProtocolDate DESC, d.ProtocolTime DESC
+                    OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY");
+
+                parameters.Add(new SqlParameter("@Offset", (page - 1) * pageSize));
+                parameters.Add(new SqlParameter("@PageSize", pageSize));
+
+                // Execute main query
+                using (var command = new SqlCommand(queryBuilder.ToString(), connection))
+                {
+                    command.Parameters.AddRange(parameters.ToArray());
+
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            // NDRYSHIMI: Përdor DocumentMapper nga Services
+                            var document = DocumentMapper.MapToDocument(reader);
+
+                            // Populate Classification
+                            if (!reader.IsDBNull(reader.GetOrdinal("ClassificationName")))
+                            {
+                                document.Classification = new Classification
+                                {
+                                    ClassificationId = document.ClassificationId,
+                                    Name = reader.GetString(reader.GetOrdinal("ClassificationName")),
+                                    ColorCode = reader.IsDBNull(reader.GetOrdinal("ColorCode"))
+                                        ? null
+                                        : reader.GetString(reader.GetOrdinal("ColorCode"))
+                                };
+                            }
+
+                            // Populate Creator
+                            if (!reader.IsDBNull(reader.GetOrdinal("CreatorUserName")))
+                            {
+                                document.Creator = new ApplicationUser
+                                {
+                                    UserName = reader.GetString(reader.GetOrdinal("CreatorUserName")),
+                                    FirstName = reader.GetString(reader.GetOrdinal("CreatorFirstName")),
+                                    LastName = reader.GetString(reader.GetOrdinal("CreatorLastName"))
+                                };
+                            }
+
+                            documents.Add(document);
+                        }
+                    }
+                }
+
+                // ViewBag for filters
+                ViewBag.SearchTerm = searchTerm;
+                ViewBag.SelectedDocumentType = documentType;
+                ViewBag.SelectedStatus = status;
+                ViewBag.DateFrom = dateFrom?.ToString("yyyy-MM-dd");
+                ViewBag.DateTo = dateTo?.ToString("yyyy-MM-dd");
+                ViewBag.CurrentPage = page;
+                ViewBag.TotalPages = totalPages;
+                ViewBag.TotalItems = totalItems;
+
+                // Statistics - FIXED: Use Documents table with DocumentType filter
+                var today = DateTime.Now.Date;
+
+                ViewBag.TotalDocuments = await ExecuteCountQuery(connection, "SELECT COUNT(*) FROM Documents");
+
+                var queryToday = "SELECT COUNT(*) FROM Documents WHERE CAST(ProtocolDate AS DATE) = @Today";
+                using (var command = new SqlCommand(queryToday, connection))
+                {
+                    command.Parameters.AddWithValue("@Today", today);
+                    ViewBag.TodayDocuments = (int)await command.ExecuteScalarAsync();
+                }
+
+                // FIXED: Use Documents with DocumentType filter instead of separate tables
+                ViewBag.IncomingCount = await ExecuteCountQuery(connection, "SELECT COUNT(*) FROM Documents WHERE DocumentType = 1");
+                ViewBag.OutgoingCount = await ExecuteCountQuery(connection, "SELECT COUNT(*) FROM Documents WHERE DocumentType = 2");
+                ViewBag.InternalCount = await ExecuteCountQuery(connection, "SELECT COUNT(*) FROM Documents WHERE DocumentType = 3");
             }
-
-            // Filter by document type
-            if (!string.IsNullOrEmpty(documentType) && Enum.TryParse<DocumentType>(documentType, out var docType))
-            {
-                query = query.Where(d => d.DocumentType == docType);
-            }
-
-            // Filter by status
-            if (!string.IsNullOrEmpty(status) && Enum.TryParse<DocumentStatus>(status, out var docStatus))
-            {
-                query = query.Where(d => d.Status == docStatus);
-            }
-
-            // Filter by date range
-            if (dateFrom.HasValue)
-            {
-                query = query.Where(d => d.ProtocolDate >= dateFrom.Value);
-            }
-
-            if (dateTo.HasValue)
-            {
-                query = query.Where(d => d.ProtocolDate <= dateTo.Value);
-            }
-
-            // Total count and paging
-            var totalItems = await query.CountAsync();
-            var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
-            var documents = await query
-                .OrderByDescending(d => d.ProtocolDate)
-                .ThenByDescending(d => d.ProtocolTime)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
-
-            // ViewBag for filters
-            ViewBag.SearchTerm = searchTerm;
-            ViewBag.SelectedDocumentType = documentType;
-            ViewBag.SelectedStatus = status;
-            ViewBag.DateFrom = dateFrom?.ToString("yyyy-MM-dd");
-            ViewBag.DateTo = dateTo?.ToString("yyyy-MM-dd");
-            ViewBag.CurrentPage = page;
-            ViewBag.TotalPages = totalPages;
-            ViewBag.TotalItems = totalItems;
-
-            // Statistics
-            var today = DateTime.Now.Date;
-            ViewBag.TotalDocuments = await _context.Documents.CountAsync();
-            ViewBag.TodayDocuments = await _context.Documents.Where(d => d.ProtocolDate == today).CountAsync();
-            ViewBag.IncomingCount = await _context.IncomingDocuments.CountAsync();
-            ViewBag.OutgoingCount = await _context.OutgoingDocuments.CountAsync();
-            ViewBag.InternalCount = await _context.InternalDocuments.CountAsync();
 
             return View(documents);
         }
 
         // GET: Manager/ProtocolBook/Details/5
-        public async Task<IActionResult> Details(int? id, string type)
+        public IActionResult Details(int? id, string type)
         {
             if (id == null || string.IsNullOrEmpty(type)) return NotFound();
 
@@ -101,6 +214,16 @@ namespace eProtokoll.Areas.Manager.Controllers
                 "internal" => RedirectToAction("Details", "InternalDocument", new { id }),
                 _ => NotFound()
             };
+        }
+
+        // Helper method për COUNT queries 
+        private async Task<int> ExecuteCountQuery(SqlConnection connection, string query)
+        {
+            using (var command = new SqlCommand(query, connection))
+            {
+                var result = await command.ExecuteScalarAsync();
+                return result != null ? (int)result : 0;
+            }
         }
     }
 }

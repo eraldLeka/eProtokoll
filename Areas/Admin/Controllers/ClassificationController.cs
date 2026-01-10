@@ -1,28 +1,44 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using eProtokoll.Data;
 using eProtokoll.Models;
+using Microsoft.Data.SqlClient;
+using System.Data;
+using eProtokoll.Services.Mappers;
 
 namespace eProtokoll.Areas.Admin.Controllers
 {
     [Area("Admin")]
     public class ClassificationController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly string _connectionString;
 
-        public ClassificationController(ApplicationDbContext context)
+        public ClassificationController(IConfiguration configuration)
         {
-            _context = context;
+            _connectionString = configuration.GetConnectionString("DefaultConnection");
         }
-
         // GET: Admin/Classification
         public async Task<IActionResult> Index()
         {
-            var classifications = await _context.Classifications
-                .Include(c => c.Documents)
-                .OrderBy(c => c.SortOrder)
-                .ThenBy(c => c.Level)
-                .ToListAsync();
+            var classifications = new List<Classification>();
+
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                var query = @"SELECT c.*, 
+                    (SELECT COUNT(*) FROM Documents WHERE ClassificationId = c.ClassificationId) AS DocumentCount
+                    FROM Classifications c 
+                    ORDER BY c.SortOrder, c.Level";
+
+                using (var command = new SqlCommand(query, connection))
+                {
+                    await connection.OpenAsync();
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            classifications.Add(ClassificationMapper.MapToClassification(reader));
+                        }
+                    }
+                }
+            }
 
             return View(classifications);
         }
@@ -53,24 +69,54 @@ namespace eProtokoll.Areas.Admin.Controllers
             {
                 try
                 {
-                    // Nëse është zgjedhur si default, heq default-in nga të tjerët
-                    if (classification.IsDefault)
+                    using (var connection = new SqlConnection(_connectionString))
                     {
-                        var currentDefaults = await _context.Classifications
-                            .Where(c => c.IsDefault)
-                            .ToListAsync();
+                        await connection.OpenAsync();
 
-                        foreach (var item in currentDefaults)
+                        // Nëse është zgjedhur si default, heq default-in nga të tjerët
+                        if (classification.IsDefault)
                         {
-                            item.IsDefault = false;
+                            var queryUnsetDefault = "UPDATE Classifications SET IsDefault = 0 WHERE IsDefault = 1";
+                            using (var command = new SqlCommand(queryUnsetDefault, connection))
+                            {
+                                await command.ExecuteNonQueryAsync();
+                            }
+                        }
+
+                        classification.CreatedDate = DateTime.Now;
+                        classification.CreatedBy = User.Identity?.Name ?? "System";
+
+                        var queryInsert = @"INSERT INTO Classifications 
+                            (Name, Level, Description, RetentionYears, RequiresApproval, MinimumRoleRequired, 
+                            AllowPrint, AllowDownload, AllowCopy, EnableAuditLog, ColorCode, SortOrder, 
+                            IsActive, IsDefault, CreatedDate, CreatedBy)
+                            VALUES 
+                            (@Name, @Level, @Description, @RetentionYears, @RequiresApproval, @MinimumRoleRequired,
+                            @AllowPrint, @AllowDownload, @AllowCopy, @EnableAuditLog, @ColorCode, @SortOrder,
+                            @IsActive, @IsDefault, @CreatedDate, @CreatedBy)";
+
+                        using (var command = new SqlCommand(queryInsert, connection))
+                        {
+                            command.Parameters.AddWithValue("@Name", classification.Name);
+                            command.Parameters.AddWithValue("@Level", (int)classification.Level);
+                            command.Parameters.AddWithValue("@Description", (object)classification.Description ?? DBNull.Value);
+                            command.Parameters.AddWithValue("@RetentionYears", classification.RetentionYears);
+                            command.Parameters.AddWithValue("@RequiresApproval", classification.RequiresApproval);
+                            command.Parameters.AddWithValue("@MinimumRoleRequired", (object)classification.MinimumRoleRequired ?? DBNull.Value);
+                            command.Parameters.AddWithValue("@AllowPrint", classification.AllowPrint);
+                            command.Parameters.AddWithValue("@AllowDownload", classification.AllowDownload);
+                            command.Parameters.AddWithValue("@AllowCopy", classification.AllowCopy);
+                            command.Parameters.AddWithValue("@EnableAuditLog", classification.EnableAuditLog);
+                            command.Parameters.AddWithValue("@ColorCode", (object)classification.ColorCode ?? DBNull.Value);
+                            command.Parameters.AddWithValue("@SortOrder", classification.SortOrder);
+                            command.Parameters.AddWithValue("@IsActive", classification.IsActive);
+                            command.Parameters.AddWithValue("@IsDefault", classification.IsDefault);
+                            command.Parameters.AddWithValue("@CreatedDate", classification.CreatedDate);
+                            command.Parameters.AddWithValue("@CreatedBy", (object)classification.CreatedBy ?? DBNull.Value);
+
+                            await command.ExecuteNonQueryAsync();
                         }
                     }
-
-                    classification.CreatedDate = DateTime.Now;
-                    classification.CreatedBy = User.Identity?.Name ?? "System";
-
-                    _context.Classifications.Add(classification);
-                    await _context.SaveChangesAsync();
 
                     TempData["SuccessMessage"] = $"Klasifikimi '{classification.Name}' u krijua me sukses!";
                     return RedirectToAction(nameof(Index));
@@ -92,7 +138,26 @@ namespace eProtokoll.Areas.Admin.Controllers
                 return NotFound();
             }
 
-            var classification = await _context.Classifications.FindAsync(id);
+            Classification classification = null;
+
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                var query = "SELECT * FROM Classifications WHERE ClassificationId = @Id";
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@Id", id.Value);
+                    await connection.OpenAsync();
+
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        if (await reader.ReadAsync())
+                        {
+                            classification = ClassificationMapper.MapToClassification(reader);
+                        }
+                    }
+                }
+            }
+
             if (classification == null)
             {
                 return NotFound();
@@ -115,38 +180,74 @@ namespace eProtokoll.Areas.Admin.Controllers
             {
                 try
                 {
-                    // Nëse është zgjedhur si default, heq default-in nga të tjerët
-                    if (classification.IsDefault)
+                    using (var connection = new SqlConnection(_connectionString))
                     {
-                        var currentDefaults = await _context.Classifications
-                            .Where(c => c.IsDefault && c.ClassificationId != id)
-                            .ToListAsync();
+                        await connection.OpenAsync();
 
-                        foreach (var item in currentDefaults)
+                        // Nëse është zgjedhur si default, heq default-in nga të tjerët
+                        if (classification.IsDefault)
                         {
-                            item.IsDefault = false;
+                            var queryUnsetDefault = "UPDATE Classifications SET IsDefault = 0 WHERE IsDefault = 1 AND ClassificationId != @Id";
+                            using (var command = new SqlCommand(queryUnsetDefault, connection))
+                            {
+                                command.Parameters.AddWithValue("@Id", id);
+                                await command.ExecuteNonQueryAsync();
+                            }
+                        }
+
+                        classification.ModifiedDate = DateTime.Now;
+                        classification.ModifiedBy = User.Identity?.Name ?? "System";
+
+                        var queryUpdate = @"UPDATE Classifications SET
+                            Name = @Name,
+                            Level = @Level,
+                            Description = @Description,
+                            RetentionYears = @RetentionYears,
+                            RequiresApproval = @RequiresApproval,
+                            MinimumRoleRequired = @MinimumRoleRequired,
+                            AllowPrint = @AllowPrint,
+                            AllowDownload = @AllowDownload,
+                            AllowCopy = @AllowCopy,
+                            EnableAuditLog = @EnableAuditLog,
+                            ColorCode = @ColorCode,
+                            SortOrder = @SortOrder,
+                            IsActive = @IsActive,
+                            IsDefault = @IsDefault,
+                            ModifiedDate = @ModifiedDate,
+                            ModifiedBy = @ModifiedBy
+                            WHERE ClassificationId = @ClassificationId";
+
+                        using (var command = new SqlCommand(queryUpdate, connection))
+                        {
+                            command.Parameters.AddWithValue("@ClassificationId", classification.ClassificationId);
+                            command.Parameters.AddWithValue("@Name", classification.Name);
+                            command.Parameters.AddWithValue("@Level", (int)classification.Level);
+                            command.Parameters.AddWithValue("@Description", (object)classification.Description ?? DBNull.Value);
+                            command.Parameters.AddWithValue("@RetentionYears", classification.RetentionYears);
+                            command.Parameters.AddWithValue("@RequiresApproval", classification.RequiresApproval);
+                            command.Parameters.AddWithValue("@MinimumRoleRequired", (object)classification.MinimumRoleRequired ?? DBNull.Value);
+                            command.Parameters.AddWithValue("@AllowPrint", classification.AllowPrint);
+                            command.Parameters.AddWithValue("@AllowDownload", classification.AllowDownload);
+                            command.Parameters.AddWithValue("@AllowCopy", classification.AllowCopy);
+                            command.Parameters.AddWithValue("@EnableAuditLog", classification.EnableAuditLog);
+                            command.Parameters.AddWithValue("@ColorCode", (object)classification.ColorCode ?? DBNull.Value);
+                            command.Parameters.AddWithValue("@SortOrder", classification.SortOrder);
+                            command.Parameters.AddWithValue("@IsActive", classification.IsActive);
+                            command.Parameters.AddWithValue("@IsDefault", classification.IsDefault);
+                            command.Parameters.AddWithValue("@ModifiedDate", (object)classification.ModifiedDate ?? DBNull.Value);
+                            command.Parameters.AddWithValue("@ModifiedBy", (object)classification.ModifiedBy ?? DBNull.Value);
+
+                            int rowsAffected = await command.ExecuteNonQueryAsync();
+
+                            if (rowsAffected == 0)
+                            {
+                                return NotFound();
+                            }
                         }
                     }
 
-                    classification.ModifiedDate = DateTime.Now;
-                    classification.ModifiedBy = User.Identity?.Name ?? "System";
-
-                    _context.Update(classification);
-                    await _context.SaveChangesAsync();
-
                     TempData["SuccessMessage"] = $"Klasifikimi '{classification.Name}' u përditësua me sukses!";
                     return RedirectToAction(nameof(Index));
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!ClassificationExists(classification.ClassificationId))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
                 }
                 catch (Exception ex)
                 {
@@ -165,9 +266,29 @@ namespace eProtokoll.Areas.Admin.Controllers
                 return NotFound();
             }
 
-            var classification = await _context.Classifications
-                .Include(c => c.Documents)
-                .FirstOrDefaultAsync(m => m.ClassificationId == id);
+            Classification classification = null;
+
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                var query = @"SELECT c.*, 
+                    (SELECT COUNT(*) FROM Documents WHERE ClassificationId = c.ClassificationId) AS DocumentCount
+                    FROM Classifications c 
+                    WHERE c.ClassificationId = @Id";
+
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@Id", id.Value);
+                    await connection.OpenAsync();
+
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        if (await reader.ReadAsync())
+                        {
+                            classification = ClassificationMapper.MapToClassification(reader);
+                        }
+                    }
+                }
+            }
 
             if (classification == null)
             {
@@ -184,25 +305,55 @@ namespace eProtokoll.Areas.Admin.Controllers
         {
             try
             {
-                var classification = await _context.Classifications
-                    .Include(c => c.Documents)
-                    .FirstOrDefaultAsync(c => c.ClassificationId == id);
+                Classification classification = null;
 
-                if (classification == null)
+                using (var connection = new SqlConnection(_connectionString))
                 {
-                    TempData["ErrorMessage"] = "Klasifikimi nuk u gjet!";
-                    return RedirectToAction(nameof(Index));
-                }
+                    await connection.OpenAsync();
 
-                // Kontrollo nëse ka dokumente të lidhura
-                if (classification.Documents != null && classification.Documents.Any())
-                {
-                    TempData["ErrorMessage"] = $"Nuk mund të fshihet! Klasifikimi '{classification.Name}' përdoret nga {classification.Documents.Count} dokumente.";
-                    return RedirectToAction(nameof(Index));
-                }
+                    // Get classification
+                    var queryGet = "SELECT * FROM Classifications WHERE ClassificationId = @Id";
+                    using (var command = new SqlCommand(queryGet, connection))
+                    {
+                        command.Parameters.AddWithValue("@Id", id);
+                        using (var reader = await command.ExecuteReaderAsync())
+                        {
+                            if (await reader.ReadAsync())
+                            {
+                                classification = ClassificationMapper.MapToClassification(reader);
+                            }
+                        }
+                    }
 
-                _context.Classifications.Remove(classification);
-                await _context.SaveChangesAsync();
+                    if (classification == null)
+                    {
+                        TempData["ErrorMessage"] = "Klasifikimi nuk u gjet!";
+                        return RedirectToAction(nameof(Index));
+                    }
+
+                    // Check for related documents
+                    var queryCheckDocs = "SELECT COUNT(*) FROM Documents WHERE ClassificationId = @Id";
+                    using (var command = new SqlCommand(queryCheckDocs, connection))
+                    {
+                        command.Parameters.AddWithValue("@Id", id);
+                        var result = await command.ExecuteScalarAsync();
+                        int docCount = result != null ? Convert.ToInt32(result) : 0;
+
+                        if (docCount > 0)
+                        {
+                            TempData["ErrorMessage"] = $"Nuk mund të fshihet! Klasifikimi '{classification.Name}' përdoret nga {docCount} dokumente.";
+                            return RedirectToAction(nameof(Index));
+                        }
+                    }
+
+                    // Delete classification
+                    var queryDelete = "DELETE FROM Classifications WHERE ClassificationId = @Id";
+                    using (var command = new SqlCommand(queryDelete, connection))
+                    {
+                        command.Parameters.AddWithValue("@Id", id);
+                        await command.ExecuteNonQueryAsync();
+                    }
+                }
 
                 TempData["SuccessMessage"] = $"Klasifikimi '{classification.Name}' u fshi me sukses!";
             }
@@ -220,24 +371,54 @@ namespace eProtokoll.Areas.Admin.Controllers
         {
             try
             {
-                var classification = await _context.Classifications.FindAsync(id);
-                if (classification == null)
+                using (var connection = new SqlConnection(_connectionString))
                 {
-                    return Json(new { success = false, message = "Klasifikimi nuk u gjet!" });
+                    await connection.OpenAsync();
+
+                    // Get current status
+                    var queryGet = "SELECT IsActive, Name FROM Classifications WHERE ClassificationId = @Id";
+                    bool currentStatus;
+                    string name;
+
+                    using (var command = new SqlCommand(queryGet, connection))
+                    {
+                        command.Parameters.AddWithValue("@Id", id);
+                        using (var reader = await command.ExecuteReaderAsync())
+                        {
+                            if (!await reader.ReadAsync())
+                            {
+                                return Json(new { success = false, message = "Klasifikimi nuk u gjet!" });
+                            }
+                            currentStatus = reader.GetBoolean(reader.GetOrdinal("IsActive"));
+                            name = reader.GetString(reader.GetOrdinal("Name"));
+                        }
+                    }
+
+                    // Toggle status
+                    var newStatus = !currentStatus;
+                    var queryUpdate = @"UPDATE Classifications SET 
+                        IsActive = @IsActive, 
+                        ModifiedDate = @ModifiedDate, 
+                        ModifiedBy = @ModifiedBy 
+                        WHERE ClassificationId = @Id";
+
+                    using (var command = new SqlCommand(queryUpdate, connection))
+                    {
+                        command.Parameters.AddWithValue("@Id", id);
+                        command.Parameters.AddWithValue("@IsActive", newStatus);
+                        command.Parameters.AddWithValue("@ModifiedDate", DateTime.Now);
+                        command.Parameters.AddWithValue("@ModifiedBy", User.Identity?.Name ?? "System");
+
+                        await command.ExecuteNonQueryAsync();
+                    }
+
+                    return Json(new
+                    {
+                        success = true,
+                        message = "Statusi u ndryshua me sukses!",
+                        isActive = newStatus
+                    });
                 }
-
-                classification.IsActive = !classification.IsActive;
-                classification.ModifiedDate = DateTime.Now;
-                classification.ModifiedBy = User.Identity?.Name ?? "System";
-
-                await _context.SaveChangesAsync();
-
-                return Json(new
-                {
-                    success = true,
-                    message = $"Statusi u ndryshua me sukses!",
-                    isActive = classification.IsActive
-                });
             }
             catch (Exception ex)
             {
@@ -251,24 +432,47 @@ namespace eProtokoll.Areas.Admin.Controllers
         {
             try
             {
-                var classifications = await _context.Classifications
-                    .Where(c => ids.Contains(c.ClassificationId))
-                    .ToListAsync();
-
-                foreach (var classification in classifications)
+                if (ids == null || !ids.Any())
                 {
-                    classification.IsActive = true;
-                    classification.ModifiedDate = DateTime.Now;
-                    classification.ModifiedBy = User.Identity?.Name ?? "System";
+                    return Json(new { success = false, message = "Nuk ka klasifikime të zgjedhura!" });
                 }
 
-                await _context.SaveChangesAsync();
-
-                return Json(new
+                using (var connection = new SqlConnection(_connectionString))
                 {
-                    success = true,
-                    message = $"{classifications.Count} klasifikime u aktivizuan me sukses!"
-                });
+                    await connection.OpenAsync();
+
+                    // Build parameterized query to prevent SQL injection
+                    var parameters = new List<SqlParameter>();
+                    var paramNames = new List<string>();
+
+                    for (int i = 0; i < ids.Count; i++)
+                    {
+                        var paramName = $"@Id{i}";
+                        paramNames.Add(paramName);
+                        parameters.Add(new SqlParameter(paramName, ids[i]));
+                    }
+
+                    var query = $@"UPDATE Classifications SET 
+                        IsActive = 1, 
+                        ModifiedDate = @ModifiedDate, 
+                        ModifiedBy = @ModifiedBy 
+                        WHERE ClassificationId IN ({string.Join(",", paramNames)})";
+
+                    using (var command = new SqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@ModifiedDate", DateTime.Now);
+                        command.Parameters.AddWithValue("@ModifiedBy", User.Identity?.Name ?? "System");
+                        command.Parameters.AddRange(parameters.ToArray());
+
+                        int rowsAffected = await command.ExecuteNonQueryAsync();
+
+                        return Json(new
+                        {
+                            success = true,
+                            message = $"{rowsAffected} klasifikime u aktivizuan me sukses!"
+                        });
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -282,24 +486,47 @@ namespace eProtokoll.Areas.Admin.Controllers
         {
             try
             {
-                var classifications = await _context.Classifications
-                    .Where(c => ids.Contains(c.ClassificationId))
-                    .ToListAsync();
-
-                foreach (var classification in classifications)
+                if (ids == null || !ids.Any())
                 {
-                    classification.IsActive = false;
-                    classification.ModifiedDate = DateTime.Now;
-                    classification.ModifiedBy = User.Identity?.Name ?? "System";
+                    return Json(new { success = false, message = "Nuk ka klasifikime të zgjedhura!" });
                 }
 
-                await _context.SaveChangesAsync();
-
-                return Json(new
+                using (var connection = new SqlConnection(_connectionString))
                 {
-                    success = true,
-                    message = $"{classifications.Count} klasifikime u çaktivizuan me sukses!"
-                });
+                    await connection.OpenAsync();
+
+                    // Build parameterized query to prevent SQL injection
+                    var parameters = new List<SqlParameter>();
+                    var paramNames = new List<string>();
+
+                    for (int i = 0; i < ids.Count; i++)
+                    {
+                        var paramName = $"@Id{i}";
+                        paramNames.Add(paramName);
+                        parameters.Add(new SqlParameter(paramName, ids[i]));
+                    }
+
+                    var query = $@"UPDATE Classifications SET 
+                        IsActive = 0, 
+                        ModifiedDate = @ModifiedDate, 
+                        ModifiedBy = @ModifiedBy 
+                        WHERE ClassificationId IN ({string.Join(",", paramNames)})";
+
+                    using (var command = new SqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@ModifiedDate", DateTime.Now);
+                        command.Parameters.AddWithValue("@ModifiedBy", User.Identity?.Name ?? "System");
+                        command.Parameters.AddRange(parameters.ToArray());
+
+                        int rowsAffected = await command.ExecuteNonQueryAsync();
+
+                        return Json(new
+                        {
+                            success = true,
+                            message = $"{rowsAffected} klasifikime u çaktivizuan me sukses!"
+                        });
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -313,31 +540,76 @@ namespace eProtokoll.Areas.Admin.Controllers
         {
             try
             {
-                var classifications = await _context.Classifications
-                    .Include(c => c.Documents)
-                    .Where(c => ids.Contains(c.ClassificationId))
-                    .ToListAsync();
-
-                // Kontrollo për dokumente të lidhura
-                var withDocuments = classifications.Where(c => c.Documents != null && c.Documents.Any()).ToList();
-                if (withDocuments.Any())
+                if (ids == null || !ids.Any())
                 {
-                    var names = string.Join(", ", withDocuments.Select(c => c.Name));
-                    return Json(new
-                    {
-                        success = false,
-                        message = $"Këto klasifikime nuk mund të fshihen sepse kanë dokumente të lidhura: {names}"
-                    });
+                    return Json(new { success = false, message = "Nuk ka klasifikime të zgjedhura!" });
                 }
 
-                _context.Classifications.RemoveRange(classifications);
-                await _context.SaveChangesAsync();
+                var withDocuments = new List<string>();
 
-                return Json(new
+                using (var connection = new SqlConnection(_connectionString))
                 {
-                    success = true,
-                    message = $"{classifications.Count} klasifikime u fshinë me sukses!"
-                });
+                    await connection.OpenAsync();
+
+                    // Check for related documents
+                    foreach (var id in ids)
+                    {
+                        var queryCheckDocs = "SELECT COUNT(*) FROM Documents WHERE ClassificationId = @Id";
+                        using (var command = new SqlCommand(queryCheckDocs, connection))
+                        {
+                            command.Parameters.AddWithValue("@Id", id);
+                            var result = await command.ExecuteScalarAsync();
+                            int docCount = result != null ? Convert.ToInt32(result) : 0;
+
+                            if (docCount > 0)
+                            {
+                                var queryGetName = "SELECT Name FROM Classifications WHERE ClassificationId = @Id";
+                                using (var cmdName = new SqlCommand(queryGetName, connection))
+                                {
+                                    cmdName.Parameters.AddWithValue("@Id", id);
+                                    var name = await cmdName.ExecuteScalarAsync() as string;
+                                    if (name != null)
+                                        withDocuments.Add(name);
+                                }
+                            }
+                        }
+                    }
+
+                    if (withDocuments.Any())
+                    {
+                        var names = string.Join(", ", withDocuments);
+                        return Json(new
+                        {
+                            success = false,
+                            message = $"Këto klasifikime nuk mund të fshihen sepse kanë dokumente të lidhura: {names}"
+                        });
+                    }
+
+                    // Build parameterized query to prevent SQL injection
+                    var parameters = new List<SqlParameter>();
+                    var paramNames = new List<string>();
+
+                    for (int i = 0; i < ids.Count; i++)
+                    {
+                        var paramName = $"@Id{i}";
+                        paramNames.Add(paramName);
+                        parameters.Add(new SqlParameter(paramName, ids[i]));
+                    }
+
+                    var queryDelete = $"DELETE FROM Classifications WHERE ClassificationId IN ({string.Join(",", paramNames)})";
+
+                    using (var command = new SqlCommand(queryDelete, connection))
+                    {
+                        command.Parameters.AddRange(parameters.ToArray());
+                        int rowsAffected = await command.ExecuteNonQueryAsync();
+
+                        return Json(new
+                        {
+                            success = true,
+                            message = $"{rowsAffected} klasifikime u fshinë me sukses!"
+                        });
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -345,9 +617,21 @@ namespace eProtokoll.Areas.Admin.Controllers
             }
         }
 
-        private bool ClassificationExists(int id)
+        // Helper method për të kontrolluar ekzistencën
+        private async Task<bool> ClassificationExists(int id)
         {
-            return _context.Classifications.Any(e => e.ClassificationId == id);
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                var query = "SELECT COUNT(*) FROM Classifications WHERE ClassificationId = @Id";
+                using (var command = new SqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@Id", id);
+                    await connection.OpenAsync();
+                    var result = await command.ExecuteScalarAsync();
+                    int count = result != null ? Convert.ToInt32(result) : 0;
+                    return count > 0;
+                }
+            }
         }
     }
 }
