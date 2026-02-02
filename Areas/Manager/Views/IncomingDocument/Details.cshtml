@@ -17,22 +17,34 @@
     <!-- Header -->
     <div class="row mb-4">
         <div class="col-md-8">
-            <h2 class="mb-2"><i class="bi bi-file-earmark-text-fill me-2 text-primary"></i> @Model.Subject</h2>
+            <h2 class="mb-2"><i class="bi bi-file-earmark-text-fill me-2 text-info"></i> @Model.Subject</h2>
             <div class="d-flex gap-2">
-                <span class="badge bg-primary fs-6">@Model.ProtocolNumber</span>
+                <span class="badge bg-info fs-6">@Model.ProtocolNumber</span>
                 @switch (Model.Status)
                 {
-                    case DocumentStatus.Registered: <span class="badge bg-info fs-6">Protokolluar</span>; break;
-                    case DocumentStatus.InProgress: <span class="badge bg-warning text-dark fs-6">Në Proces</span>; break;
-                    case DocumentStatus.Completed: <span class="badge bg-success fs-6">Përfunduar</span>; break;
+                    case DocumentStatus.Registered:
+                        <span class="badge bg-primary fs-6">Protokolluar</span>
+                        ; break;
+                    case DocumentStatus.InProgress:
+
+                        <span class="badge bg-warning text-dark fs-6">Në Proces</span>
+                        ; break;
+                    case DocumentStatus.Completed:
+
+                        <span class="badge bg-success fs-6">Përfunduar</span>
+                        ; break;
                 }
-                @if (Model.Priority == Priority.Urgent) { <span class="badge bg-danger fs-6">Urgjent</span>; }
+                @if (Model.Priority == Priority.Urgent)
+                {
+                    <span class="badge bg-danger fs-6">Urgjent</span>
+                    ;
+                }
             </div>
         </div>
         <div class="col-md-4 text-end">
             <div class="btn-group">
                 <button onclick="window.print()" class="btn btn-outline-secondary"><i class="bi bi-printer"></i></button>
-                <a asp-action="Edit" asp-route-id="@Model.DocumentId" class="btn btn-primary"><i class="bi bi-pencil"></i> Modifiko</a>
+                <a asp-action="Edit" asp-route-id="@Model.DocumentId" class="btn btn-info"><i class="bi bi-pencil"></i> Modifiko</a>
                 <button data-bs-toggle="modal" data-bs-target="#deleteModal" class="btn btn-danger"><i class="bi bi-trash"></i></button>
             </div>
         </div>
@@ -43,12 +55,12 @@
         <div class="col-lg-8">
             <!-- Protocol Information -->
             <div class="card shadow-sm mb-4">
-                <div class="card-header bg-primary text-white"><h5 class="mb-0"><i class="bi bi-hash"></i> Protokolli</h5></div>
+                <div class="card-header bg-info text-white"><h5 class="mb-0"><i class="bi bi-hash"></i> Protokolli</h5></div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-4">
                             <small class="text-muted">Numri i Protokollit</small>
-                            <h5 class="text-primary">@Model.ProtocolNumber</h5>
+                            <h5 class="text-info">@Model.ProtocolNumber</h5>
                         </div>
                         <div class="col-md-4">
                             <small class="text-muted">Data e Protokollimit</small>
@@ -59,46 +71,70 @@
                             <h6><i class="bi bi-inbox"></i> @Model.ReceivedDate.ToString("dd/MM/yyyy")</h6>
                         </div>
                     </div>
+                    <div class="row mt-3">
+                        <div class="col-md-4">
+                            <small class="text-muted">Ora e Protokollimit</small>
+                            <h6><i class="bi bi-clock"></i> @Model.ProtocolTime.ToString(@"hh\:mm")</h6>
+                        </div>
+                        <div class="col-md-4">
+                            <small class="text-muted">Ora e Marrjes</small>
+                            <h6><i class="bi bi-clock"></i> @Model.ReceivedTime.ToString(@"hh\:mm")</h6>
+                        </div>
+                        <div class="col-md-4">
+                            <small class="text-muted">Mënyra e Dërgesës</small>
+                            <h6>
+                                @switch (Model.DeliveryMethod)
+                                {
+                                    case DeliveryMethod.Email:
+                                        <span><i class="bi bi-envelope"></i> Email</span>
+                                        ; break;
+                                    case DeliveryMethod.HandDelivery:
+
+                                        <span><i class="bi bi-hand-index"></i> Dorazi</span>
+                                        ; break;
+                                    case DeliveryMethod.Mail:
+
+                                        <span><i class="bi bi-mailbox"></i> Postë</span>
+                                        ; break;
+                                    case DeliveryMethod.Courier:
+
+                                        <span><i class="bi bi-truck"></i> Kurier</span>
+                                        ; break;
+                                    case DeliveryMethod.Fax:
+
+                                        <span><i class="bi bi-telephone"></i> Faks</span>
+                                        ; break;
+                                    case DeliveryMethod.ElectronicPortal:
+
+                                        <span><i class="bi bi-globe"></i> Portal</span>
+                                        ; break;
+                                    default:
+
+                                        <span>Tjetër</span>
+                                        ; break;
+                                }
+                            </h6>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <!-- Sender Information -->
             <div class="card shadow-sm mb-4">
-                <div class="card-header bg-info text-white"><h5 class="mb-0"><i class="bi bi-building"></i> Dërguesi</h5></div>
+                <div class="card-header bg-primary text-white"><h5 class="mb-0"><i class="bi bi-building"></i> Dërguesi</h5></div>
                 <div class="card-body">
-                    <h5><i class="bi bi-bank text-info"></i> @Model.Institution?.Name</h5>
+                    <h5><i class="bi bi-bank text-primary"></i> @Model.Institution?.Name</h5>
                     @if (!string.IsNullOrEmpty(Model.Institution?.Adress))
                     {
                         <small class="text-muted"><i class="bi bi-geo-alt"></i> @Model.Institution.Adress</small>
                     }
-                    <hr/>
+                    <hr />
                     <div class="row">
                         <div class="col-md-6">
                             <small class="text-muted">Emri i Dërguesit</small>
                             <h6><i class="bi bi-person"></i> @Model.SenderName</h6>
                         </div>
-                        <div class="col-md-6">
-                            <small class="text-muted">Pozicioni</small>
-                            <h6>@(Model.SenderPosition ?? "-")</h6>
-                        </div>
                     </div>
-                    @if (!string.IsNullOrEmpty(Model.SenderEmail) || !string.IsNullOrEmpty(Model.SenderPhone))
-                    {
-                        <div class="row mt-2">
-                            @if (!string.IsNullOrEmpty(Model.SenderEmail))
-                            {
-                                <div class="col-md-6">
-                                    <small><a href="mailto:@Model.SenderEmail"><i class="bi bi-envelope"></i> @Model.SenderEmail</a></small>
-                                </div>
-                            }
-                            @if (!string.IsNullOrEmpty(Model.SenderPhone))
-                            {
-                                <div class="col-md-6">
-                                    <small><a href="tel:@Model.SenderPhone"><i class="bi bi-telephone"></i> @Model.SenderPhone</a></small>
-                                </div>
-                            }
-                        </div>
-                    }
                 </div>
             </div>
 
@@ -110,12 +146,12 @@
                     <h5>@Model.Subject</h5>
                     @if (!string.IsNullOrEmpty(Model.Content))
                     {
-                        <hr/>
+                        <hr />
                         <p class="bg-light p-3 rounded">@Model.Content</p>
                     }
                     @if (!string.IsNullOrEmpty(Model.OriginalDocumentNumber))
                     {
-                        <hr/>
+                        <hr />
                         <small class="text-muted">Nr. Origjinal: <strong>@Model.OriginalDocumentNumber</strong></small>
                         @if (Model.OriginalDocumentDate.HasValue)
                         {
@@ -137,6 +173,12 @@
                         {
                             <div class="alert alert-success">
                                 <i class="bi bi-check-circle-fill"></i> <strong>Përgjigjur më:</strong> @Model.ResponseDate?.ToString("dd/MM/yyyy")
+                                @if (Model.ResponseDocumentId.HasValue)
+                                {
+                                    <br />
+                        
+                                    <small class="text-muted">Dokument Përgjigje ID: @Model.ResponseDocumentId</small>
+                                }
                             </div>
                         }
                         else
@@ -145,10 +187,18 @@
                                 <i class="bi bi-exclamation-triangle"></i> <strong>Kërkon Përgjigje</strong>
                                 @if (Model.ResponseDeadline.HasValue)
                                 {
-                                    <br/><strong>Afati:</strong> @Model.ResponseDeadline.Value.ToString("dd/MM/yyyy")
+                                    <br />
+                                    <strong>Afati:</strong>
+ 
+                                    @Model.ResponseDeadline.Value.ToString("dd/MM/yyyy")
                                     @if (Model.ResponseDeadline.Value < DateTime.Now)
                                     {
                                         <span class="badge bg-danger ms-2">VONUAR - @((DateTime.Now - Model.ResponseDeadline.Value).Days) ditë</span>
+                                    }
+                                    else
+                                    {
+                                        var daysLeft = (Model.ResponseDeadline.Value - DateTime.Now).Days;
+                                        <span class="badge bg-info ms-2">@daysLeft ditë të mbetura</span>
                                     }
                                 }
                             </div>
@@ -168,13 +218,44 @@
                             {
                                 <div class="list-group-item d-flex align-items-center">
                                     <div class="me-3">
-                                        @if (att.FileExtension == ".pdf") { <i class="bi bi-file-pdf-fill text-danger" style="font-size:2rem;"></i> }
-                                        else if (att.FileExtension == ".docx" || att.FileExtension == ".doc") { <i class="bi bi-file-word-fill text-primary" style="font-size:2rem;"></i> }
-                                        else { <i class="bi bi-file-fill text-secondary" style="font-size:2rem;"></i> }
+                                        @if (att.FileExtension == ".pdf")
+                                        {
+                                            <i class="bi bi-file-pdf-fill text-danger" style="font-size:2rem;"></i>
+                                        }
+                                        else if (att.FileExtension == ".docx" || att.FileExtension == ".doc")
+                                        {
+
+                                            <i class="bi bi-file-word-fill text-primary" style="font-size:2rem;"></i>
+                                        }
+                                        else if (att.FileExtension == ".xlsx" || att.FileExtension == ".xls")
+                                        {
+
+                                            <i class="bi bi-file-excel-fill text-success" style="font-size:2rem;"></i>
+                                        }
+                                        else if (att.FileExtension == ".jpg" || att.FileExtension == ".jpeg" || att.FileExtension == ".png")
+                                        {
+
+                                            <i class="bi bi-file-image-fill text-info" style="font-size:2rem;"></i>
+                                        }
+                                        else
+                                        {
+
+                                            <i class="bi bi-file-fill text-secondary" style="font-size:2rem;"></i>
+                                        }
                                     </div>
                                     <div class="flex-grow-1">
-                                        <h6>@att.OriginalFileName @if(att.IsPrimaryDocument){<span class="badge bg-primary ms-2">Kryesor</span>}</h6>
-                                        <small class="text-muted">@att.FileSizeMB MB | @att.UploadedDate.ToString("dd/MM/yyyy")</small>
+                                        <h6 class="mb-1">
+                                            @att.OriginalFileName
+                                            @if (att.IsPrimaryDocument)
+                                            {
+                                                <span class="badge bg-primary ms-2">Kryesor</span>
+                                            }
+                                        </h6>
+                                        <small class="text-muted">
+                                            @att.FileSizeMB MB |
+                                            Ngarkuar: @att.UploadedDate.ToString("dd/MM/yyyy HH:mm") |
+                                            Nga: @(att.UploadedBy ?? "System")
+                                        </small>
                                     </div>
                                     <div class="btn-group btn-group-sm">
                                         <a href="@att.FilePath" target="_blank" class="btn btn-outline-primary"><i class="bi bi-eye"></i> Shiko</a>
@@ -195,22 +276,81 @@
                     <div class="card-body">
                         @foreach (var t in Model.Trackings.OrderByDescending(x => x.AssignedDate))
                         {
-                            <div class="card border-warning mb-2">
+                            <div class="card @(t.IsActive ? "border-warning" : "border-secondary") mb-2">
                                 <div class="card-body p-3">
-                                    <div class="d-flex justify-content-between">
-                                        <div>
-                                            <h6><i class="bi bi-person"></i> @t.AssignedToUser?.FullName</h6>
-                                            <small class="text-muted">Nga: @t.AssignedByUser?.FullName</small>
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1">
+                                                <i class="bi bi-person-fill"></i>
+                                                @(t.AssignedToUser?.FullName ?? t.AssignedToUserId)
+                                            </h6>
+                                            <small class="text-muted">
+                                                <i class="bi bi-arrow-right"></i>
+                                                Nga: @(t.AssignedByUser?.FullName ?? t.AssignedByUserId)
+                                            </small>
                                         </div>
-                                        @switch (t.Status)
+                                        <div class="text-end">
+                                            @if (t.CompletedDate.HasValue)
+                                            {
+                                                <span class="badge bg-success mb-1">Përfunduar</span>
+                                            }
+                                            else if (t.IsActive)
+                                            {
+                                                <span class="badge bg-warning text-dark mb-1">Aktiv</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary mb-1">Jo Aktiv</span>
+                                            }
+                                            @switch (t.Priority)
+                                            {
+                                                case Priority.Urgent:
+                                                    <span class="badge bg-danger">Urgjent</span>
+                                                    ; break;
+                                                case Priority.High:
+
+                                                    <span class="badge bg-warning text-dark">I Lartë</span>
+                                                    ; break;
+                                                case Priority.Normal:
+
+                                                    <span class="badge bg-info">Normal</span>
+                                                    ; break;
+                                                case Priority.Low:
+
+                                                    <span class="badge bg-secondary">I Ulët</span>
+                                                    ; break;
+                                            }
+                                        </div>
+                                    </div>
+
+                                    @if (!string.IsNullOrEmpty(t.Notes))
+                                    {
+                                        <div class="mt-2 p-2 bg-light rounded">
+                                            <small><strong>Shënime:</strong> @t.Notes</small>
+                                        </div>
+                                    }
+
+                                    <div class="mt-2">
+                                        <small class="text-muted">
+                                            <i class="bi bi-calendar-plus"></i> Caktuar: @t.AssignedDate.ToString("dd/MM/yyyy HH:mm")
+                                        </small>
+                                        @if (t.DueDate.HasValue)
                                         {
-                                            case TrackingStatus.Completed: <span class="badge bg-success">Përfunduar</span>; break;
-                                            case TrackingStatus.InProgress: <span class="badge bg-primary">Në Proces</span>; break;
-                                            default: <span class="badge bg-secondary">@t.Status</span>; break;
+                                            <small class="text-muted ms-3">
+                                                <i class="bi bi-calendar-x"></i> Afati: @t.DueDate.Value.ToString("dd/MM/yyyy")
+                                                @if (t.DueDate.Value < DateTime.Now && !t.CompletedDate.HasValue)
+                                                {
+                                                    <span class="badge bg-danger ms-1">Vonuar</span>
+                                                }
+                                            </small>
+                                        }
+                                        @if (t.CompletedDate.HasValue)
+                                        {
+                                            <small class="text-success ms-3">
+                                                <i class="bi bi-check-circle-fill"></i> Përfunduar: @t.CompletedDate.Value.ToString("dd/MM/yyyy HH:mm")
+                                            </small>
                                         }
                                     </div>
-                                    <p class="mb-1 mt-2"><strong>Udhëzimet:</strong> @t.Instructions</p>
-                                    <small class="text-muted"><i class="bi bi-calendar"></i> @t.AssignedDate.ToString("dd/MM/yyyy HH:mm")</small>
                                 </div>
                             </div>
                         }
@@ -231,7 +371,7 @@
         <!-- Sidebar -->
         <div class="col-lg-4">
             <div class="card shadow-sm sticky-top" style="top:20px;">
-                <div class="card-header bg-primary text-white"><h6 class="mb-0"><i class="bi bi-info-circle"></i> Info</h6></div>
+                <div class="card-header bg-info text-white"><h6 class="mb-0"><i class="bi bi-info-circle"></i> Informacion</h6></div>
                 <div class="card-body">
                     <div class="mb-3 pb-3 border-bottom">
                         <small class="text-muted">Klasifikimi</small>
@@ -242,10 +382,21 @@
                         <h6>
                             @switch (Model.Status)
                             {
-                                case DocumentStatus.Registered: <span class="badge bg-info">Protokolluar</span>; break;
-                                case DocumentStatus.InProgress: <span class="badge bg-warning text-dark">Në Proces</span>; break;
-                                case DocumentStatus.Completed: <span class="badge bg-success">Përfunduar</span>; break;
-                                default: <span class="badge bg-secondary">@Model.Status</span>; break;
+                                case DocumentStatus.Registered:
+                                    <span class="badge bg-primary">Protokolluar</span>
+                                    ; break;
+                                case DocumentStatus.InProgress:
+
+                                    <span class="badge bg-warning text-dark">Në Proces</span>
+                                    ; break;
+                                case DocumentStatus.Completed:
+
+                                    <span class="badge bg-success">Përfunduar</span>
+                                    ; break;
+                                default:
+
+                                    <span class="badge bg-secondary">@Model.Status</span>
+                                    ; break;
                             }
                         </h6>
                     </div>
@@ -254,33 +405,38 @@
                         <h6>
                             @switch (Model.Priority)
                             {
-                                case Priority.Urgent: <span class="badge bg-danger">Urgjent</span>; break;
-                                case Priority.High: <span class="badge bg-warning text-dark">I Lartë</span>; break;
-                                case Priority.Normal: <span class="badge bg-info">Normal</span>; break;
-                                default: <span class="badge bg-secondary">@Model.Priority</span>; break;
-                            }
-                        </h6>
-                    </div>
-                    <div class="mb-3 pb-3 border-bottom">
-                        <small class="text-muted">Kopje Fizike</small>
-                        <h6>
-                            @if (Model.HasPhysicalCopy)
-                            {
-                                <i class="bi bi-check-circle text-success"></i> <span>Po</span>
-                                @if (!string.IsNullOrEmpty(Model.PhysicalLocation))
-                                {
-                                    <br/><small class="text-muted">@Model.PhysicalLocation</small>
-                                }
-                            }
-                            else
-                            {
-                                <i class="bi bi-x-circle text-muted"></i> <span>Jo</span>
+                                case Priority.Urgent:
+                                    <span class="badge bg-danger">Urgjent</span>
+                                    ; break;
+                                case Priority.High:
+
+                                    <span class="badge bg-warning text-dark">I Lartë</span>
+                                    ; break;
+                                case Priority.Normal:
+
+                                    <span class="badge bg-info">Normal</span>
+                                    ; break;
+                                case Priority.Low:
+
+                                    <span class="badge bg-secondary">I Ulët</span>
+                                    ; break;
                             }
                         </h6>
                     </div>
                     <div class="mb-3">
-                        <small class="text-muted">Shtojca</small>
-                        <h6>@(Model.HasAttachments ? $"{Model.Attachments?.Count} file" : "Jo")</h6>
+                        <small class="text-muted">Bashkëngjitje</small>
+                        <h6>
+                            @if (Model.HasAttachments && Model.Attachments != null && Model.Attachments.Any())
+                            {
+                                <i class="bi bi-check-circle text-success"></i>
+                                <span>@Model.Attachments.Count file</span>
+                            }
+                            else
+                            {
+                                <i class="bi bi-x-circle text-muted"></i>
+                                <span>Asnjë</span>
+                            }
+                        </h6>
                     </div>
                 </div>
             </div>
@@ -288,13 +444,17 @@
             <!-- Metadata -->
             <div class="card shadow-sm mt-3 bg-light">
                 <div class="card-body small">
-                    <div><strong>ID:</strong> @Model.DocumentId</div>
-                    <div><strong>Krijuar nga:</strong> @Model.Creator?.FullName</div>
-                    <div><strong>Data:</strong> @Model.CreatedDate.ToString("dd/MM/yyyy HH:mm")</div>
+                    <div class="mb-2"><strong>ID:</strong> @Model.DocumentId</div>
+                    <div class="mb-2"><strong>Krijuar nga:</strong> @(Model.Creator?.FullName ?? Model.CreatedBy ?? "System")</div>
+                    <div class="mb-2"><strong>Data e Krijimit:</strong> @Model.CreatedDate.ToString("dd/MM/yyyy HH:mm")</div>
                     @if (Model.ModifiedDate.HasValue)
                     {
-                        <hr/>
-                        <div><strong>Modifikuar:</strong> @Model.ModifiedDate.Value.ToString("dd/MM/yyyy")</div>
+                        <hr class="my-2" />
+                        <div class="mb-2"><strong>Modifikuar më:</strong> @Model.ModifiedDate.Value.ToString("dd/MM/yyyy HH:mm")</div>
+                        @if (!string.IsNullOrEmpty(Model.ModifiedBy))
+                        {
+                            <div><strong>Modifikuar nga:</strong> @Model.ModifiedBy</div>
+                        }
                     }
                 </div>
             </div>
@@ -303,8 +463,15 @@
             <div class="card shadow-sm mt-3">
                 <div class="card-body p-2">
                     <div class="d-grid gap-2">
-                        <a asp-action="Edit" asp-route-id="@Model.DocumentId" class="btn btn-sm btn-primary"><i class="bi bi-pencil"></i> Modifiko</a>
-                        <button onclick="window.print()" class="btn btn-sm btn-outline-secondary"><i class="bi bi-printer"></i> Printo</button>
+                        <a asp-action="Edit" asp-route-id="@Model.DocumentId" class="btn btn-sm btn-info">
+                            <i class="bi bi-pencil"></i> Modifiko
+                        </a>
+                        <button onclick="window.print()" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-printer"></i> Printo
+                        </button>
+                        <a asp-area="Manager" asp-controller="IncomingDocument" asp-action="Index" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-arrow-left"></i> Kthehu
+                        </a>
                     </div>
                 </div>
             </div>
@@ -321,14 +488,22 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p>Fshij dokumentin: <strong class="text-primary">@Model.ProtocolNumber</strong>?</p>
-                <div class="alert alert-danger">Kjo do të fshijë të gjitha të dhënat e dokumentit!</div>
+                <p>Jeni të sigurt që dëshironi të fshini këtë dokument?</p>
+                <div class="alert alert-info mb-2">
+                    <strong>Protokoll:</strong> @Model.ProtocolNumber<br />
+                    <strong>Subjekt:</strong> @Model.Subject
+                </div>
+                <div class="alert alert-danger mb-0">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    Kjo veprim do të fshijë përgjithmonë dokumentin dhe të gjitha të dhënat e tij!
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anulo</button>
                 <form method="post" asp-action="Delete" class="d-inline">
                     <input type="hidden" name="id" value="@Model.DocumentId">
-                    <button type="submit" class="btn btn-danger"><i class="bi bi-trash"></i> Fshij</button>
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-danger"><i class="bi bi-trash"></i> Fshij Dokumentin</button>
                 </form>
             </div>
         </div>
@@ -336,10 +511,34 @@
 </div>
 
 @section Styles {
-<style>
-    .card { border:none; border-radius:12px; }
-    .card-header { border-radius:12px 12px 0 0!important; font-weight:600; }
-    .sticky-top { position:sticky; z-index:1020; }
-    @@media print { .btn, .breadcrumb { display:none!important; } }
-</style>
+    <style>
+        .card {
+            border: none;
+            border-radius: 12px;
+        }
+
+        .card-header {
+            border-radius: 12px 12px 0 0 !important;
+            font-weight: 600;
+        }
+
+        .sticky-top {
+            position: sticky;
+            z-index: 1020;
+        }
+
+        @@media print {
+            .btn, .breadcrumb, .modal, nav {
+                display: none !important;
+            }
+
+            .col-lg-4 {
+                display: none !important;
+            }
+
+            .col-lg-8 {
+                width: 100% !important;
+            }
+        }
+    </style>
 }

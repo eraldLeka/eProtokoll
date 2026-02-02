@@ -28,7 +28,7 @@
             <p class="text-muted mt-2">Përditëso të dhënat e dokumentit: <strong class="text-warning">@Model.ProtocolNumber</strong></p>
         </div>
         <div class="col-md-4 text-end">
-            <a asp-area="Manager" asp-controller="InternalDocument" asp-action="Details" asp-route-id="@Model.DocumentId" class="btn btn-outline-info">
+            <a asp-area="Manager" asp-controller="InternalDocument" asp-action="Details" asp-route-id="@Model.DocumentId" class="btn btn-outline-warning">
                 <i class="bi bi-eye me-1"></i>
                 Shiko Detajet
             </a>
@@ -36,10 +36,14 @@
     </div>
 
     <form asp-action="Edit" method="post" enctype="multipart/form-data" id="editForm">
+        @Html.AntiForgeryToken()
         <input type="hidden" asp-for="DocumentId" />
         <input type="hidden" asp-for="CreatedDate" />
         <input type="hidden" asp-for="CreatedBy" />
         <input type="hidden" asp-for="DocumentType" />
+        <input type="hidden" asp-for="IsResponded" />
+        <input type="hidden" asp-for="ResponseDate" />
+        <input type="hidden" asp-for="ResponseDocumentId" />
 
         <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
@@ -91,7 +95,7 @@
             <div class="card-header bg-info text-white">
                 <h5 class="mb-0">
                     <i class="bi bi-building me-2"></i>
-                    Informacioni i Qarkullimit
+                    Informacioni i Qarkullimit të Brendshëm
                 </h5>
             </div>
             <div class="card-body">
@@ -100,7 +104,7 @@
                         <div class="mb-3">
                             <label asp-for="FromDepartment" class="form-label">
                                 <i class="bi bi-box-arrow-right text-danger"></i>
-                                Departamenti Dërgues <span class="text-danger">*</span>
+                                Departamenti Dërgues
                             </label>
                             <input asp-for="FromDepartment" class="form-control" placeholder="p.sh. Departamenti i IT" />
                             <span asp-validation-for="FromDepartment" class="text-danger"></span>
@@ -110,7 +114,7 @@
                         <div class="mb-3">
                             <label asp-for="ToDepartment" class="form-label">
                                 <i class="bi bi-box-arrow-in-left text-success"></i>
-                                Departamenti Marrës <span class="text-danger">*</span>
+                                Departamenti Marrës
                             </label>
                             <input asp-for="ToDepartment" class="form-control" placeholder="p.sh. Departamenti i Financës" />
                             <span asp-validation-for="ToDepartment" class="text-danger"></span>
@@ -155,19 +159,6 @@
                 </h5>
             </div>
             <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label asp-for="InternalType" class="form-label">
-                                <i class="bi bi-folder text-primary"></i>
-                                Lloji i Dokumentit <span class="text-danger">*</span>
-                            </label>
-                            <select asp-for="InternalType" class="form-select" asp-items="Html.GetEnumSelectList<InternalDocumentType>()">
-                            </select>
-                            <span asp-validation-for="InternalType" class="text-danger"></span>
-                        </div>
-                    </div>
-                </div>
                 <div class="mb-3">
                     <label asp-for="Subject" class="form-label">
                         <i class="bi bi-chat-left-text text-primary"></i>
@@ -233,12 +224,12 @@
             </div>
         </div>
 
-        <!-- Response & Approval Settings -->
+        <!-- Response Settings -->
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-success text-white">
                 <h5 class="mb-0">
-                    <i class="bi bi-gear me-2"></i>
-                    Cilësimet e Përgjigjes dhe Miratimit
+                    <i class="bi bi-reply me-2"></i>
+                    Përgjigja dhe Afati
                 </h5>
             </div>
             <div class="card-body">
@@ -263,141 +254,124 @@
                         </div>
                     </div>
                 </div>
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-check form-switch mb-3">
-                            <input asp-for="RequiresApproval" class="form-check-input" type="checkbox" />
-                            <label asp-for="RequiresApproval" class="form-check-label">
-                                <i class="bi bi-check-circle text-success"></i>
-                                Kërkon Miratim
-                            </label>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-check form-switch mb-3">
-                            <input asp-for="RequiresSignature" class="form-check-input" type="checkbox" />
-                            <label asp-for="RequiresSignature" class="form-check-label">
-                                <i class="bi bi-pen text-success"></i>
-                                Kërkon Firmë
-                            </label>
-                        </div>
-                    </div>
-                </div>
-                @if (Model.IsApproved)
+                @if (Model.IsResponded)
                 {
                     <div class="alert alert-success">
                         <i class="bi bi-check-circle-fill me-2"></i>
-                        <strong>Statusi:</strong> Është miratuar më @Model.ApprovedDate?.ToString("dd/MM/yyyy")
-                        @if (!string.IsNullOrEmpty(Model.ApprovalComment))
+                        <strong>Statusi:</strong> Është përgjigjur më @Model.ResponseDate?.ToString("dd/MM/yyyy")
+                        @if (Model.ResponseDocumentId.HasValue)
                         {
                             <br />
-                            <strong>Koment:</strong>
- 
-                            @Model.ApprovalComment
+                            <small class="text-muted">Dokument Përgjigje ID: @Model.ResponseDocumentId</small>
                         }
                     </div>
                 }
             </div>
         </div>
 
-        <!-- Existing Attachments -->
+        <!-- Current Attachment -->
         @if (Model.Attachments != null && Model.Attachments.Any())
         {
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-dark text-white">
                     <h5 class="mb-0">
                         <i class="bi bi-paperclip me-2"></i>
-                        Shtojcat Ekzistuese (@Model.Attachments.Count)
+                        Bashkëngjitja Aktuale
                     </h5>
                 </div>
                 <div class="card-body">
-                    <div class="list-group">
-                        @foreach (var attachment in Model.Attachments)
-                        {
-                            <div class="list-group-item">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div class="flex-grow-1">
-                                        <h6 class="mb-1">
-                                            <i class="bi bi-file-earmark-@(attachment.FileExtension == ".pdf" ? "pdf" : attachment.FileExtension == ".docx" || attachment.FileExtension == ".doc" ? "word" : "text") text-warning"></i>
-                                            @attachment.OriginalFileName
-                                        </h6>
-                                        <small class="text-muted">
-                                            <i class="bi bi-hdd"></i> @attachment.FileSizeMB MB
-                                            | <i class="bi bi-calendar"></i> @attachment.UploadedDate.ToString("dd/MM/yyyy HH:mm")
-                                        </small>
-                                    </div>
-                                    <div class="btn-group btn-group-sm">
-                                        <a href="@attachment.FilePath" target="_blank" class="btn btn-outline-primary" title="Shiko">
-                                            <i class="bi bi-eye"></i>
-                                        </a>
-                                        <a href="@attachment.FilePath" download class="btn btn-outline-success" title="Shkarko">
-                                            <i class="bi bi-download"></i>
-                                        </a>
-                                        <button type="button" class="btn btn-outline-danger delete-attachment"
-                                                data-id="@attachment.AttachmentId"
-                                                data-name="@attachment.OriginalFileName"
-                                                title="Fshij">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </div>
-                                </div>
+                    @foreach (var attachment in Model.Attachments.OrderBy(a => a.DisplayOrder))
+                    {
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">
+                                    @if (attachment.FileExtension == ".pdf")
+                                    {
+                                        <i class="bi bi-file-earmark-pdf text-danger"></i>
+                                    }
+                                    else if (attachment.FileExtension == ".docx" || attachment.FileExtension == ".doc")
+                                    {
+                                        <i class="bi bi-file-earmark-word text-primary"></i>
+                                    }
+                                    else if (attachment.FileExtension == ".xlsx" || attachment.FileExtension == ".xls")
+                                    {
+                                        <i class="bi bi-file-earmark-excel text-success"></i>
+                                    }
+                                    else if (attachment.FileExtension == ".jpg" || attachment.FileExtension == ".jpeg" || attachment.FileExtension == ".png")
+                                    {
+                                        <i class="bi bi-file-earmark-image text-info"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-file-earmark text-secondary"></i>
+                                    }
+                                    @attachment.OriginalFileName
+                                    @if (attachment.IsPrimaryDocument)
+                                    {
+                                        <span class="badge bg-warning text-dark ms-2">Kryesor</span>
+                                    }
+                                </h6>
+                                <small class="text-muted">
+                                    <i class="bi bi-hdd"></i> @attachment.FileSizeMB MB
+                                    | <i class="bi bi-calendar"></i> @attachment.UploadedDate.ToString("dd/MM/yyyy HH:mm")
+                                    @if (!string.IsNullOrEmpty(attachment.UploadedBy))
+                                    {
+                                        <span>| <i class="bi bi-person"></i> @attachment.UploadedBy</span>
+                                    }
+                                </small>
                             </div>
-                        }
-                    </div>
+                            <div class="btn-group btn-group-sm">
+                                <a href="@attachment.FilePath" target="_blank" class="btn btn-outline-primary" title="Shiko">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="@attachment.FilePath" download class="btn btn-outline-success" title="Shkarko">
+                                    <i class="bi bi-download"></i>
+                                </a>
+                            </div>
+                        </div>
+                    }
                 </div>
             </div>
         }
 
-        <!-- New File Upload -->
+        <!-- Replace File Upload -->
         <div class="card shadow-sm mb-4">
-            <div class="card-header bg-dark text-white">
+            <div class="card-header bg-warning text-dark">
                 <h5 class="mb-0">
-                    <i class="bi bi-plus-circle me-2"></i>
-                    Shto Bashkëngjitje të Re
+                    <i class="bi bi-arrow-repeat me-2"></i>
+                    @if (Model.Attachments != null && Model.Attachments.Any())
+                    {
+                        <text>Zëvendëso Bashkëngjitjen</text>
+                    }
+                    else
+                    {
+                        <text>Shto Bashkëngjitje</text>
+                    }
                 </h5>
             </div>
             <div class="card-body">
                 <div class="mb-3">
                     <label for="attachmentFile" class="form-label">
-                        <i class="bi bi-file-earmark-arrow-up text-dark"></i>
-                        Ngarko Skedarin e Ri
+                        <i class="bi bi-file-earmark-arrow-up text-warning"></i>
+                        Ngarko Skedarin
                     </label>
-                    <input type="file" class="form-control" id="attachmentFile" name="attachmentFile" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" />
-                    <small class="text-muted">Formatet e lejuara: PDF, Word, Imazhe (max 10MB)</small>
+                    <input type="file" class="form-control" id="attachmentFile" name="attachmentFile" accept=".pdf,.doc,.docx,.xlsx,.xls,.jpg,.jpeg,.png" />
+                    <small class="text-muted">Formatet e lejuara: PDF, Word, Excel, Imazhe (max 10MB)</small>
                 </div>
-            </div>
-        </div>
-
-        <!-- Physical Copy -->
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-light">
-                <h5 class="mb-0">
-                    <i class="bi bi-archive me-2 text-muted"></i>
-                    Kopja Fizike
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-check form-switch mb-3">
-                            <input asp-for="HasPhysicalCopy" class="form-check-input" type="checkbox" />
-                            <label asp-for="HasPhysicalCopy" class="form-check-label">
-                                <i class="bi bi-box-seam text-muted"></i>
-                                Ka Kopje Fizike
-                            </label>
-                        </div>
+                @if (Model.Attachments != null && Model.Attachments.Any())
+                {
+                    <div class="alert alert-warning mb-0">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>KUJDES:</strong> Bashkëngjitja e re do të zëvendësojë atë ekzistuesen. Bashkëngjitja e vjetër do të fshihet përfundimisht.
                     </div>
-                    <div class="col-md-6">
-                        <div class="mb-3">
-                            <label asp-for="PhysicalLocation" class="form-label">
-                                <i class="bi bi-geo-alt text-muted"></i>
-                                Vendndodhja Fizike
-                            </label>
-                            <input asp-for="PhysicalLocation" class="form-control" placeholder="p.sh. Arkivi A, Rafte 2" />
-                            <span asp-validation-for="PhysicalLocation" class="text-danger"></span>
-                        </div>
+                }
+                else
+                {
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Shënim:</strong> Ky dokument nuk ka bashkëngjitje. Ngarko një skedar.
                     </div>
-                </div>
+                }
             </div>
         </div>
 
@@ -430,7 +404,7 @@
                             <i class="bi bi-arrow-left me-1"></i>
                             Kthehu në Listë
                         </a>
-                        <a asp-area="Manager" asp-controller="InternalDocument" asp-action="Details" asp-route-id="@Model.DocumentId" class="btn btn-outline-info">
+                        <a asp-area="Manager" asp-controller="InternalDocument" asp-action="Details" asp-route-id="@Model.DocumentId" class="btn btn-outline-warning">
                             <i class="bi bi-eye me-1"></i>
                             Shiko Detajet
                         </a>
@@ -445,64 +419,32 @@
     </form>
 </div>
 
-<!-- Delete Attachment Modal -->
-<div class="modal fade" id="deleteAttachmentModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                    Fshij Bashkëngjitjen
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p>A jeni të sigurt që dëshironi të fshini bashkëngjitjen:</p>
-                <p class="fw-bold text-center text-warning" id="deleteAttachmentName"></p>
-                <div class="alert alert-danger">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                    <strong>KUJDES:</strong> Kjo veprim nuk mund të zhbëhet!
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="bi bi-x-circle me-1"></i>
-                    Anulo
-                </button>
-                <button type="button" class="btn btn-danger" id="confirmDeleteAttachment">
-                    <i class="bi bi-trash-fill me-1"></i>
-                    Fshij
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
 @section Scripts {
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
 
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             // Show/hide response deadline field
             function toggleResponseDeadline() {
                 if ($('#requiresResponseSwitch').is(':checked')) {
                     $('#responseDeadlineField').slideDown();
                 } else {
                     $('#responseDeadlineField').slideUp();
+                    $('#ResponseDeadline').val('');
                 }
             }
 
             $('#requiresResponseSwitch').on('change', toggleResponseDeadline);
-            toggleResponseDeadline();
+            toggleResponseDeadline(); // Initialize on load
 
             // File upload validation
-            $('#attachmentFile').on('change', function() {
+            $('#attachmentFile').on('change', function () {
                 const file = this.files[0];
                 if (file) {
-                    const fileSize = file.size / 1024 / 1024;
-                    const allowedTypes = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png'];
+                    const fileSize = file.size / 1024 / 1024; // in MB
+                    const allowedTypes = ['.pdf', '.doc', '.docx', '.xlsx', '.xls', '.jpg', '.jpeg', '.png'];
                     const fileExt = '.' + file.name.split('.').pop().toLowerCase();
 
                     if (fileSize > 10) {
@@ -512,42 +454,44 @@
                     }
 
                     if (!allowedTypes.includes(fileExt)) {
-                        alert('Format i pasaktë! Formatet e lejuara janë: PDF, Word, Imazhe');
+                        alert('Format i pasaktë! Formatet e lejuara janë: PDF, Word, Excel, Imazhe');
                         $(this).val('');
                         return false;
                     }
                 }
             });
 
-            // Delete attachment
-            let attachmentIdToDelete = null;
+            // Form validation before submit
+            $('#editForm').on('submit', function (e) {
+                let isValid = true;
+                let errorMessage = '';
 
-            $('.delete-attachment').on('click', function() {
-                attachmentIdToDelete = $(this).data('id');
-                const attachmentName = $(this).data('name');
-                $('#deleteAttachmentName').text(attachmentName);
-                $('#deleteAttachmentModal').modal('show');
-            });
-
-            $('#confirmDeleteAttachment').on('click', function() {
-                if (attachmentIdToDelete) {
-                    $.ajax({
-                        url: '@Url.Action("DeleteAttachment", "InternalDocument", new { area = "Manager" })',
-                        type: 'POST',
-                        data: { id: attachmentIdToDelete },
-                        success: function(response) {
-                            if (response.success) {
-                                $('#deleteAttachmentModal').modal('hide');
-                                location.reload();
-                            } else {
-                                alert('Gabim: ' + response.message);
-                            }
-                        },
-                        error: function() {
-                            alert('Ka ndodhur një gabim gjatë fshirjes së shtojcës!');
-                        }
-                    });
+                // Required field validation
+                if (!$('#Subject').val().trim()) {
+                    isValid = false;
+                    errorMessage += '- Subjekti është i detyrueshëm\n';
                 }
+
+                if (!$('#ClassificationId').val()) {
+                    isValid = false;
+                    errorMessage += '- Klasifikimi është i detyrueshëm\n';
+                }
+
+                if (!$('#ProtocolDate').val()) {
+                    isValid = false;
+                    errorMessage += '- Data e protokollimit është e detyrueshme\n';
+                }
+
+                if (!isValid) {
+                    e.preventDefault();
+                    alert('Ju lutem plotësoni fushat e detyrueshme:\n\n' + errorMessage);
+                    return false;
+                }
+
+                // Show loading state
+                const submitBtn = $(this).find('button[type="submit"]');
+                submitBtn.prop('disabled', true);
+                submitBtn.html('<i class="bi bi-hourglass-split me-1"></i> Duke përditësuar...');
             });
         });
     </script>
@@ -579,21 +523,23 @@
             font-weight: 500;
         }
 
+        .form-check-label {
+            font-weight: 500;
+        }
+
         .btn-lg {
             padding: 0.75rem 2rem;
         }
 
-        .list-group-item {
-            border-left: none;
-            border-right: none;
+        .btn-outline-warning {
+            color: #ffc107;
+            border-color: #ffc107;
         }
 
-            .list-group-item:first-child {
-                border-top: none;
-            }
-
-            .list-group-item:last-child {
-                border-bottom: none;
+            .btn-outline-warning:hover {
+                background-color: #ffc107;
+                border-color: #ffc107;
+                color: #212529;
             }
     </style>
 }

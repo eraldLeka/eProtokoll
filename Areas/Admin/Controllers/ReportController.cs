@@ -1,12 +1,14 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using eProtokoll.Models;
+﻿using eProtokoll.Models;
+using eProtokoll.Services.Mappers;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using System.Data;
-using eProtokoll.Services.Mappers;
 
 namespace eProtokoll.Areas.Admin.Controllers
 {
     [Area("Admin")]
+    [Authorize(Roles = "Administrator")]
     public class ReportController : Controller
     {
         private readonly string _connectionString;
@@ -25,7 +27,7 @@ namespace eProtokoll.Areas.Admin.Controllers
             {
                 await connection.OpenAsync();
 
-                // Statistika të përgjithshme (TPH - Documents table)
+                // Statistika të përgjithshme
                 viewModel.TotalDocuments = await ExecuteCountQuery(connection, "SELECT COUNT(*) FROM Documents");
                 viewModel.TotalIncomingDocuments = await ExecuteCountQuery(connection, "SELECT COUNT(*) FROM Documents WHERE DocumentType = 1");
                 viewModel.TotalOutgoingDocuments = await ExecuteCountQuery(connection, "SELECT COUNT(*) FROM Documents WHERE DocumentType = 2");
@@ -36,8 +38,7 @@ namespace eProtokoll.Areas.Admin.Controllers
 
                 viewModel.TotalClassifications = await ExecuteCountQuery(connection, "SELECT COUNT(*) FROM Classifications");
 
-                // Dokumente sipas statusit
-                viewModel.DraftDocuments = await ExecuteCountQuery(connection, $"SELECT COUNT(*) FROM Documents WHERE Status = {(int)DocumentStatus.Draft}");
+                // Dokumente sipas statusit (Registered, InProgress, Completed)
                 viewModel.RegisteredDocuments = await ExecuteCountQuery(connection, $"SELECT COUNT(*) FROM Documents WHERE Status = {(int)DocumentStatus.Registered}");
                 viewModel.InProgressDocuments = await ExecuteCountQuery(connection, $"SELECT COUNT(*) FROM Documents WHERE Status = {(int)DocumentStatus.InProgress}");
                 viewModel.CompletedDocuments = await ExecuteCountQuery(connection, $"SELECT COUNT(*) FROM Documents WHERE Status = {(int)DocumentStatus.Completed}");
@@ -163,7 +164,7 @@ namespace eProtokoll.Areas.Admin.Controllers
             {
                 await connection.OpenAsync();
 
-                // Incoming documents by institution (TPH - Documents with DocumentType = 1)
+                // Incoming documents by institution
                 var queryIncoming = @"SELECT TOP 10 i.Name, COUNT(*) as Count 
                     FROM Documents d
                     INNER JOIN Institutions i ON d.InstitutionId = i.InstitutionId
@@ -186,7 +187,7 @@ namespace eProtokoll.Areas.Admin.Controllers
                     }
                 }
 
-                // Outgoing documents by institution (TPH - Documents with DocumentType = 2)
+                // Outgoing documents by institution
                 var queryOutgoing = @"SELECT TOP 10 i.Name, COUNT(*) as Count 
                     FROM Documents d
                     INNER JOIN Institutions i ON d.InstitutionId = i.InstitutionId
@@ -263,7 +264,7 @@ namespace eProtokoll.Areas.Admin.Controllers
         }
 
         // GET: Admin/Report/AuditLog
-        public async Task<IActionResult> AuditLog(DateTime? startDate, DateTime? endDate, string userId = null, string actionType = null)
+        public async Task<IActionResult> AuditLog(DateTime? startDate, DateTime? endDate, string userId = null)
         {
             startDate ??= DateTime.Now.AddDays(-30);
             endDate ??= DateTime.Now;
@@ -275,7 +276,6 @@ namespace eProtokoll.Areas.Admin.Controllers
             {
                 await connection.OpenAsync();
 
-                // ✅ FIKSUAR: AssignedToUserId dhe AssignedByUserId (jo AssignedTo/AssignedBy)
                 var query = @"SELECT dt.*, 
                     d.ProtocolNumber, d.Subject,
                     u1.UserName as AssignedToUserName, u1.FirstName as AssignedToFirstName, u1.LastName as AssignedToLastName,
@@ -292,12 +292,6 @@ namespace eProtokoll.Areas.Admin.Controllers
                     query += " AND (dt.AssignedToUserId = @UserId OR dt.AssignedByUserId = @UserId)";
                 }
 
-                // Add action type filter
-                if (!string.IsNullOrEmpty(actionType) && Enum.TryParse<ActionType>(actionType, out var action))
-                {
-                    query += " AND dt.ActionType = @ActionType";
-                }
-
                 query += " ORDER BY dt.CreatedDate DESC";
 
                 using (var command = new SqlCommand(query, connection))
@@ -308,11 +302,6 @@ namespace eProtokoll.Areas.Admin.Controllers
                     if (!string.IsNullOrEmpty(userId))
                     {
                         command.Parameters.AddWithValue("@UserId", userId);
-                    }
-
-                    if (!string.IsNullOrEmpty(actionType) && Enum.TryParse<ActionType>(actionType, out var parsedAction))
-                    {
-                        command.Parameters.AddWithValue("@ActionType", (int)parsedAction);
                     }
 
                     using (var reader = await command.ExecuteReaderAsync())
@@ -377,7 +366,6 @@ namespace eProtokoll.Areas.Admin.Controllers
             ViewBag.StartDate = startDate.Value.ToString("yyyy-MM-dd");
             ViewBag.EndDate = endDate.Value.ToString("yyyy-MM-dd");
             ViewBag.SelectedUserId = userId;
-            ViewBag.SelectedActionType = actionType;
             ViewBag.Users = users;
 
             return View(auditLogs);
@@ -407,16 +395,18 @@ namespace eProtokoll.Areas.Admin.Controllers
 
         public int TotalClassifications { get; set; }
 
-        public int DraftDocuments { get; set; }
+        // Status counts (3 statuse)
         public int RegisteredDocuments { get; set; }
         public int InProgressDocuments { get; set; }
         public int CompletedDocuments { get; set; }
 
+        // Priority counts
         public int LowPriorityDocuments { get; set; }
         public int NormalPriorityDocuments { get; set; }
         public int HighPriorityDocuments { get; set; }
         public int UrgentPriorityDocuments { get; set; }
 
+        // Time-based counts
         public int CurrentMonthDocuments { get; set; }
         public int CurrentWeekDocuments { get; set; }
         public int TodayDocuments { get; set; }

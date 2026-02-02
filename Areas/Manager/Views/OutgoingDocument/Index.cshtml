@@ -73,10 +73,10 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-muted mb-1 text-uppercase small">Në Pritje</h6>
-                            <h2 class="mb-0 fw-bold text-warning">@ViewBag.PendingSend</h2>
+                            <h6 class="text-muted mb-1 text-uppercase small">Në Proces</h6>
+                            <h2 class="mb-0 fw-bold text-warning">@ViewBag.InProgress</h2>
                             <small class="text-warning">
-                                <i class="bi bi-hourglass-split"></i> Për dërgim
+                                <i class="bi bi-hourglass-split"></i> Aktive
                             </small>
                         </div>
                         <div class="stat-icon bg-warning-subtle text-warning">
@@ -91,8 +91,8 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-muted mb-1 text-uppercase small">Të Dërguara</h6>
-                            <h2 class="mb-0 fw-bold text-info">@ViewBag.Sent</h2>
+                            <h6 class="text-muted mb-1 text-uppercase small">Të Përfunduara</h6>
+                            <h2 class="mb-0 fw-bold text-info">@ViewBag.Completed</h2>
                             <small class="text-info">
                                 <i class="bi bi-check-circle"></i> Dorëzuar
                             </small>
@@ -115,67 +115,22 @@
             </h5>
         </div>
         <div class="card-body">
-            <form method="get" id="filterForm">
-                <div class="row g-3">
-                    <div class="col-md-3">
-                        <label for="searchTerm" class="form-label">Kërko</label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-white">
-                                <i class="bi bi-search"></i>
-                            </span>
-                            <input type="text" class="form-control" id="searchTerm" name="searchTerm"
-                                   value="@ViewBag.SearchTerm" placeholder="Nr. protokolli, subjekt, marrës...">
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                        <label for="status" class="form-label">Statusi</label>
-                        <select class="form-select" id="status" name="status">
-                            <option value="">Të gjithë</option>
-                            <option value="Draft" selected="@(ViewBag.SelectedStatus == "Draft")">Draft</option>
-                            <option value="Registered" selected="@(ViewBag.SelectedStatus == "Registered")">Protokolluar</option>
-                            <option value="InProgress" selected="@(ViewBag.SelectedStatus == "InProgress")">Në Proces</option>
-                            <option value="Pending" selected="@(ViewBag.SelectedStatus == "Pending")">Në Pritje</option>
-                            <option value="Completed" selected="@(ViewBag.SelectedStatus == "Completed")">Përfunduar</option>
-                            <option value="Cancelled" selected="@(ViewBag.SelectedStatus == "Cancelled")">Anulluar</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label for="priority" class="form-label">Prioriteti</label>
-                        <select class="form-select" id="priority" name="priority">
-                            <option value="">Të gjithë</option>
-                            <option value="Low" selected="@(ViewBag.SelectedPriority == "Low")">I Ulët</option>
-                            <option value="Normal" selected="@(ViewBag.SelectedPriority == "Normal")">Normal</option>
-                            <option value="High" selected="@(ViewBag.SelectedPriority == "High")">I Lartë</option>
-                            <option value="Urgent" selected="@(ViewBag.SelectedPriority == "Urgent")">Urgjent</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label for="institution" class="form-label">Institucioni</label>
-                        <select class="form-select" id="institution" name="institution">
-                            <option value="">Të gjithë</option>
-                            @if (ViewBag.Institutions != null)
-                            {
-                                @foreach (var inst in (IEnumerable<SelectListItem>)ViewBag.Institutions)
-                                {
-                                    <option value="@inst.Value" selected="@(ViewBag.SelectedInstitution == inst.Value)">@inst.Text</option>
-                                }
-                            }
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Periudha</label>
-                        <div class="input-group">
-                            <input type="date" class="form-control" id="dateFrom" name="dateFrom" value="@ViewBag.DateFrom">
-                            <span class="input-group-text">deri</span>
-                            <input type="date" class="form-control" id="dateTo" name="dateTo" value="@ViewBag.DateTo">
-                        </div>
+            <form method="get" id="filterForm" class="row g-3">
+                <div class="col-md-8">
+                    <label for="searchTerm" class="form-label">Kërko</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" class="form-control" id="searchTerm" name="searchTerm"
+                               value="@ViewBag.SearchTerm" placeholder="Nr. protokolli, subjekt, marrës...">
                     </div>
                 </div>
-                <div class="row mt-3">
-                    <div class="col-12">
-                        <button type="submit" class="btn btn-success">
-                            <i class="bi bi-funnel me-1"></i>
-                            Apliko Filtrat
+                <div class="col-md-4 d-flex align-items-end">
+                    <div>
+                        <button type="submit" class="btn btn-success me-2">
+                            <i class="bi bi-search me-1"></i>
+                            Kërko
                         </button>
                         <a href="@Url.Action("Index", "OutgoingDocument", new { area = "Manager" })" class="btn btn-outline-secondary">
                             <i class="bi bi-x-circle me-1"></i>
@@ -219,9 +174,9 @@
                                 <th style="width: 12%;">Nr. Protokolli</th>
                                 <th style="width: 25%;">Subjekti</th>
                                 <th style="width: 15%;">Institucioni Marrës</th>
-                                <th style="width: 10%;">Data e Dërgimit</th>
+                                <th style="width: 10%;">Data e Protokollimit</th>
                                 <th style="width: 10%;">Prioriteti</th>
-                                <th style="width: 10%;">Statusi Dërgese</th>
+                                <th style="width: 10%;">Statusi</th>
                                 <th style="width: 8%;">Shtojca</th>
                                 <th style="width: 10%;" class="text-end">Veprime</th>
                             </tr>
@@ -258,21 +213,11 @@
                                         }
                                     </td>
                                     <td>
-                                        @if (doc.SentDate.HasValue)
-                                        {
-                                            <small>
-                                                <i class="bi bi-calendar-event"></i> @doc.SentDate.Value.ToString("dd/MM/yyyy")
-                                                @if (doc.SentTime.HasValue)
-                                                {
-                                                    <br />
-                                                    <i class="bi bi-clock"></i> @doc.SentTime.Value.ToString(@"hh\:mm")
-                                                }
-                                            </small>
-                                        }
-                                        else
-                                        {
-                                            <small class="text-muted">-</small>
-                                        }
+                                        <small>
+                                            <i class="bi bi-calendar"></i> @doc.ProtocolDate.ToString("dd/MM/yyyy")
+                                            <br />
+                                            <i class="bi bi-clock"></i> @doc.ProtocolTime.ToString(@"hh\:mm")
+                                        </small>
                                     </td>
                                     <td>
                                         @switch (doc.Priority)
@@ -300,40 +245,22 @@
                                         }
                                     </td>
                                     <td>
-                                        @switch (doc.ShipmentStatus)
+                                        @switch (doc.Status)
                                         {
-                                            case ShipmentStatus.Prepared:
-                                                <span class="badge bg-secondary">
-                                                    <i class="bi bi-box"></i> Në Përgatitje
+                                            case DocumentStatus.Registered:
+                                                <span class="badge bg-info">
+                                                    <i class="bi bi-file-earmark-check"></i> I Protokolluar
                                                 </span>
                                                 break;
-                                            case ShipmentStatus.ReadyToSend:
-                                                <span class="badge bg-primary">
-                                                    <i class="bi bi-check-circle"></i> Gati
-                                                </span>
-                                                break;
-                                            case ShipmentStatus.InTransit:
+                                            case DocumentStatus.InProgress:
                                                 <span class="badge bg-warning text-dark">
-                                                    <i class="bi bi-truck"></i> Në Dërgim
+                                                    <i class="bi bi-hourglass-split"></i> Në Proces
                                                 </span>
                                                 break;
-                                            case ShipmentStatus.Delivered:
+                                            case DocumentStatus.Completed:
                                                 <span class="badge bg-success">
-                                                    <i class="bi bi-check-all"></i> Dorëzuar
+                                                    <i class="bi bi-check-all"></i> I Përfunduar
                                                 </span>
-                                                break;
-                                            case ShipmentStatus.Failed:
-                                                <span class="badge bg-danger">
-                                                    <i class="bi bi-x-circle"></i> Dështoi
-                                                </span>
-                                                break;
-                                            case ShipmentStatus.Returned:
-                                                <span class="badge bg-dark">
-                                                    <i class="bi bi-arrow-return-left"></i> Kthyer
-                                                </span>
-                                                break;
-                                            default:
-                                                <span class="badge bg-light text-dark">@doc.ShipmentStatus</span>
                                                 break;
                                         }
                                     </td>
@@ -359,14 +286,14 @@
                                                title="Modifiko">
                                                 <i class="bi bi-pencil-fill"></i>
                                             </a>
-                                            @if (doc.ShipmentStatus != ShipmentStatus.Delivered)
+                                            @if (doc.Status != DocumentStatus.Completed)
                                             {
                                                 <button type="button"
-                                                        class="btn btn-outline-success mark-as-sent"
+                                                        class="btn btn-outline-success mark-as-completed"
                                                         data-id="@doc.DocumentId"
                                                         data-protocol="@doc.ProtocolNumber"
-                                                        title="Shëno si të dërguar">
-                                                    <i class="bi bi-send-check"></i>
+                                                        title="Shëno si të përfunduar">
+                                                    <i class="bi bi-check-circle"></i>
                                                 </button>
                                             }
                                             <button type="button"
@@ -460,23 +387,23 @@
     </div>
 </div>
 
-<!-- Mark as Sent Modal -->
-<div class="modal fade" id="markAsSentModal" tabindex="-1">
+<!-- Mark as Completed Modal -->
+<div class="modal fade" id="markAsCompletedModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header bg-success text-white">
                 <h5 class="modal-title">
-                    <i class="bi bi-send-check me-2"></i>
-                    Konfirmo Dërgimin
+                    <i class="bi bi-check-circle me-2"></i>
+                    Konfirmo Përfundimin
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p>A jeni të sigurt që dëshironi të shënoni dokumentin si të dërguar:</p>
-                <p class="fw-bold text-center text-success fs-5" id="sentDocumentProtocol"></p>
+                <p>A jeni të sigurt që dëshironi të shënoni dokumentin si të përfunduar:</p>
+                <p class="fw-bold text-center text-success fs-5" id="completedDocumentProtocol"></p>
                 <div class="alert alert-info">
                     <i class="bi bi-info-circle me-2"></i>
-                    Kjo do të ndryshojë statusin e dokumentit në "Dorëzuar" dhe do të regjistrojë datën e dërgimit.
+                    Kjo do të ndryshojë statusin e dokumentit në "I Përfunduar".
                 </div>
             </div>
             <div class="modal-footer">
@@ -484,9 +411,9 @@
                     <i class="bi bi-x-circle me-1"></i>
                     Anulo
                 </button>
-                <button type="button" class="btn btn-success" id="confirmMarkAsSent">
-                    <i class="bi bi-send-check me-1"></i>
-                    Konfirmo Dërgimin
+                <button type="button" class="btn btn-success" id="confirmMarkAsCompleted">
+                    <i class="bi bi-check-circle me-1"></i>
+                    Konfirmo Përfundimin
                 </button>
             </div>
         </div>
@@ -530,59 +457,23 @@
 </div>
 
 @section Scripts {
-    <script>
-        $(document).ready(function() {
-            let documentIdToMark = null;
-
-            // Mark as sent
-            $('.mark-as-sent').on('click', function() {
-                documentIdToMark = $(this).data('id');
-                const protocol = $(this).data('protocol');
-                $('#sentDocumentProtocol').text(protocol);
-                $('#markAsSentModal').modal('show');
-            });
-
-            $('#confirmMarkAsSent').on('click', function() {
-                if (documentIdToMark) {
-                    $.ajax({
-                        url: '@Url.Action("MarkAsSent", "OutgoingDocument", new { area = "Manager" })',
-                        type: 'POST',
-                        data: { id: documentIdToMark },
-                        success: function(response) {
-                            if (response.success) {
-                                $('#markAsSentModal').modal('hide');
-                                location.reload();
-                            } else {
-                                alert('Gabim: ' + response.message);
-                            }
-                        },
-                        error: function() {
-                            alert('Ka ndodhur një gabim gjatë shënimit të dokumentit!');
-                        }
+            <script>
+                $(document).ready(function() {
+                    // Delete document
+                    $('.delete-document').on('click', function() {
+                        const id = $(this).data('id');
+                        const protocol = $(this).data('protocol');
+                        $('#deleteDocumentProtocol').text(protocol);
+                        $('#deleteDocumentId').val(id);
+                        $('#deleteModal').modal('show');
                     });
-                }
-            });
 
-            // Delete document
-            $('.delete-document').on('click', function() {
-                const id = $(this).data('id');
-                const protocol = $(this).data('protocol');
-                $('#deleteDocumentProtocol').text(protocol);
-                $('#deleteDocumentId').val(id);
-                $('#deleteModal').modal('show');
-            });
-
-            // Export to Excel (placeholder)
-            $('#exportExcelBtn').on('click', function() {
-                alert('Eksportimi në Excel do të implementohet së shpejti!');
-            });
-
-            // Export to PDF (placeholder)
-            $('#exportPdfBtn').on('click', function() {
-                alert('Eksportimi në PDF do të implementohet së shpejti!');
-            });
-        });
-    </script>
+                    // Export placeholders
+                    $('#exportExcelBtn, #exportPdfBtn').on('click', function() {
+                        alert('Eksportimi do të implementohet së shpejti!');
+                    });
+                });
+            </script>
 }
 
 @section Styles {

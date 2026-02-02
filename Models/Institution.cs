@@ -2,8 +2,9 @@
 
 namespace eProtokoll.Models
 {
+    /// <summary>
     /// Institucionet e jashtme me të cilat komunikon organizata
-
+    /// </summary>
     public class Institution
     {
         [Key]
@@ -11,19 +12,19 @@ namespace eProtokoll.Models
 
         [Required(ErrorMessage = "Emri i institucionit është i detyrueshëm")]
         [StringLength(200)]
-        [Display(Name = "Emri i institucionit")]
+        [Display(Name = "Emri i Institucionit")]
         public string Name { get; set; }
 
         [StringLength(100)]
         [Display(Name = "Emri i Shkurtuar")]
-        public string ShortName { get; set; }
+        public string? ShortName { get; set; }
 
         [Required]
-        [Display(Name ="Lloji i instutuicionit")]
+        [Display(Name = "Lloji i Institucionit")]
         public InstitutionType Type { get; set; }
 
         [StringLength(200)]
-        [Display(Name ="Adresa")]
+        [Display(Name = "Adresa")]
         public string? Adress { get; set; }
 
         [StringLength(50)]
@@ -31,7 +32,7 @@ namespace eProtokoll.Models
         public string? City { get; set; }
 
         [StringLength(20)]
-        [Display(Name ="Kodi Postar")]
+        [Display(Name = "Kodi Postar")]
         public string? PostalCode { get; set; }
 
         [StringLength(50)]
@@ -40,18 +41,17 @@ namespace eProtokoll.Models
 
         [StringLength(20)]
         [Phone(ErrorMessage = "Numri i telefonit nuk është valid")]
-        [Display(Name ="Telefoni")]
+        [Display(Name = "Telefoni")]
         public string? Phone { get; set; }
 
         [StringLength(20)]
-        [Display(Name ="Faksi")]
+        [Display(Name = "Faksi")]
         public string? Fax { get; set; }
 
         [StringLength(100)]
-        [EmailAddress(ErrorMessage = "Email-i nuk eshte valid")]
-        [Display(Name ="Email")]
+        [EmailAddress(ErrorMessage = "Email-i nuk është valid")]
+        [Display(Name = "Email")]
         public string? Email { get; set; }
-
 
         [StringLength(200)]
         [Url(ErrorMessage = "URL-ja nuk është valide")]
@@ -62,7 +62,6 @@ namespace eProtokoll.Models
         [Display(Name = "Personi i Kontaktit")]
         public string? ContactPerson { get; set; }
 
-
         [StringLength(100)]
         [Display(Name = "Pozicioni i Kontaktit")]
         public string? ContactPosition { get; set; }
@@ -70,7 +69,6 @@ namespace eProtokoll.Models
         [StringLength(20)]
         [Display(Name = "Telefoni i Kontaktit")]
         public string? ContactPhone { get; set; }
-
 
         [StringLength(100)]
         [EmailAddress]
@@ -86,6 +84,7 @@ namespace eProtokoll.Models
 
         [StringLength(500)]
         [Display(Name = "Shënime")]
+        [DataType(DataType.MultilineText)]
         public string? Notes { get; set; }
 
         [Display(Name = "Data e Krijimit")]
@@ -94,62 +93,55 @@ namespace eProtokoll.Models
         [Display(Name = "Data e Modifikimit")]
         public DateTime? ModifiedDate { get; set; }
 
-        [StringLength(36)]
+        [StringLength(450)]  // ✅ KORRIGJUAR
         [Display(Name = "Krijuar nga")]
         public string? CreatedBy { get; set; }
 
-        [StringLength(36)]
+        [StringLength(450)]  // ✅ KORRIGJUAR
         [Display(Name = "Modifikuar nga")]
         public string? ModifiedBy { get; set; }
 
-
-        ///Navigation Properties
-        [Display(Name = "Dokumentet Hyrese")]
+        // Navigation Properties
+        [Display(Name = "Dokumentet Hyrëse")]
         public virtual ICollection<IncomingDocument>? IncomingDocuments { get; set; }
 
-        [Display(Name ="Dokumentet Dalese")]
+        [Display(Name = "Dokumentet Dalëse")]
         public virtual ICollection<OutgoingDocument>? OutgoingDocuments { get; set; }
+    }
 
+    /// <summary>
+    /// Llojet e institucioneve
+    /// </summary>
+    public enum InstitutionType
+    {
+        [Display(Name = "Institucion Shtetëror")]
+        Government = 1,
 
-        ///Llojet e institucioneve
-        ///
-        public enum InstitutionType
-        {
-            [Display(Name="Institucion Shteteror")]
-            Government = 1,
+        [Display(Name = "Bashki/Komunë")]
+        Municipality = 2,
 
-            [Display(Name ="Bashki/Komune")]
-            Municipality = 2,
+        [Display(Name = "Ministri")]
+        Ministry = 3,
 
-            [Display(Name ="Ministri")]
-            Ministry = 3,
+        [Display(Name = "Kompani Private")]
+        Private = 4,
 
-            [Display (Name ="Kompani private")]
-            Private = 4,
+        [Display(Name = "OJF/OJQ")]
+        NGO = 5,
 
-            [Display(Name ="OJF/OJQ")]
-            NGO = 5,
+        [Display(Name = "Organizatë Ndërkombëtare")]
+        International = 6,
 
-            [Display(Name ="Organizate Nderkombetare")]
-            International = 6,
+        [Display(Name = "Institucion Arsimor")]
+        Educational = 7,
 
-            [Display(Name= "Instuticion Arsimor" )]
-            Educational = 7,
+        [Display(Name = "Institucion Shëndetësor")]
+        Healthcare = 8,
 
-            [Display(Name ="Instuticion Shendetesor")]
-            Healthcare = 8,
+        [Display(Name = "Media")]
+        Media = 9,
 
-            [Display(Name = "Media")]
-            Media = 9,
-
-            [Display(Name = "Tjeter")]
-            Other = 10
-        }
-            
-        
-
-
-
-
+        [Display(Name = "Tjetër")]
+        Other = 10
     }
 }

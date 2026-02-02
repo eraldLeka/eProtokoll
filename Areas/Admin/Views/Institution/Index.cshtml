@@ -84,7 +84,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="text-muted mb-1">Shtetërore</h6>
-                            <h3 class="mb-0 text-info">@Model.Count(i => i.Type == eProtokoll.Models.Institution.InstitutionType.Government)</h3>
+                            <h3 class="mb-0 text-info">@Model.Count(i => i.Type == eProtokoll.Models.InstitutionType.Government)</h3>
                         </div>
                         <div class="text-info">
                             <i class="bi bi-bank" style="font-size: 2rem;"></i>
@@ -114,16 +114,16 @@
                         <label for="filterType" class="form-label">Lloji</label>
                         <select class="form-select" id="filterType" name="type">
                             <option value="">Të gjitha</option>
-                            <option value="1">Institucion Shteteror</option>
-                            <option value="2">Bashki/Komune</option>
-                            <option value="3">Ministri</option>
-                            <option value="4">Kompani Private</option>
-                            <option value="5">OJF/OJQ</option>
-                            <option value="6">Organizatë Ndërkombëtare</option>
-                            <option value="7">Institucion Arsimor</option>
-                            <option value="8">Institucion Shëndetësor</option>
-                            <option value="9">Media</option>
-                            <option value="10">Tjetër</option>
+                            <option value="0">Institucion Shteteror</option>
+                            <option value="1">Bashki/Komune</option>
+                            <option value="2">Ministri</option>
+                            <option value="3">Kompani Private</option>
+                            <option value="4">OJF/OJQ</option>
+                            <option value="5">Organizatë Ndërkombëtare</option>
+                            <option value="6">Institucion Arsimor</option>
+                            <option value="7">Institucion Shëndetësor</option>
+                            <option value="8">Media</option>
+                            <option value="9">Tjetër</option>
                         </select>
                     </div>
                     <div class="col-md-2">
@@ -200,61 +200,61 @@
                                     <td>
                                         @switch (institution.Type)
                                         {
-                                            case eProtokoll.Models.Institution.InstitutionType.Government:
+                                            case eProtokoll.Models.InstitutionType.Government:
                                                 <span class="badge bg-primary">
                                                     <i class="bi bi-bank me-1"></i>
                                                     Shteteror
                                                 </span>
                                                 break;
-                                            case eProtokoll.Models.Institution.InstitutionType.Municipality:
+                                            case eProtokoll.Models.InstitutionType.Municipality:
                                                 <span class="badge bg-info">
                                                     <i class="bi bi-building me-1"></i>
                                                     Bashki/Komune
                                                 </span>
                                                 break;
-                                            case eProtokoll.Models.Institution.InstitutionType.Ministry:
+                                            case eProtokoll.Models.InstitutionType.Ministry:
                                                 <span class="badge bg-success">
                                                     <i class="bi bi-bank2 me-1"></i>
                                                     Ministri
                                                 </span>
                                                 break;
-                                            case eProtokoll.Models.Institution.InstitutionType.Private:
+                                            case eProtokoll.Models.InstitutionType.Private:
                                                 <span class="badge bg-warning text-dark">
                                                     <i class="bi bi-briefcase me-1"></i>
                                                     Private
                                                 </span>
                                                 break;
-                                            case eProtokoll.Models.Institution.InstitutionType.NGO:
+                                            case eProtokoll.Models.InstitutionType.NGO:
                                                 <span class="badge bg-secondary">
                                                     <i class="bi bi-people me-1"></i>
                                                     OJF/OJQ
                                                 </span>
                                                 break;
-                                            case eProtokoll.Models.Institution.InstitutionType.International:
+                                            case eProtokoll.Models.InstitutionType.International:
                                                 <span class="badge bg-danger">
                                                     <i class="bi bi-globe me-1"></i>
                                                     Ndërkombëtare
                                                 </span>
                                                 break;
-                                            case eProtokoll.Models.Institution.InstitutionType.Educational:
+                                            case eProtokoll.Models.InstitutionType.Educational:
                                                 <span class="badge bg-primary">
                                                     <i class="bi bi-book me-1"></i>
                                                     Arsimor
                                                 </span>
                                                 break;
-                                            case eProtokoll.Models.Institution.InstitutionType.Healthcare:
+                                            case eProtokoll.Models.InstitutionType.Healthcare:
                                                 <span class="badge bg-danger">
                                                     <i class="bi bi-hospital me-1"></i>
                                                     Shëndetësor
                                                 </span>
                                                 break;
-                                            case eProtokoll.Models.Institution.InstitutionType.Media:
+                                            case eProtokoll.Models.InstitutionType.Media:
                                                 <span class="badge bg-dark">
                                                     <i class="bi bi-broadcast me-1"></i>
                                                     Media
                                                 </span>
                                                 break;
-                                            case eProtokoll.Models.Institution.InstitutionType.Other:
+                                            case eProtokoll.Models.InstitutionType.Other:
                                                 <span class="badge bg-secondary">
                                                     <i class="bi bi-three-dots me-1"></i>
                                                     Tjetër
@@ -332,6 +332,12 @@
                                     </td>
                                     <td class="text-end">
                                         <div class="btn-group btn-group-sm" role="group">
+                                            <a asp-area="Admin" asp-controller="Institution" asp-action="Details"
+                                               asp-route-id="@institution.InstitutionId"
+                                               class="btn btn-outline-info"
+                                               title="Detajet">
+                                                <i class="bi bi-eye-fill"></i>
+                                            </a>
                                             <a asp-area="Admin" asp-controller="Institution" asp-action="Edit"
                                                asp-route-id="@institution.InstitutionId"
                                                class="btn btn-outline-primary"

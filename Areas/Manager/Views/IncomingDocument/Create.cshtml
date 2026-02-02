@@ -22,7 +22,7 @@
     <div class="row mb-4">
         <div class="col-12">
             <h2 class="mb-0">
-                <i class="bi bi-file-earmark-plus me-2 text-primary"></i>
+                <i class="bi bi-file-earmark-plus me-2 text-info"></i>
                 Regjistro Dokument Hyrës të Ri
             </h2>
             <p class="text-muted mt-2">Plotëso të dhënat e dokumentit që vjen nga institucioni i jashtëm</p>
@@ -33,11 +33,19 @@
         <div class="col-lg-9">
             <form asp-area="Manager" asp-controller="IncomingDocument" asp-action="Create" method="post" enctype="multipart/form-data" id="createForm">
                 @Html.AntiForgeryToken()
-                <div asp-validation-summary="All" class="alert alert-danger"></div>
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div asp-validation-summary="All" class="alert alert-danger"></div>
+                }
+
+                <div class="mb-3">
+                    <label class="form-label">Numri i Protokollit (parashikuar)</label>
+                    <input type="text" id="predictedProtocolNumber" class="form-control" readonly />
+                </div>
 
                 <!-- Protocol Information -->
                 <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-primary text-white">
+                    <div class="card-header bg-info text-white">
                         <h5 class="mb-0">
                             <i class="bi bi-hash me-2"></i>
                             Informacioni i Protokollimit
@@ -48,20 +56,16 @@
                             <div class="col-md-4">
                                 <div class="mb-3">
                                     <label asp-for="ProtocolNumber" class="form-label">
-                                        <i class="bi bi-file-text text-primary"></i>
+                                        <i class="bi bi-file-text text-info"></i>
                                         Numri i Protokollit <span class="text-danger">*</span>
                                     </label>
-
                                     <input asp-for="ProtocolNumber"
-                                           class="form-control form-control-lg fw-bold text-primary"
+                                           class="form-control form-control-lg fw-bold text-info"
                                            readonly />
-
                                     <input type="hidden" asp-for="ProtocolNumber" />
-
                                     <span asp-validation-for="ProtocolNumber" class="text-danger"></span>
                                     <small class="text-muted">Gjenerohet automatikisht</small>
                                 </div>
-
                             </div>
                             <div class="col-md-4">
                                 <div class="mb-3">
@@ -87,7 +91,7 @@
 
                 <!-- Sender Information -->
                 <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-info text-white">
+                    <div class="card-header bg-primary text-white">
                         <h5 class="mb-0">
                             <i class="bi bi-building me-2"></i>
                             Informacioni i Dërguesit
@@ -98,7 +102,7 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label asp-for="InstitutionId" class="form-label">
-                                        <i class="bi bi-bank text-info"></i>
+                                        <i class="bi bi-bank text-primary"></i>
                                         Institucioni Dërgues <span class="text-danger">*</span>
                                     </label>
                                     <select asp-for="InstitutionId" class="form-select" asp-items="ViewBag.Institutions">
@@ -110,7 +114,7 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label asp-for="SenderName" class="form-label">
-                                        <i class="bi bi-person text-info"></i>
+                                        <i class="bi bi-person text-primary"></i>
                                         Emri i Dërguesit <span class="text-danger">*</span>
                                     </label>
                                     <input asp-for="SenderName" class="form-control" placeholder="Emri i plotë i dërguesit" />
@@ -121,34 +125,12 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label asp-for="SenderPosition" class="form-label">
-                                        <i class="bi bi-briefcase text-info"></i>
-                                        Pozicioni
-                                    </label>
-                                    <input asp-for="SenderPosition" class="form-control" placeholder="p.sh. Drejtor, Sekretar..." />
-                                    <span asp-validation-for="SenderPosition" class="text-danger"></span>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
                                     <label asp-for="SenderEmail" class="form-label">
-                                        <i class="bi bi-envelope text-info"></i>
+                                        <i class="bi bi-envelope text-primary"></i>
                                         Email
                                     </label>
                                     <input asp-for="SenderEmail" class="form-control" type="email" placeholder="email@example.com" />
                                     <span asp-validation-for="SenderEmail" class="text-danger"></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label asp-for="SenderPhone" class="form-label">
-                                        <i class="bi bi-telephone text-info"></i>
-                                        Telefoni
-                                    </label>
-                                    <input asp-for="SenderPhone" class="form-control" type="tel" placeholder="+355 69 123 4567" />
-                                    <span asp-validation-for="SenderPhone" class="text-danger"></span>
                                 </div>
                             </div>
                         </div>
@@ -318,61 +300,28 @@
                 </div>
 
                 <!-- File Upload -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-dark text-white">
-                        <h5 class="mb-0">
-                            <i class="bi bi-paperclip me-2"></i>
-                            Bashkëngjitja e Dokumentit
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label for="attachmentFile" class="form-label">
-                                <i class="bi bi-file-earmark-arrow-up text-dark"></i>
-                                Ngarko Skedarin
-                            </label>
-                            <input type="file" class="form-control" id="attachmentFile" name="attachmentFile" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" />
-                            <small class="text-muted">Formatet e lejuara: PDF, Word, Imazhe (max 10MB)</small>
-                        </div>
-                        <div class="alert alert-info mb-0">
-                            <i class="bi bi-info-circle me-2"></i>
-                            <strong>Këshillë:</strong> Rekomandohet që të ngarkoni versionin e skanuar të dokumentit origjinal.
-                        </div>
-                    </div>
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-paperclip me-2"></i>
+                    Bashkëngjitja e Dokumentit
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="attachmentFile" class="form-label">
+                        <i class="bi bi-file-earmark-arrow-up text-dark"></i>
+                        Ngarko Skedarin
+                    </label>
+                    <input type="file" class="form-control" id="attachmentFile" name="attachmentFile" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" />
+                    <small class="text-muted">Formatet e lejuara: PDF, Word, Imazhe (max 10MB)</small>
                 </div>
-
-                <!-- Physical Copy -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-light">
-                        <h5 class="mb-0">
-                            <i class="bi bi-box-seam me-2 text-muted"></i>
-                            Kopja Fizike
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-check form-switch mb-3">
-                                    <input asp-for="HasPhysicalCopy" class="form-check-input" type="checkbox" checked />
-                                    <label asp-for="HasPhysicalCopy" class="form-check-label">
-                                        <i class="bi bi-archive text-muted"></i>
-                                        Ka Kopje Fizike (në arkiv)
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label asp-for="PhysicalLocation" class="form-label">
-                                        <i class="bi bi-geo-alt text-muted"></i>
-                                        Vendndodhja Fizike
-                                    </label>
-                                    <input asp-for="PhysicalLocation" class="form-control" placeholder="p.sh. Arkivi A, Rafte 5, Kutia 12" />
-                                    <span asp-validation-for="PhysicalLocation" class="text-danger"></span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <div class="alert alert-info mb-0 d-none" id="attachmentInfoAlert">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>Këshillë:</strong> Rekomandohet që të ngarkoni versionin e skanuar të dokumentit origjinal.
                 </div>
+            </div>
+        </div>
 
                 <!-- Notes -->
                 <div class="card shadow-sm mb-4">
@@ -402,7 +351,7 @@
                                 <i class="bi bi-arrow-left me-1"></i>
                                 Kthehu
                             </a>
-                            <button type="submit" class="btn btn-primary btn-lg px-5" id="submitBtn">
+                            <button type="submit" class="btn btn-info btn-lg px-5" id="submitBtn">
                                 <i class="bi bi-save me-1"></i>
                                 Ruaj Dokumentin
                             </button>
@@ -414,15 +363,15 @@
 
         <!-- Sidebar Help -->
         <div class="col-lg-3">
-            <div class="card shadow-sm border-primary sticky-top" style="top: 20px;">
-                <div class="card-header bg-primary text-white">
+            <div class="card shadow-sm border-info sticky-top" style="top: 20px;">
+                <div class="card-header bg-info text-white">
                     <h5 class="mb-0">
                         <i class="bi bi-info-circle me-2"></i>
                         Udhëzime
                     </h5>
                 </div>
                 <div class="card-body small">
-                    <h6 class="text-primary">
+                    <h6 class="text-info">
                         <i class="bi bi-lightbulb-fill"></i> Hapat për Regjistrim
                     </h6>
                     <ol class="ps-3">
@@ -431,11 +380,12 @@
                         <li class="mb-2">Plotëso të dhënat e dërguesit</li>
                         <li class="mb-2">Shkruaj subjektin dhe përmbajtjen</li>
                         <li class="mb-2">Vendos klasifikimin e duhur</li>
+                        <li class="mb-2">Shëno datën dhe orën e marrjes</li>
                         <li class="mb-2">Ngarko skedarin (opsionale)</li>
                         <li class="mb-2">Ruaj dokumentin</li>
                     </ol>
                     <hr />
-                    <h6 class="text-primary">
+                    <h6 class="text-info">
                         <i class="bi bi-exclamation-triangle-fill"></i> Fusha të Detyrueshme
                     </h6>
                     <ul class="ps-3">
@@ -445,14 +395,20 @@
                         <li>Subjekti</li>
                         <li>Klasifikimi</li>
                         <li>Data e Marrjes</li>
+                        <li>Mënyra e Dërgesës</li>
                     </ul>
                     <hr />
-                    <h6 class="text-primary">
+                    <h6 class="text-info">
                         <i class="bi bi-shield-check"></i> Klasifikimet
                     </h6>
                     <p class="mb-0 text-muted small">
                         Zgjidhni klasifikimin e duhur sipas rëndësisë dhe konfidencialitetit të dokumentit.
                     </p>
+                    <hr />
+                    <div class="alert alert-info mb-0 small">
+                        <i class="bi bi-person-check me-1"></i>
+                        <strong>Krijuar nga:</strong> @User.Identity?.Name
+                    </div>
                 </div>
             </div>
         </div>
@@ -466,28 +422,26 @@
 
     <script>
         $(document).ready(function() {
-            console.log("✅ Page loaded - form ready");
-
             // Show/hide response deadline field
-            $('#requiresResponseSwitch').on('change', function() {
-                if ($(this).is(':checked')) {
+            function toggleResponseDeadline() {
+                if ($('#requiresResponseSwitch').is(':checked')) {
                     $('#responseDeadlineField').slideDown();
                 } else {
                     $('#responseDeadlineField').slideUp();
                     $('#ResponseDeadline').val('');
                 }
-            });
-
-            // Trigger on load if already checked
-            if ($('#requiresResponseSwitch').is(':checked')) {
-                $('#responseDeadlineField').show();
             }
 
+            $('#requiresResponseSwitch').on('change', toggleResponseDeadline);
+            toggleResponseDeadline();
+
             // File upload validation
-            $('#attachmentFile').on('change', function() {
+            	$('#attachmentFile').on('change', function() {
                 const file = this.files[0];
+                const $alert = $('#attachmentInfoAlert');
+                $alert.addClass('d-none');
                 if (file) {
-                    const fileSize = file.size / 1024 / 1024; // in MB
+                    const fileSize = file.size / 1024 / 1024;
                     const allowedTypes = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png'];
                     const fileExt = '.' + file.name.split('.').pop().toLowerCase();
 
@@ -502,22 +456,25 @@
                         $(this).val('');
                         return false;
                     }
+
+                    // show informational alert briefly instead of permanent red box
+                    $alert.removeClass('d-none');
+                    setTimeout(() => $alert.addClass('d-none'), 4000);
                 }
             });
 
-            // Form submit handler - CLIENT SIDE VALIDATION REMOVED
-            $('#submitBtn').on('click', function(e) {
-                console.log("🚀 Submit button clicked!");
-                console.log("Institution:", $('#InstitutionId').val());
-                console.log("SenderName:", $('#SenderName').val());
-                console.log("Subject:", $('#Subject').val());
-                console.log("Classification:", $('#ClassificationId').val());
-            });
-
-            $('#createForm').on('submit', function(e) {
-                console.log("📤 Form submitting...");
-            });
-                 
+            // Fetch predicted protocol number via AJAX and display
+            (function(){
+                var url = '@Url.Action("PeekNextIncomingProtocolNumberAsync", "IncomingDocument", new { area = "Manager" })';
+                // Try fetch
+                fetch(url).then(function(resp){
+                    if (!resp.ok) return null; return resp.text();
+                }).then(function(text){
+                    if (text) {
+                        $('#predictedProtocolNumber').val(text);
+                    }
+                }).catch(function(){ /* ignore */ });
+            })();
         });
     </script>
 }
@@ -526,8 +483,8 @@
     <style>
         .form-control:focus,
         .form-select:focus {
-            border-color: #0d6efd;
-            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+            border-color: #0dcaf0;
+            box-shadow: 0 0 0 0.25rem rgba(13, 202, 240, 0.15);
         }
 
         .card {

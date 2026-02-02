@@ -115,67 +115,22 @@
             </h5>
         </div>
         <div class="card-body">
-            <form method="get" id="filterForm">
-                <div class="row g-3">
-                    <div class="col-md-3">
-                        <label for="searchTerm" class="form-label">Kërko</label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-white">
-                                <i class="bi bi-search"></i>
-                            </span>
-                            <input type="text" class="form-control" id="searchTerm" name="searchTerm"
-                                   value="@ViewBag.SearchTerm" placeholder="Nr. protokolli, subjekt, dërgues...">
-                        </div>
-                    </div>
-                    <div class="col-md-2">
-                        <label for="status" class="form-label">Statusi</label>
-                        <select class="form-select" id="status" name="status">
-                            <option value="">Të gjithë</option>
-                            <option value="Draft" selected="@(ViewBag.SelectedStatus == "Draft")">Draft</option>
-                            <option value="Registered" selected="@(ViewBag.SelectedStatus == "Registered")">Protokolluar</option>
-                            <option value="InProgress" selected="@(ViewBag.SelectedStatus == "InProgress")">Në Proces</option>
-                            <option value="Pending" selected="@(ViewBag.SelectedStatus == "Pending")">Në Pritje</option>
-                            <option value="Completed" selected="@(ViewBag.SelectedStatus == "Completed")">Përfunduar</option>
-                            <option value="Cancelled" selected="@(ViewBag.SelectedStatus == "Cancelled")">Anulluar</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label for="priority" class="form-label">Prioriteti</label>
-                        <select class="form-select" id="priority" name="priority">
-                            <option value="">Të gjithë</option>
-                            <option value="Low" selected="@(ViewBag.SelectedPriority == "Low")">I Ulët</option>
-                            <option value="Normal" selected="@(ViewBag.SelectedPriority == "Normal")">Normal</option>
-                            <option value="High" selected="@(ViewBag.SelectedPriority == "High")">I Lartë</option>
-                            <option value="Urgent" selected="@(ViewBag.SelectedPriority == "Urgent")">Urgjent</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label for="institution" class="form-label">Institucioni</label>
-                        <select class="form-select" id="institution" name="institution">
-                            <option value="">Të gjithë</option>
-                            @if (ViewBag.Institutions != null)
-                            {
-                                @foreach (var inst in (IEnumerable<SelectListItem>)ViewBag.Institutions)
-                                {
-                                    <option value="@inst.Value" selected="@(ViewBag.SelectedInstitution == inst.Value)">@inst.Text</option>
-                                }
-                            }
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Periudha</label>
-                        <div class="input-group">
-                            <input type="date" class="form-control" id="dateFrom" name="dateFrom" value="@ViewBag.DateFrom">
-                            <span class="input-group-text">deri</span>
-                            <input type="date" class="form-control" id="dateTo" name="dateTo" value="@ViewBag.DateTo">
-                        </div>
+            <form method="get" id="filterForm" class="row g-3">
+                <div class="col-md-6">
+                    <label for="searchTerm" class="form-label">Kërko</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" class="form-control" id="searchTerm" name="searchTerm"
+                               value="@ViewBag.SearchTerm" placeholder="Nr. protokolli, subjekt, dërgues...">
                     </div>
                 </div>
-                <div class="row mt-3">
-                    <div class="col-12">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-funnel me-1"></i>
-                            Apliko Filtrat
+                <div class="col-md-6 d-flex align-items-end">
+                    <div>
+                        <button type="submit" class="btn btn-primary me-2">
+                            <i class="bi bi-search me-1"></i>
+                            Kërko
                         </button>
                         <a href="@Url.Action("Index", "IncomingDocument", new { area = "Manager" })" class="btn btn-outline-secondary">
                             <i class="bi bi-x-circle me-1"></i>
@@ -289,32 +244,23 @@
                                                 break;
                                         }
                                     </td>
-                                    <td>
-                                        @switch (doc.Status)
-                                        {
-                                            case DocumentStatus.Draft:
-                                                <span class="badge bg-secondary">Draft</span>
-                                                break;
-                                            case DocumentStatus.Registered:
-                                                <span class="badge bg-primary">Protokolluar</span>
-                                                break;
-                                            case DocumentStatus.InProgress:
-                                                <span class="badge bg-info">Në Proces</span>
-                                                break;
-                                            case DocumentStatus.Pending:
-                                                <span class="badge bg-warning text-dark">Në Pritje</span>
-                                                break;
-                                            case DocumentStatus.Completed:
-                                                <span class="badge bg-success">Përfunduar</span>
-                                                break;
-                                            case DocumentStatus.Cancelled:
-                                                <span class="badge bg-danger">Anulluar</span>
-                                                break;
-                                            default:
-                                                <span class="badge bg-light text-dark">@doc.Status</span>
-                                                break;
-                                        }
-                                    </td>
+                                 <td>
+                                     @switch (doc.Status)
+                                     {
+                                       case DocumentStatus.Registered:
+                                         <span class="badge bg-primary">Protokolluar</span>
+                                          break;
+                                        case DocumentStatus.InProgress:
+                                         <span class="badge bg-warning text-dark">Në Proces</span>
+                                          break;
+                                        case DocumentStatus.Completed:
+                                        <span class="badge bg-success">Përfunduar</span>
+                                        break;
+                                        default:
+                                          <span class="badge bg-secondary">@doc.Status</span>
+                                          break;
+                                            }
+                                  </td>
                                     <td class="text-center">
                                         @if (doc.HasAttachments)
                                         {

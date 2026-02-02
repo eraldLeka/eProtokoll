@@ -74,7 +74,7 @@
                                         <i class="bi bi-diagram-3 text-primary"></i>
                                         Lloji i Institucionit <span class="text-danger">*</span>
                                     </label>
-                                    <select asp-for="Type" class="form-select" asp-items="Html.GetEnumSelectList<eProtokoll.Models.Institution.InstitutionType>()">
+                                    <select asp-for="Type" class="form-select" asp-items="Html.GetEnumSelectList<eProtokoll.Models.InstitutionType>()">
                                         <option value="">-- Zgjidh Llojin --</option>
                                     </select>
                                     <span asp-validation-for="Type" class="text-danger"></span>
@@ -389,18 +389,18 @@
                 var type = $(this).val();
                 var description = '';
 
-                switch(type) {
-                    case '1': description = 'Institucione të administratës shtetërore'; break;
-                    case '2': description = 'Bashki dhe komuna të vendit'; break;
-                    case '3': description = 'Ministritë qendrore'; break;
-                    case '4': description = 'Kompani dhe shoqëri private'; break;
-                    case '5': description = 'Organizata joqeveritare dhe jofitimprurëse'; break;
-                    case '6': description = 'Organizata dhe institucione ndërkombëtare'; break;
-                    case '7': description = 'Shkolla, universitete dhe institucione arsimore'; break;
-                    case '8': description = 'Spitale, klinika dhe institucione shëndetësore'; break;
-                    case '9': description = 'Gazeta, televizione, radio dhe media të tjera'; break;
-                    case '10': description = 'Institucione që nuk përfshihen në kategoritë e tjera'; break;
-                }
+                        switch(type) {
+            case '0': description = 'Institucione të administratës shtetërore'; break;
+            case '1': description = 'Bashki dhe komuna të vendit'; break;
+            case '2': description = 'Ministritë qendrore'; break;
+            case '3': description = 'Kompani dhe shoqëri private'; break;
+            case '4': description = 'Organizata joqeveritare dhe jofitimprurëse'; break;
+            case '5': description = 'Organizata dhe institucione ndërkombëtare'; break;
+            case '6': description = 'Shkolla, universitete dhe institucione arsimore'; break;
+            case '7': description = 'Spitale, klinika dhe institucione shëndetësore'; break;
+            case '8': description = 'Gazeta, televizione, radio dhe media të tjera'; break;
+            case '9': description = 'Institucione që nuk përfshihen në kategoritë e tjera'; break;
+        }
 
                 if (description) {
                     $('.text-info').remove();

@@ -1,12 +1,14 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using eProtokoll.Models;
+﻿using eProtokoll.Models;
+using eProtokoll.Services.Mappers;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using System.Data;
-using eProtokoll.Services.Mappers;
 
 namespace eProtokoll.Areas.Admin.Controllers
 {
     [Area("Admin")]
+    [Authorize(Roles = "Administrator")]
     public class InstitutionController : Controller
     {
         private readonly string _connectionString;

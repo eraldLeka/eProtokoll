@@ -1,0 +1,212 @@
+﻿@{
+    ViewData["Title"] = "Login";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - eProtokoll</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="~/lib/bootstrap-icons/font/bootstrap-icons.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .login-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+            padding: 3rem;
+            width: 100%;
+            max-width: 420px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+            .login-header i {
+                font-size: 3.5rem;
+                color: #4a5568;
+                margin-bottom: 1rem;
+            }
+
+            .login-header h2 {
+                font-size: 1.75rem;
+                font-weight: 600;
+                color: #2d3748;
+                margin-bottom: 0.5rem;
+            }
+
+            .login-header p {
+                color: #718096;
+                font-size: 0.95rem;
+                margin-bottom: 0;
+            }
+
+        .form-label {
+            font-weight: 500;
+            color: #4a5568;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+            .form-label i {
+                margin-right: 0.4rem;
+                color: #718096;
+            }
+
+        .form-control {
+            border: 1.5px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+
+            .form-control:focus {
+                border-color: #4299e1;
+                box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+                outline: none;
+            }
+
+            .form-control::placeholder {
+                color: #a0aec0;
+            }
+
+        .form-check-input:checked {
+            background-color: #4299e1;
+            border-color: #4299e1;
+        }
+
+        .form-check-input:focus {
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+            border-color: #4299e1;
+        }
+
+        .form-check-label {
+            color: #4a5568;
+            font-size: 0.9rem;
+        }
+
+        .btn-login {
+            background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+            border: none;
+            padding: 0.875rem;
+            font-size: 1rem;
+            font-weight: 500;
+            border-radius: 8px;
+            transition: all 0.3s;
+            color: white;
+        }
+
+            .btn-login:hover {
+                background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%);
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(66, 153, 225, 0.3);
+            }
+
+            .btn-login:active {
+                transform: translateY(0);
+            }
+
+        .alert {
+            border-radius: 8px;
+            border: none;
+            font-size: 0.9rem;
+        }
+
+        .alert-danger {
+            background-color: #fff5f5;
+            color: #c53030;
+            border-left: 3px solid #fc8181;
+        }
+
+        .footer-text {
+            margin-top: 2rem;
+            text-align: center;
+        }
+
+            .footer-text small {
+                color: #718096;
+                font-size: 0.85rem;
+            }
+
+            .footer-text i {
+                color: #4299e1;
+                margin-right: 0.3rem;
+            }
+
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="login-header">
+            <i class="bi bi-shield-lock"></i>
+            <h2>eProtokoll</h2>
+            <p>Sistemi Elektronik i Protokollit</p>
+        </div>
+
+        @if (!string.IsNullOrEmpty(ViewBag.ErrorMessage))
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-circle"></i> @ViewBag.ErrorMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        <form method="post" asp-action="Login" asp-controller="Account">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+
+            <div class="mb-3">
+                <label for="username" class="form-label">
+                    <i class="bi bi-person-circle"></i> Përdoruesi
+                </label>
+                <input type="text" name="username" id="username" class="form-control"
+                       placeholder="Shkruaj username-in" required autofocus />
+            </div>
+
+            <div class="mb-3">
+                <label for="password" class="form-label">
+                    <i class="bi bi-key"></i> Fjalëkalimi
+                </label>
+                <input type="password" name="password" id="password" class="form-control"
+                       placeholder="Shkruaj fjalëkalimin" required />
+            </div>
+
+            <div class="mb-4 form-check">
+                <input type="checkbox" name="rememberMe" id="rememberMe" class="form-check-input" />
+                <label class="form-check-label" for="rememberMe">
+                    Më mbaj të identifikuar
+                </label>
+            </div>
+
+            <div class="d-grid">
+                <button type="submit" class="btn btn-primary btn-login">
+                    <i class="bi bi-box-arrow-in-right"></i> Identifikohu
+                </button>
+            </div>
+        </form>
+
+        <div class="footer-text">
+            <small>
+                <i class="bi bi-shield-check"></i>
+                Lidhje e sigurt dhe e enkriptuar
+            </small>
+        </div>
+    </div>
+
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

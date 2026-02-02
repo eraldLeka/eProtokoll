@@ -1,14 +1,17 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using eProtokoll.Models;
+using eProtokoll.Services.Mappers;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using eProtokoll.Models;
 using Microsoft.Data.SqlClient;
 using System.Data;
 using System.Text;
-using eProtokoll.Services.Mappers;
+using System.Security.Claims;
 
 namespace eProtokoll.Areas.Manager.Controllers
 {
     [Area("Manager")]
+    [Authorize(Roles = "Manager")]
     public class InternalDocumentController : Controller
     {
         private readonly string _connectionString;
@@ -179,6 +182,7 @@ namespace eProtokoll.Areas.Manager.Controllers
                             {
                                 document.Creator = new ApplicationUser
                                 {
+                                    Id = document.CreatedBy,
                                     UserName = reader.GetString(reader.GetOrdinal("CreatorUserName")),
                                     FirstName = reader.GetString(reader.GetOrdinal("CreatorFirstName")),
                                     LastName = reader.GetString(reader.GetOrdinal("CreatorLastName"))
@@ -190,6 +194,7 @@ namespace eProtokoll.Areas.Manager.Controllers
                             {
                                 document.FromUser = new ApplicationUser
                                 {
+                                    Id = document.FromUserId,
                                     UserName = reader.GetString(reader.GetOrdinal("FromUserUserName")),
                                     FirstName = reader.GetString(reader.GetOrdinal("FromUserFirstName")),
                                     LastName = reader.GetString(reader.GetOrdinal("FromUserLastName"))
@@ -201,6 +206,7 @@ namespace eProtokoll.Areas.Manager.Controllers
                             {
                                 document.ToUser = new ApplicationUser
                                 {
+                                    Id = document.ToUserId,
                                     UserName = reader.GetString(reader.GetOrdinal("ToUserUserName")),
                                     FirstName = reader.GetString(reader.GetOrdinal("ToUserFirstName")),
                                     LastName = reader.GetString(reader.GetOrdinal("ToUserLastName"))
@@ -233,13 +239,6 @@ namespace eProtokoll.Areas.Manager.Controllers
                     ViewBag.TodayInternal = (int)await command.ExecuteScalarAsync();
                 }
 
-                var queryNeedsApproval = @"SELECT COUNT(*) FROM Documents 
-                    WHERE DocumentType = 3 AND RequiresApproval = 1 AND IsApproved = 0";
-                ViewBag.NeedsApproval = await ExecuteCountQuery(connection, queryNeedsApproval);
-
-                var queryApproved = @"SELECT COUNT(*) FROM Documents 
-                    WHERE DocumentType = 3 AND IsApproved = 1";
-                ViewBag.Approved = await ExecuteCountQuery(connection, queryApproved);
             }
 
             return View(documents);
@@ -257,10 +256,8 @@ namespace eProtokoll.Areas.Manager.Controllers
                 ProtocolNumber = protocolNumber,
                 ProtocolDate = DateTime.Now.Date,
                 ProtocolTime = currentTime,
-                Status = DocumentStatus.Draft,
+                Status = DocumentStatus.Registered,
                 Priority = Priority.Normal,
-                Language = "Shqip",
-                InternalType = InternalDocumentType.Memo
             };
 
             await LoadDropdowns();
@@ -283,24 +280,23 @@ namespace eProtokoll.Areas.Manager.Controllers
                         {
                             // Set metadata
                             model.CreatedDate = DateTime.Now;
-                            model.CreatedBy = User.Identity.Name;
+                            model.CreatedBy = User.FindFirstValue(ClaimTypes.NameIdentifier);
                             model.DocumentType = DocumentType.Internal;
+                            model.RequiresResponse = model.ResponseDeadline.HasValue;
 
                             // Insert InternalDocument
                             var query = @"INSERT INTO Documents (
                                 ProtocolNumber, ProtocolDate, ProtocolTime, DocumentType, Subject, Content,
-                                ReferenceNumber, ReferenceDate, ClassificationId, Status, Priority,
-                                HasDeadline, DeadlineDate, Notes, PageCount, Language, IsScanned,
-                                HasAttachments, IsArchived, ArchivedDate, ArchivedBy, CreatedDate, CreatedBy,
+                                ClassificationId, Status, Priority,
+                                HasDeadline, DeadlineDate, Notes, HasAttachments, IsArchived, ArchivedDate, ArchivedBy, CreatedDate, CreatedBy,
                                 ModifiedDate, ModifiedBy, FromUserId, FromDepartment, ToUserId, ToDepartment,
-                                InternalType, RequiresApproval, RequiresResponse, ResponseDeadline
+                                RequiresResponse, ResponseDeadline,Discriminator
                             ) OUTPUT INSERTED.DocumentId VALUES (
                                 @ProtocolNumber, @ProtocolDate, @ProtocolTime, @DocumentType, @Subject, @Content,
-                                @ReferenceNumber, @ReferenceDate, @ClassificationId, @Status, @Priority,
-                                @HasDeadline, @DeadlineDate, @Notes, @PageCount, @Language, @IsScanned,
-                                @HasAttachments, @IsArchived, @ArchivedDate, @ArchivedBy, @CreatedDate, @CreatedBy,
+                                @ClassificationId, @Status, @Priority, @HasDeadline, @DeadlineDate, @Notes, @HasAttachments, @IsArchived,
+                                @ArchivedDate, @ArchivedBy, @CreatedDate, @CreatedBy,
                                 @ModifiedDate, @ModifiedBy, @FromUserId, @FromDepartment, @ToUserId, @ToDepartment,
-                                @InternalType, @RequiresApproval, @RequiresResponse, @ResponseDeadline
+                                @RequiresResponse, @ResponseDeadline, @Discriminator
                             )";
 
                             int documentId;
@@ -316,7 +312,9 @@ namespace eProtokoll.Areas.Manager.Controllers
                                 var uploadsFolder = Path.Combine(_environment.WebRootPath, "uploads", "internal");
                                 Directory.CreateDirectory(uploadsFolder);
 
-                                var uniqueFileName = $"{Guid.NewGuid()}_{attachmentFile.FileName}";
+                                // Shkurto emrin e skedarit për të shmangur problemin e gjatësisë
+                                var safeFileName = GetSafeFileName(attachmentFile.FileName);
+                                var uniqueFileName = $"{Guid.NewGuid()}_{safeFileName}";
                                 var filePath = Path.Combine(uploadsFolder, uniqueFileName);
 
                                 using (var fileStream = new FileStream(filePath, FileMode.Create))
@@ -327,12 +325,10 @@ namespace eProtokoll.Areas.Manager.Controllers
                                 // Insert attachment
                                 var attachmentQuery = @"INSERT INTO DocumentAttachments (
                                     DocumentId, FileName, OriginalFileName, FilePath, FileSize, FileExtension,
-                                    ContentType, UploadedDate, UploadedBy, Category, IsVirusScanned,
-                                    AllowDownload, AllowPrint, DisplayOrder, IsPrimaryDocument
+                                    ContentType, UploadedDate, UploadedBy, Category, DisplayOrder, IsPrimaryDocument
                                 ) VALUES (
                                     @DocumentId, @FileName, @OriginalFileName, @FilePath, @FileSize, @FileExtension,
-                                    @ContentType, @UploadedDate, @UploadedBy, @Category, @IsVirusScanned,
-                                    @AllowDownload, @AllowPrint, @DisplayOrder, @IsPrimaryDocument
+                                    @ContentType, @UploadedDate, @UploadedBy, @Category, @DisplayOrder, @IsPrimaryDocument
                                 )";
 
                                 using (var attachCommand = new SqlCommand(attachmentQuery, connection, transaction))
@@ -345,11 +341,8 @@ namespace eProtokoll.Areas.Manager.Controllers
                                     attachCommand.Parameters.AddWithValue("@FileExtension", Path.GetExtension(attachmentFile.FileName));
                                     attachCommand.Parameters.AddWithValue("@ContentType", attachmentFile.ContentType);
                                     attachCommand.Parameters.AddWithValue("@UploadedDate", DateTime.Now);
-                                    attachCommand.Parameters.AddWithValue("@UploadedBy", User.Identity.Name);
+                                    attachCommand.Parameters.AddWithValue("@UploadedBy", User.FindFirstValue(ClaimTypes.NameIdentifier));
                                     attachCommand.Parameters.AddWithValue("@Category", (int)FileCategory.Document);
-                                    attachCommand.Parameters.AddWithValue("@IsVirusScanned", false);
-                                    attachCommand.Parameters.AddWithValue("@AllowDownload", true);
-                                    attachCommand.Parameters.AddWithValue("@AllowPrint", true);
                                     attachCommand.Parameters.AddWithValue("@DisplayOrder", 1);
                                     attachCommand.Parameters.AddWithValue("@IsPrimaryDocument", true);
                                     await attachCommand.ExecuteNonQueryAsync();
@@ -368,10 +361,10 @@ namespace eProtokoll.Areas.Manager.Controllers
                             TempData["SuccessMessage"] = $"Dokumenti brendshëm '{model.ProtocolNumber}' u regjistrua me sukses!";
                             return RedirectToAction(nameof(Index));
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
                             transaction.Rollback();
-                            throw;
+                            TempData["ErrorMessage"] = $"Gabim: {ex.Message}";
                         }
                     }
                 }
@@ -448,23 +441,21 @@ namespace eProtokoll.Areas.Manager.Controllers
                         {
                             // Update InternalDocument
                             var query = @"UPDATE Documents SET
-                                FromUserId = @FromUserId,
-                                FromDepartment = @FromDepartment,
-                                ToUserId = @ToUserId,
-                                ToDepartment = @ToDepartment,
-                                InternalType = @InternalType,
-                                Subject = @Subject,
-                                Content = @Content,
-                                ClassificationId = @ClassificationId,
-                                Status = @Status,
-                                Priority = @Priority,
-                                RequiresApproval = @RequiresApproval,
-                                RequiresResponse = @RequiresResponse,
-                                ResponseDeadline = @ResponseDeadline,
-                                Notes = @Notes,
-                                ModifiedDate = @ModifiedDate,
-                                ModifiedBy = @ModifiedBy
-                                WHERE DocumentId = @DocumentId AND DocumentType = 3";
+                        FromUserId = @FromUserId,
+                        FromDepartment = @FromDepartment,
+                        ToUserId = @ToUserId,
+                        ToDepartment = @ToDepartment,
+                        Subject = @Subject,
+                        Content = @Content,
+                        ClassificationId = @ClassificationId,
+                        Status = @Status,
+                        Priority = @Priority,
+                        RequiresResponse = @RequiresResponse,
+                        ResponseDeadline = @ResponseDeadline,
+                        Notes = @Notes,
+                        ModifiedDate = @ModifiedDate,
+                        ModifiedBy = @ModifiedBy
+                        WHERE DocumentId = @DocumentId AND DocumentType = 3";
 
                             using (var command = new SqlCommand(query, connection, transaction))
                             {
@@ -473,29 +464,74 @@ namespace eProtokoll.Areas.Manager.Controllers
                                 command.Parameters.AddWithValue("@FromDepartment", (object)model.FromDepartment ?? DBNull.Value);
                                 command.Parameters.AddWithValue("@ToUserId", (object)model.ToUserId ?? DBNull.Value);
                                 command.Parameters.AddWithValue("@ToDepartment", (object)model.ToDepartment ?? DBNull.Value);
-                                command.Parameters.AddWithValue("@InternalType", (int)model.InternalType);
                                 command.Parameters.AddWithValue("@Subject", model.Subject);
                                 command.Parameters.AddWithValue("@Content", (object)model.Content ?? DBNull.Value);
                                 command.Parameters.AddWithValue("@ClassificationId", model.ClassificationId);
                                 command.Parameters.AddWithValue("@Status", (int)model.Status);
                                 command.Parameters.AddWithValue("@Priority", (int)model.Priority);
-                                command.Parameters.AddWithValue("@RequiresApproval", model.RequiresApproval);
                                 command.Parameters.AddWithValue("@RequiresResponse", model.RequiresResponse);
                                 command.Parameters.AddWithValue("@ResponseDeadline", (object)model.ResponseDeadline ?? DBNull.Value);
                                 command.Parameters.AddWithValue("@Notes", (object)model.Notes ?? DBNull.Value);
                                 command.Parameters.AddWithValue("@ModifiedDate", DateTime.Now);
-                                command.Parameters.AddWithValue("@ModifiedBy", User.Identity.Name);
+                                command.Parameters.AddWithValue("@ModifiedBy", User.FindFirstValue(ClaimTypes.NameIdentifier));
 
                                 await command.ExecuteNonQueryAsync();
                             }
 
-                            // Handle new file upload
+                            // Handle file replacement
                             if (attachmentFile != null && attachmentFile.Length > 0)
                             {
+                                // 1. Get existing attachments to delete physical files
+                                var getAttachmentsQuery = "SELECT FileName, FilePath FROM DocumentAttachments WHERE DocumentId = @DocumentId";
+                                var oldFiles = new List<(string fileName, string filePath)>();
+
+                                using (var getCommand = new SqlCommand(getAttachmentsQuery, connection, transaction))
+                                {
+                                    getCommand.Parameters.AddWithValue("@DocumentId", id);
+                                    using (var reader = await getCommand.ExecuteReaderAsync())
+                                    {
+                                        while (await reader.ReadAsync())
+                                        {
+                                            oldFiles.Add((
+                                                reader["FileName"].ToString(),
+                                                reader["FilePath"].ToString()
+                                            ));
+                                        }
+                                    }
+                                }
+
+                                // 2. Delete old attachments from database
+                                var deleteQuery = "DELETE FROM DocumentAttachments WHERE DocumentId = @DocumentId";
+                                using (var deleteCommand = new SqlCommand(deleteQuery, connection, transaction))
+                                {
+                                    deleteCommand.Parameters.AddWithValue("@DocumentId", id);
+                                    await deleteCommand.ExecuteNonQueryAsync();
+                                }
+
+                                // 3. Delete old physical files
+                                foreach (var file in oldFiles)
+                                {
+                                    try
+                                    {
+                                        var physicalPath = Path.Combine(_environment.WebRootPath, file.filePath.TrimStart('/'));
+                                        if (System.IO.File.Exists(physicalPath))
+                                        {
+                                            System.IO.File.Delete(physicalPath);
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        // Log error but continue - don't fail transaction
+                                        Console.WriteLine($"Error deleting file: {ex.Message}");
+                                    }
+                                }
+
+                                // 4. Upload new file
                                 var uploadsFolder = Path.Combine(_environment.WebRootPath, "uploads", "internal");
                                 Directory.CreateDirectory(uploadsFolder);
 
-                                var uniqueFileName = $"{Guid.NewGuid()}_{attachmentFile.FileName}";
+                                var safeFileName = GetSafeFileName(attachmentFile.FileName);
+                                var uniqueFileName = $"{Guid.NewGuid()}_{safeFileName}";
                                 var filePath = Path.Combine(uploadsFolder, uniqueFileName);
 
                                 using (var fileStream = new FileStream(filePath, FileMode.Create))
@@ -503,25 +539,14 @@ namespace eProtokoll.Areas.Manager.Controllers
                                     await attachmentFile.CopyToAsync(fileStream);
                                 }
 
-                                // Get current attachment count
-                                var countQuery = "SELECT COUNT(*) FROM DocumentAttachments WHERE DocumentId = @DocumentId";
-                                int attachmentCount;
-                                using (var countCommand = new SqlCommand(countQuery, connection, transaction))
-                                {
-                                    countCommand.Parameters.AddWithValue("@DocumentId", id);
-                                    attachmentCount = (int)await countCommand.ExecuteScalarAsync();
-                                }
-
-                                // Insert attachment
+                                // 5. Insert new attachment
                                 var attachmentQuery = @"INSERT INTO DocumentAttachments (
-                                    DocumentId, FileName, OriginalFileName, FilePath, FileSize, FileExtension,
-                                    ContentType, UploadedDate, UploadedBy, Category, IsVirusScanned,
-                                    AllowDownload, AllowPrint, DisplayOrder
-                                ) VALUES (
-                                    @DocumentId, @FileName, @OriginalFileName, @FilePath, @FileSize, @FileExtension,
-                                    @ContentType, @UploadedDate, @UploadedBy, @Category, @IsVirusScanned,
-                                    @AllowDownload, @AllowPrint, @DisplayOrder
-                                )";
+                            DocumentId, FileName, OriginalFileName, FilePath, FileSize, FileExtension,
+                            ContentType, UploadedDate, UploadedBy, Category, DisplayOrder
+                        ) VALUES (
+                            @DocumentId, @FileName, @OriginalFileName, @FilePath, @FileSize, @FileExtension,
+                            @ContentType, @UploadedDate, @UploadedBy, @Category, @DisplayOrder
+                        )";
 
                                 using (var attachCommand = new SqlCommand(attachmentQuery, connection, transaction))
                                 {
@@ -533,16 +558,13 @@ namespace eProtokoll.Areas.Manager.Controllers
                                     attachCommand.Parameters.AddWithValue("@FileExtension", Path.GetExtension(attachmentFile.FileName));
                                     attachCommand.Parameters.AddWithValue("@ContentType", attachmentFile.ContentType);
                                     attachCommand.Parameters.AddWithValue("@UploadedDate", DateTime.Now);
-                                    attachCommand.Parameters.AddWithValue("@UploadedBy", User.Identity?.Name ?? "System");
+                                    attachCommand.Parameters.AddWithValue("@UploadedBy", User.FindFirstValue(ClaimTypes.NameIdentifier));
                                     attachCommand.Parameters.AddWithValue("@Category", (int)FileCategory.Document);
-                                    attachCommand.Parameters.AddWithValue("@IsVirusScanned", false);
-                                    attachCommand.Parameters.AddWithValue("@AllowDownload", true);
-                                    attachCommand.Parameters.AddWithValue("@AllowPrint", true);
-                                    attachCommand.Parameters.AddWithValue("@DisplayOrder", attachmentCount + 1);
+                                    attachCommand.Parameters.AddWithValue("@DisplayOrder", 1);
                                     await attachCommand.ExecuteNonQueryAsync();
                                 }
 
-                                // Update HasAttachments
+                                // 6. Update HasAttachments
                                 var updateQuery = "UPDATE Documents SET HasAttachments = 1 WHERE DocumentId = @DocumentId";
                                 using (var updateCommand = new SqlCommand(updateQuery, connection, transaction))
                                 {
@@ -555,10 +577,10 @@ namespace eProtokoll.Areas.Manager.Controllers
                             TempData["SuccessMessage"] = $"Dokumenti '{model.ProtocolNumber}' u përditësua me sukses!";
                             return RedirectToAction(nameof(Index));
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
                             transaction.Rollback();
-                            throw;
+                            TempData["ErrorMessage"] = $"Gabim: {ex.Message}";
                         }
                     }
                 }
@@ -566,219 +588,6 @@ namespace eProtokoll.Areas.Manager.Controllers
 
             await LoadDropdowns(model.ClassificationId, model.FromUserId, model.ToUserId);
             return View(model);
-        }
-
-        // GET: Manager/InternalDocument/Details/5
-        public async Task<IActionResult> Details(int? id)
-        {
-            if (id == null) return NotFound();
-
-            InternalDocument document = null;
-
-            using (var connection = new SqlConnection(_connectionString))
-            {
-                await connection.OpenAsync();
-
-                // Main document with JOINs
-                var query = @"SELECT d.*, 
-                    c.Name as ClassificationName, c.ColorCode,
-                    u.UserName as CreatorUserName, u.FirstName as CreatorFirstName, u.LastName as CreatorLastName,
-                    uf.UserName as FromUserUserName, uf.FirstName as FromUserFirstName, uf.LastName as FromUserLastName,
-                    ut.UserName as ToUserUserName, ut.FirstName as ToUserFirstName, ut.LastName as ToUserLastName,
-                    ua.UserName as ApproverUserName, ua.FirstName as ApproverFirstName, ua.LastName as ApproverLastName
-                    FROM Documents d
-                    LEFT JOIN Classifications c ON d.ClassificationId = c.ClassificationId
-                    LEFT JOIN AspNetUsers u ON d.CreatedBy = u.Id
-                    LEFT JOIN AspNetUsers uf ON d.FromUserId = uf.Id
-                    LEFT JOIN AspNetUsers ut ON d.ToUserId = ut.Id
-                    LEFT JOIN AspNetUsers ua ON d.ApprovedBy = ua.Id
-                    WHERE d.DocumentId = @DocumentId AND d.DocumentType = 3";
-
-                using (var command = new SqlCommand(query, connection))
-                {
-                    command.Parameters.AddWithValue("@DocumentId", id.Value);
-                    using (var reader = await command.ExecuteReaderAsync())
-                    {
-                        if (await reader.ReadAsync())
-                        {
-                            document = DocumentMapper.MapToInternalDocument(reader);
-
-                            // Populate Classification
-                            if (!reader.IsDBNull(reader.GetOrdinal("ClassificationName")))
-                            {
-                                document.Classification = new Classification
-                                {
-                                    ClassificationId = document.ClassificationId,
-                                    Name = reader.GetString(reader.GetOrdinal("ClassificationName")),
-                                    ColorCode = reader.IsDBNull(reader.GetOrdinal("ColorCode"))
-                                        ? null
-                                        : reader.GetString(reader.GetOrdinal("ColorCode"))
-                                };
-                            }
-
-                            // Populate Creator
-                            if (!reader.IsDBNull(reader.GetOrdinal("CreatorUserName")))
-                            {
-                                document.Creator = new ApplicationUser
-                                {
-                                    UserName = reader.GetString(reader.GetOrdinal("CreatorUserName")),
-                                    FirstName = reader.GetString(reader.GetOrdinal("CreatorFirstName")),
-                                    LastName = reader.GetString(reader.GetOrdinal("CreatorLastName"))
-                                };
-                            }
-
-                            // Populate FromUser
-                            if (!reader.IsDBNull(reader.GetOrdinal("FromUserUserName")))
-                            {
-                                document.FromUser = new ApplicationUser
-                                {
-                                    UserName = reader.GetString(reader.GetOrdinal("FromUserUserName")),
-                                    FirstName = reader.GetString(reader.GetOrdinal("FromUserFirstName")),
-                                    LastName = reader.GetString(reader.GetOrdinal("FromUserLastName"))
-                                };
-                            }
-
-                            // Populate ToUser
-                            if (!reader.IsDBNull(reader.GetOrdinal("ToUserUserName")))
-                            {
-                                document.ToUser = new ApplicationUser
-                                {
-                                    UserName = reader.GetString(reader.GetOrdinal("ToUserUserName")),
-                                    FirstName = reader.GetString(reader.GetOrdinal("ToUserFirstName")),
-                                    LastName = reader.GetString(reader.GetOrdinal("ToUserLastName"))
-                                };
-                            }
-
-                            // Populate Approver
-                            if (!reader.IsDBNull(reader.GetOrdinal("ApproverUserName")))
-                            {
-                                document.Approver = new ApplicationUser
-                                {
-                                    UserName = reader.GetString(reader.GetOrdinal("ApproverUserName")),
-                                    FirstName = reader.GetString(reader.GetOrdinal("ApproverFirstName")),
-                                    LastName = reader.GetString(reader.GetOrdinal("ApproverLastName"))
-                                };
-                            }
-                        }
-                    }
-                }
-
-                if (document == null) return NotFound();
-
-                // Attachments
-                document.Attachments = new List<DocumentAttachment>();
-                var attachQuery = "SELECT * FROM DocumentAttachments WHERE DocumentId = @DocumentId ORDER BY DisplayOrder";
-                using (var command = new SqlCommand(attachQuery, connection))
-                {
-                    command.Parameters.AddWithValue("@DocumentId", id.Value);
-                    using (var reader = await command.ExecuteReaderAsync())
-                    {
-                        while (await reader.ReadAsync())
-                        {
-                            document.Attachments.Add(AttachmentMapper.MapToDocumentAttachment(reader));
-                        }
-                    }
-                }
-
-                // Trackings
-                document.Trackings = new List<DocumentTracking>();
-                var trackQuery = @"SELECT dt.*, 
-                    u.UserName as AssignedToUserName, u.FirstName as AssignedToFirstName, u.LastName as AssignedToLastName
-                    FROM DocumentTrackings dt
-                    LEFT JOIN AspNetUsers u ON dt.AssignedTo = u.Id
-                    WHERE dt.DocumentId = @DocumentId
-                    ORDER BY dt.CreatedDate DESC";
-                using (var command = new SqlCommand(trackQuery, connection))
-                {
-                    command.Parameters.AddWithValue("@DocumentId", id.Value);
-                    using (var reader = await command.ExecuteReaderAsync())
-                    {
-                        while (await reader.ReadAsync())
-                        {
-                            var tracking = TrackingMapper.MapToDocumentTracking(reader);
-                            if (!reader.IsDBNull(reader.GetOrdinal("AssignedToUserName")))
-                            {
-                                tracking.AssignedToUser = new ApplicationUser
-                                {
-                                    UserName = reader.GetString(reader.GetOrdinal("AssignedToUserName")),
-                                    FirstName = reader.GetString(reader.GetOrdinal("AssignedToFirstName")),
-                                    LastName = reader.GetString(reader.GetOrdinal("AssignedToLastName"))
-                                };
-                            }
-                            document.Trackings.Add(tracking);
-                        }
-                    }
-                }
-
-                // Deadlines
-                document.Deadlines = new List<Deadline>();
-                var deadlineQuery = @"SELECT d.*, 
-                    u.UserName as ResponsibleUserName, u.FirstName as ResponsibleFirstName, u.LastName as ResponsibleLastName
-                    FROM Deadlines d
-                    LEFT JOIN AspNetUsers u ON d.ResponsibleUserId = u.Id
-                    WHERE d.DocumentId = @DocumentId
-                    ORDER BY d.DueDate";
-                using (var command = new SqlCommand(deadlineQuery, connection))
-                {
-                    command.Parameters.AddWithValue("@DocumentId", id.Value);
-                    using (var reader = await command.ExecuteReaderAsync())
-                    {
-                        while (await reader.ReadAsync())
-                        {
-                            var deadline = DeadlineMapper.MapToDeadline(reader);
-                            if (!reader.IsDBNull(reader.GetOrdinal("ResponsibleUserName")))
-                            {
-                                deadline.ResponsibleUser = new ApplicationUser
-                                {
-                                    UserName = reader.GetString(reader.GetOrdinal("ResponsibleUserName")),
-                                    FirstName = reader.GetString(reader.GetOrdinal("ResponsibleFirstName")),
-                                    LastName = reader.GetString(reader.GetOrdinal("ResponsibleLastName"))
-                                };
-                            }
-                            document.Deadlines.Add(deadline);
-                        }
-                    }
-                }
-            }
-
-            return View(document);
-        }
-
-        // POST: Manager/InternalDocument/Approve/5
-        [HttpPost]
-        public async Task<IActionResult> Approve(int id, string? comment)
-        {
-            using (var connection = new SqlConnection(_connectionString))
-            {
-                await connection.OpenAsync();
-
-                var query = @"UPDATE Documents SET
-                    IsApproved = 1,
-                    ApprovedDate = @ApprovedDate,
-                    ApprovedBy = @ApprovedBy,
-                    ApprovalComment = @ApprovalComment,
-                    Status = 5,
-                    ModifiedDate = @ModifiedDate,
-                    ModifiedBy = @ModifiedBy
-                    WHERE DocumentId = @DocumentId AND DocumentType = 3";
-
-                using (var command = new SqlCommand(query, connection))
-                {
-                    command.Parameters.AddWithValue("@DocumentId", id);
-                    command.Parameters.AddWithValue("@ApprovedDate", DateTime.Now);
-                    command.Parameters.AddWithValue("@ApprovedBy", User.Identity?.Name ?? "System");
-                    command.Parameters.AddWithValue("@ApprovalComment", (object)comment ?? DBNull.Value);
-                    command.Parameters.AddWithValue("@ModifiedDate", DateTime.Now);
-                    command.Parameters.AddWithValue("@ModifiedBy", User.Identity?.Name ?? "System");
-
-                    var rowsAffected = await command.ExecuteNonQueryAsync();
-
-                    if (rowsAffected > 0)
-                        return Json(new { success = true, message = "Dokumenti u miratua me sukses!" });
-                    else
-                        return Json(new { success = false, message = "Dokumenti nuk u gjet!" });
-                }
-            }
         }
 
         // POST: Manager/InternalDocument/Delete/5
@@ -1086,17 +895,12 @@ namespace eProtokoll.Areas.Manager.Controllers
             command.Parameters.AddWithValue("@DocumentType", (int)DocumentType.Internal);
             command.Parameters.AddWithValue("@Subject", model.Subject);
             command.Parameters.AddWithValue("@Content", (object)model.Content ?? DBNull.Value);
-            command.Parameters.AddWithValue("@ReferenceNumber", (object)model.ReferenceNumber ?? DBNull.Value);
-            command.Parameters.AddWithValue("@ReferenceDate", (object)model.ReferenceDate ?? DBNull.Value);
             command.Parameters.AddWithValue("@ClassificationId", model.ClassificationId);
             command.Parameters.AddWithValue("@Status", (int)model.Status);
             command.Parameters.AddWithValue("@Priority", (int)model.Priority);
             command.Parameters.AddWithValue("@HasDeadline", model.HasDeadline);
             command.Parameters.AddWithValue("@DeadlineDate", (object)model.DeadlineDate ?? DBNull.Value);
             command.Parameters.AddWithValue("@Notes", (object)model.Notes ?? DBNull.Value);
-            command.Parameters.AddWithValue("@PageCount", (object)model.PageCount ?? DBNull.Value);
-            command.Parameters.AddWithValue("@Language", (object)model.Language ?? DBNull.Value);
-            command.Parameters.AddWithValue("@IsScanned", model.IsScanned);
             command.Parameters.AddWithValue("@HasAttachments", false);
             command.Parameters.AddWithValue("@IsArchived", model.IsArchived);
             command.Parameters.AddWithValue("@ArchivedDate", (object)model.ArchivedDate ?? DBNull.Value);
@@ -1109,10 +913,29 @@ namespace eProtokoll.Areas.Manager.Controllers
             command.Parameters.AddWithValue("@FromDepartment", (object)model.FromDepartment ?? DBNull.Value);
             command.Parameters.AddWithValue("@ToUserId", (object)model.ToUserId ?? DBNull.Value);
             command.Parameters.AddWithValue("@ToDepartment", (object)model.ToDepartment ?? DBNull.Value);
-            command.Parameters.AddWithValue("@InternalType", (int)model.InternalType);
-            command.Parameters.AddWithValue("@RequiresApproval", model.RequiresApproval);
             command.Parameters.AddWithValue("@RequiresResponse", model.RequiresResponse);
             command.Parameters.AddWithValue("@ResponseDeadline", (object)model.ResponseDeadline ?? DBNull.Value);
+            command.Parameters.AddWithValue("@Discriminator", "InternalDocument");
+
+        }
+
+        private string GetSafeFileName(string originalFileName)
+        {
+            const int maxLength = 50; // Gjatësia maksimale për emrin origjinal (pa extension)
+            var extension = Path.GetExtension(originalFileName);
+            var nameWithoutExtension = Path.GetFileNameWithoutExtension(originalFileName);
+
+            // Shkurto emrin nëse tejkalon gjatësinë maksimale
+            if (nameWithoutExtension.Length > maxLength)
+            {
+                nameWithoutExtension = nameWithoutExtension.Substring(0, maxLength);
+            }
+
+            // Hiq karakteret e pavlefshme
+            var invalidChars = Path.GetInvalidFileNameChars();
+            nameWithoutExtension = string.Join("_", nameWithoutExtension.Split(invalidChars));
+
+            return $"{nameWithoutExtension}{extension}";
         }
     }
 }

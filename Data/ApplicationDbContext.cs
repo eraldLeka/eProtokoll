@@ -1,8 +1,6 @@
 ﻿using eProtokoll.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Reflection.Emit;
 
 namespace eProtokoll.Data
 {
@@ -27,10 +25,6 @@ namespace eProtokoll.Data
         public DbSet<DocumentTracking> DocumentTrackings { get; set; }
         public DbSet<Deadline> Deadlines { get; set; }
         public DbSet<DocumentAttachment> DocumentAttachments { get; set; }
-
-        public DbSet<DocumentResponse> DocumentResponses { get; set; }
-
-
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -107,8 +101,6 @@ namespace eProtokoll.Data
                 entity.Property(e => e.ProtocolNumber).IsRequired();
                 entity.Property(e => e.Subject).IsRequired().HasMaxLength(500);
 
-                
-
                 // Relacioni me Classification
                 entity.HasOne(d => d.Classification)
                     .WithMany(c => c.Documents)
@@ -149,7 +141,7 @@ namespace eProtokoll.Data
                 // Relacioni me ResponseDocument (OutgoingDocument)
                 entity.HasOne(d => d.ResponseDocument)
                     .WithOne(o => o.OriginalIncomingDocument)
-                    .HasForeignKey<OutgoingDocument>(o => o.OriginalIncomingDocumentId)
+                    .HasForeignKey<IncomingDocument>(i => i.ResponseDocumentId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
 
@@ -157,16 +149,12 @@ namespace eProtokoll.Data
             modelBuilder.Entity<OutgoingDocument>(entity =>
             {
                 entity.HasIndex(e => e.InstitutionId);
-                entity.HasIndex(e => e.SentDate);
 
                 // Relacioni me Institution
                 entity.HasOne(d => d.Institution)
                     .WithMany(i => i.OutgoingDocuments)
                     .HasForeignKey(d => d.InstitutionId)
                     .OnDelete(DeleteBehavior.Restrict);
-
-                entity.Property(e => e.ShipmentCost)
-                    .HasColumnType("decimal(18,2)");
             });
 
             // InternalDocument
@@ -180,11 +168,6 @@ namespace eProtokoll.Data
                     .WithMany()
                     .HasForeignKey(d => d.ResponseDocumentId)
                     .OnDelete(DeleteBehavior.Restrict);
-
-                entity.HasOne(d => d.RelatedDocument)
-                    .WithMany()
-                    .HasForeignKey(d => d.RelatedDocumentId)
-                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             // DocumentTracking
@@ -192,19 +175,7 @@ namespace eProtokoll.Data
             {
                 entity.HasIndex(e => e.DocumentId);
                 entity.HasIndex(e => e.AssignedToUserId);
-                entity.HasIndex(e => e.Status);
                 entity.HasIndex(e => e.DueDate);
-
-                // Self-referencing për delegimet
-                entity.HasOne(t => t.ParentTracking)
-                    .WithMany(t => t.SubDelegations)
-                    .HasForeignKey(t => t.ParentTrackingId)
-                    .OnDelete(DeleteBehavior.Restrict);
-
-                entity.HasOne(t => t.DelegatedToTracking)
-                    .WithMany()
-                    .HasForeignKey(t => t.DelegatedToTrackingId)
-                    .OnDelete(DeleteBehavior.Restrict);
 
                 // Relacioni me AssignedByUser
                 entity.HasOne(t => t.AssignedByUser)
@@ -214,12 +185,13 @@ namespace eProtokoll.Data
             });
 
             // Deadline
+            // Deadline
             modelBuilder.Entity<Deadline>(entity =>
             {
                 entity.HasIndex(e => e.DocumentId);
                 entity.HasIndex(e => e.DueDate);
-                entity.HasIndex(e => e.Status);
                 entity.HasIndex(e => e.ResponsibleUserId);
+                entity.HasIndex(e => e.IsCompleted); 
 
                 entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
 
@@ -247,17 +219,10 @@ namespace eProtokoll.Data
             {
                 entity.HasIndex(e => e.DocumentId);
                 entity.HasIndex(e => e.UploadedDate);
-                entity.HasIndex(e => e.FileHash);
 
                 entity.Property(e => e.FileName).IsRequired().HasMaxLength(255);
                 entity.Property(e => e.FilePath).IsRequired().HasMaxLength(500);
                 entity.Property(e => e.FileSize).IsRequired();
-
-                // Self-referencing për versionet
-                entity.HasOne(a => a.PreviousVersion)
-                    .WithMany(a => a.Versions)
-                    .HasForeignKey(a => a.PreviousVersionId)
-                    .OnDelete(DeleteBehavior.Restrict);
 
                 // Relacioni me Uploader
                 entity.HasOne(a => a.Uploader)
@@ -279,10 +244,6 @@ namespace eProtokoll.Data
                     Level = AccessLevel.Public,
                     Description = "Dokumente publike që mund të shihen nga të gjithë",
                     RetentionYears = 5,
-                    RequiresApproval = false,
-                    AllowPrint = true,
-                    AllowDownload = true,
-                    AllowCopy = true,
                     ColorCode = "#28a745",
                     SortOrder = 1,
                     IsActive = true,
@@ -292,20 +253,15 @@ namespace eProtokoll.Data
                 new Classification
                 {
                     ClassificationId = 2,
-                    Name = "I kufizuar",
+                    Name = "I Kufizuar",
                     Level = AccessLevel.Restricted,
-                    Description = "Vetëm për punonjësit e autorizuar (assigned)",
+                    Description = "Vetëm për punonjësit e përzgjedhur (assigned)",
                     RetentionYears = 10,
-                    RequiresApproval = false,
-                    AllowPrint = true,
-                    AllowDownload = true,
-                    AllowCopy = true,
-                    ColorCode = "#17a2b8",
+                    ColorCode = "#ffc107",
                     SortOrder = 2,
                     IsActive = true,
                     CreatedDate = DateTime.Now
                 },
-     
                 new Classification
                 {
                     ClassificationId = 3,
@@ -313,15 +269,11 @@ namespace eProtokoll.Data
                     Level = AccessLevel.Secret,
                     Description = "Vetëm menaxherët dhe administratorët",
                     RetentionYears = 20,
-                    RequiresApproval = true,
-                    AllowPrint = false,
-                    AllowDownload = false,
-                    AllowCopy = false,
-                    ColorCode = "#fd7e14",
+                    ColorCode = "#dc3545",
                     SortOrder = 3,
                     IsActive = true,
                     CreatedDate = DateTime.Now
-                }        
+                }
             );
 
             // Seed ProtocolSettings për vitin aktual
@@ -350,6 +302,12 @@ namespace eProtokoll.Data
                     CreatedDate = DateTime.Now
                 }
             );
+            modelBuilder.Entity<Document>()
+    .HasDiscriminator<string>("Discriminator")
+    .HasValue<Document>("Document")                     
+    .HasValue<IncomingDocument>("IncomingDocument")     
+    .HasValue<OutgoingDocument>("OutgoingDocument")     
+    .HasValue<InternalDocument>("InternalDocument");
         }
     }
 }

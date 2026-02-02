@@ -1,19 +1,24 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using eProtokoll.Models;
+﻿using eProtokoll.Models;
+using eProtokoll.Services.Mappers;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using System.Data;
-using eProtokoll.Services.Mappers;
 
 namespace eProtokoll.Areas.Admin.Controllers
 {
     [Area("Admin")]
+    [Authorize(Roles = "Administrator")]
+
     public class SettingsController : Controller
     {
         private readonly string _connectionString;
+        private readonly eProtokoll.Services.IProtocolNumberService _protocolNumberService;
 
-        public SettingsController(IConfiguration configuration)
+        public SettingsController(IConfiguration configuration, eProtokoll.Services.IProtocolNumberService protocolNumberService)
         {
             _connectionString = configuration.GetConnectionString("DefaultConnection");
+            _protocolNumberService = protocolNumberService;
         }
 
         // GET: Admin/Settings
@@ -515,7 +520,7 @@ namespace eProtokoll.Areas.Admin.Controllers
         {
             try
             {
-                var previewNumber = GenerateProtocolNumber(prefix, number, year, format, padding, showYear);
+                var previewNumber = _protocolNumberService.FormatProtocolNumber(prefix, number, year, format, padding, showYear);
                 return Json(new { success = true, protocolNumber = previewNumber });
             }
             catch (Exception ex)
@@ -562,37 +567,6 @@ namespace eProtokoll.Areas.Admin.Controllers
             command.Parameters.AddWithValue("@IsClosed", settings.IsClosed);
             command.Parameters.AddWithValue("@CreatedDate", settings.CreatedDate);
             command.Parameters.AddWithValue("@CreatedBy", (object)settings.CreatedBy ?? DBNull.Value);
-        }
-
-        // Generate protocol number (pa ndryshime - logjikë e pastër)
-        private string GenerateProtocolNumber(string prefix, int number, int year,
-            string format, int padding, bool showYear)
-        {
-            var result = format;
-
-            result = result.Replace("{PREFIX}", prefix ?? "");
-            result = result.Replace("{NUMBER}", number.ToString("D" + padding));
-
-            if (showYear)
-            {
-                result = result.Replace("{YEAR}", year.ToString());
-            }
-            else
-            {
-                result = result.Replace("{YEAR}", "");
-            }
-            // Pastro separators të dyfishtë
-            while (result.Contains("//"))
-            {
-                result = result.Replace("//", "/");
-            }
-
-            while (result.Contains("--"))
-            {
-                result = result.Replace("--", "-");
-            }
-
-            return result.Trim('/', '-');
         }
     }
 }

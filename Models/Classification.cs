@@ -28,25 +28,6 @@ namespace eProtokoll.Models
         [Range(1, 99, ErrorMessage = "Koha e ruajtjes duhet të jetë midis 1 dhe 99 vjet")]
         public int RetentionYears { get; set; } = 5;
 
-        [Display(Name = "Kërkon Miratim për Qasje")]
-        public bool RequiresApproval { get; set; }
-
-        [StringLength(200)]
-        [Display(Name = "Roli Minimal për Qasje")]
-        public string? MinimumRoleRequired { get; set; }
-
-        [Display(Name = "Lejon Printim")]
-        public bool AllowPrint { get; set; } = true;
-
-        [Display(Name = "Lejon Shkarkim")]
-        public bool AllowDownload { get; set; } = true;
-
-        [Display(Name = "Lejon Kopjim")]
-        public bool AllowCopy { get; set; } = true;
-
-        [Display(Name = "Regjistrim në Log")]
-        public bool EnableAuditLog { get; set; } = true;
-
         [StringLength(7)]
         [Display(Name = "Ngjyra e Etiketës")]
         [RegularExpression(@"^#[0-9A-Fa-f]{6}$", ErrorMessage = "Ngjyra duhet të jetë në format HEX (p.sh. #FF0000)")]
@@ -67,11 +48,11 @@ namespace eProtokoll.Models
         [Display(Name = "Data e Modifikimit")]
         public DateTime? ModifiedDate { get; set; }
 
-        [StringLength(36)]
+        [StringLength(450)]
         [Display(Name = "Krijuar nga")]
         public string? CreatedBy { get; set; }
 
-        [StringLength(36)]
+        [StringLength(450)]
         [Display(Name = "Modifikuar nga")]
         public string? ModifiedBy { get; set; }
 
@@ -86,13 +67,12 @@ namespace eProtokoll.Models
     public enum AccessLevel
     {
         [Display(Name = "Publik", Description = "Të gjithë mund ta shohin")]
-        Public = 1,
+        Public = 0,
 
-        [Display(Name = "I Kufizuar", Description = "Vetëm punonjësit e autorizuar")]
-        Restricted = 2,
+        [Display(Name = "I Kufizuar", Description = "Vetëm punonjësit e përzgjedhur")]
+        Restricted = 1,
 
         [Display(Name = "Sekret", Description = "Vetëm menaxherët dhe administratorët")]
-        Secret = 3,
-
+        Secret = 2
     }
 }

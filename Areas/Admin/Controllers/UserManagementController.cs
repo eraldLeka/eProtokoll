@@ -1,13 +1,15 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using eProtokoll.Models;
+using eProtokoll.Services.Mappers;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
-using eProtokoll.Models;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using System.Data;
-using eProtokoll.Services.Mappers;
 
 namespace eProtokoll.Areas.Admin.Controllers
 {
     [Area("Admin")]
+    [Authorize(Roles = "Administrator")]
     public class UserManagementController : Controller
     {
         private readonly string _connectionString;
@@ -101,7 +103,7 @@ namespace eProtokoll.Areas.Admin.Controllers
         {
             bool hasErrors = false;
 
-            // Valido password
+            // ===================== VALIDIM =====================
             if (string.IsNullOrEmpty(Password))
             {
                 TempData["PasswordError"] = "Fjalëkalimi është i detyrueshëm!";
@@ -119,7 +121,6 @@ namespace eProtokoll.Areas.Admin.Controllers
                 hasErrors = true;
             }
 
-            // Valido username (duhet të jetë unik)
             if (string.IsNullOrEmpty(model.UserName))
             {
                 ModelState.AddModelError(nameof(model.UserName), "Emri i përdoruesit është i detyrueshëm!");
@@ -135,7 +136,6 @@ namespace eProtokoll.Areas.Admin.Controllers
                 }
             }
 
-            // Valido email (duhet të jetë unik)
             if (string.IsNullOrEmpty(model.Email))
             {
                 ModelState.AddModelError(nameof(model.Email), "Email-i është i detyrueshëm!");
@@ -151,7 +151,6 @@ namespace eProtokoll.Areas.Admin.Controllers
                 }
             }
 
-            // Valido FirstName dhe LastName (required por jo unikë)
             if (string.IsNullOrEmpty(model.FirstName))
             {
                 ModelState.AddModelError(nameof(model.FirstName), "Emri është i detyrueshëm!");
@@ -171,6 +170,7 @@ namespace eProtokoll.Areas.Admin.Controllers
                 return View(model);
             }
 
+            // ===================== KRIJIMI I PËRDORUESIT =====================
             var user = new ApplicationUser
             {
                 UserName = model.UserName,
@@ -179,7 +179,7 @@ namespace eProtokoll.Areas.Admin.Controllers
                 LastName = model.LastName,
                 Position = model.Position,
                 Department = model.Department,
-                Role = model.Role,
+                Role = model.Role,       // Enum për logjikë biznesi / UI
                 PhoneNumber = model.PhoneNumber,
                 IsActive = model.IsActive,
                 CreatedDate = DateTime.Now,
@@ -190,6 +190,9 @@ namespace eProtokoll.Areas.Admin.Controllers
 
             if (result.Succeeded)
             {
+                // ===================== SHTO PËRDORUESIN NË IDENTITY ROLE =====================
+                await _userManager.AddToRoleAsync(user, model.Role.ToString());
+
                 TempData["SuccessMessage"] = $"Përdoruesi '{user.FullName}' u krijua me sukses!";
                 return RedirectToAction(nameof(Index));
             }
@@ -203,6 +206,7 @@ namespace eProtokoll.Areas.Admin.Controllers
             ViewBag.ConfirmPassword = ConfirmPassword;
             return View(model);
         }
+
 
         // GET: Admin/UserManagement/Edit/5
         public async Task<IActionResult> Edit(string id)
@@ -239,7 +243,7 @@ namespace eProtokoll.Areas.Admin.Controllers
 
             bool hasErrors = false;
 
-            // Valido password (vetëm nëse është shkruar)
+            // ===================== VALIDIMI I FJALËKALIMIT =====================
             if (!string.IsNullOrEmpty(Password))
             {
                 if (Password.Length < 6)
@@ -255,7 +259,7 @@ namespace eProtokoll.Areas.Admin.Controllers
                 }
             }
 
-            // Valido email nëse është ndryshuar
+            // ===================== VALIDIMI I EMAIL =====================
             if (user.Email != model.Email)
             {
                 var existingEmail = await FindByEmailAsync(model.Email);
@@ -266,7 +270,7 @@ namespace eProtokoll.Areas.Admin.Controllers
                 }
             }
 
-            // Valido username nëse është ndryshuar
+            // ===================== VALIDIMI I USERNAME =====================
             if (user.UserName != model.UserName)
             {
                 var existingUsername = await FindByUsernameAsync(model.UserName);
@@ -284,21 +288,36 @@ namespace eProtokoll.Areas.Admin.Controllers
                 return View(model);
             }
 
-            // Përditëso të dhënat
+            // ===================== PËRDITËSIMI I TË DHËNAVE =====================
             user.UserName = model.UserName;
             user.Email = model.Email;
             user.FirstName = model.FirstName;
             user.LastName = model.LastName;
             user.Position = model.Position;
             user.Department = model.Department;
-            user.Role = model.Role;
             user.PhoneNumber = model.PhoneNumber;
             user.IsActive = model.IsActive;
-            user.ModifiedData = DateTime.Now;
+            user.ModifiedDate = DateTime.Now;
             user.ModifiedBy = User.Identity?.Name;
 
-            var updateResult = await _userManager.UpdateAsync(user);
+            // ===================== PËRDITËSIMI I ROLE-S NË IDENTITY =====================
+            if (user.Role != model.Role)
+            {
+                // Merr rolet aktuale të përdoruesit
+                var currentRoles = await _userManager.GetRolesAsync(user);
 
+                // Hiq të gjitha rolet ekzistuese
+                await _userManager.RemoveFromRolesAsync(user, currentRoles);
+
+                // Shto rolin e ri
+                await _userManager.AddToRoleAsync(user, model.Role.ToString());
+
+                // Përditëso enum-in lokal
+                user.Role = model.Role;
+            }
+
+            // ===================== PËRDITËSIMI I PËRDORUESIT =====================
+            var updateResult = await _userManager.UpdateAsync(user);
             if (!updateResult.Succeeded)
             {
                 foreach (var error in updateResult.Errors)
@@ -310,7 +329,7 @@ namespace eProtokoll.Areas.Admin.Controllers
                 return View(model);
             }
 
-            // Ndrysho password-in nëse është shkruar
+            // ===================== NDRYSHIMI I FJALËKALIMIT =====================
             if (!string.IsNullOrEmpty(Password))
             {
                 await _userManager.RemovePasswordAsync(user);
@@ -331,6 +350,7 @@ namespace eProtokoll.Areas.Admin.Controllers
             TempData["SuccessMessage"] = $"Përdoruesi '{user.FullName}' u përditësua me sukses!";
             return RedirectToAction(nameof(Index));
         }
+
 
         // POST: Admin/UserManagement/Delete/5
         [HttpPost]
@@ -375,7 +395,7 @@ namespace eProtokoll.Areas.Admin.Controllers
             }
 
             user.IsActive = !user.IsActive;
-            user.ModifiedData = DateTime.Now;
+            user.ModifiedDate = DateTime.Now;
             user.ModifiedBy = User.Identity?.Name;
 
             var result = await _userManager.UpdateAsync(user);
@@ -406,7 +426,7 @@ namespace eProtokoll.Areas.Admin.Controllers
                     if (user != null)
                     {
                         user.IsActive = true;
-                        user.ModifiedData = DateTime.Now;
+                        user.ModifiedDate = DateTime.Now;
                         user.ModifiedBy = User.Identity?.Name;
                         await _userManager.UpdateAsync(user);
                         count++;
@@ -438,7 +458,7 @@ namespace eProtokoll.Areas.Admin.Controllers
                     if (user != null)
                     {
                         user.IsActive = false;
-                        user.ModifiedData = DateTime.Now;
+                        user.ModifiedDate = DateTime.Now;
                         user.ModifiedBy = User.Identity?.Name;
                         await _userManager.UpdateAsync(user);
                         count++;

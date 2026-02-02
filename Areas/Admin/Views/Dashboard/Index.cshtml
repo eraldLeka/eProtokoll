@@ -3,6 +3,7 @@
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
 }
 <!-- Statistics Cards -->
+<!-- Statistics Cards -->
 <div class="row mb-4">
     <div class="col-xl-3 col-md-6 mb-3">
         <div class="card border-left-primary shadow h-100 py-2">
@@ -12,8 +13,10 @@
                         <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
                             Përdoruesit
                         </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">125</div>
-                        <small class="text-muted"><i class="bi bi-arrow-up text-success"></i> +12 këtë muaj</small>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@ViewBag.TotalUsers</div>
+                        <small class="text-muted">
+                            <i class="bi bi-arrow-up text-success"></i> +@ViewBag.UsersThisMonth këtë muaj
+                        </small>
                     </div>
                     <div class="col-auto">
                         <i class="bi bi-people-fill text-primary" style="font-size: 2rem; opacity: 0.3;"></i>
@@ -31,8 +34,10 @@
                         <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
                             Dokumentet
                         </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">1,543</div>
-                        <small class="text-muted"><i class="bi bi-arrow-up text-success"></i> +87 sot</small>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@ViewBag.TotalDocuments</div>
+                        <small class="text-muted">
+                            <i class="bi bi-arrow-up text-success"></i> +@ViewBag.DocumentsToday sot
+                        </small>
                     </div>
                     <div class="col-auto">
                         <i class="bi bi-file-earmark-text-fill text-success" style="font-size: 2rem; opacity: 0.3;"></i>
@@ -50,8 +55,10 @@
                         <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
                             Institucionet
                         </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">45</div>
-                        <small class="text-muted"><i class="bi bi-arrow-up text-success"></i> +3 këtë muaj</small>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@ViewBag.TotalInstitutions</div>
+                        <small class="text-muted">
+                            <i class="bi bi-arrow-up text-success"></i> +@ViewBag.InstitutionsThisMonth këtë muaj
+                        </small>
                     </div>
                     <div class="col-auto">
                         <i class="bi bi-building text-warning" style="font-size: 2rem; opacity: 0.3;"></i>
@@ -69,8 +76,10 @@
                         <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
                             Afatet Aktive
                         </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">12</div>
-                        <small class="text-muted"><i class="bi bi-exclamation-circle text-danger"></i> Në pritje</small>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@ViewBag.ActiveDeadlines</div>
+                        <small class="text-muted">
+                            <i class="bi bi-exclamation-circle text-danger"></i> Në pritje
+                        </small>
                     </div>
                     <div class="col-auto">
                         <i class="bi bi-alarm-fill text-danger" style="font-size: 2rem; opacity: 0.3;"></i>
@@ -147,46 +156,53 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td><small class="text-muted">10:30</small></td>
-                                <td>
-                                    <i class="bi bi-person-circle text-primary"></i> Erald Hoxha
-                                </td>
-                                <td>Krijoi dokument hyrës <strong>H-0143/2024</strong></td>
-                                <td><span class="badge bg-success">Sukses</span></td>
-                            </tr>
-                            <tr>
-                                <td><small class="text-muted">10:15</small></td>
-                                <td>
-                                    <i class="bi bi-person-circle text-success"></i> Ana Marku
-                                </td>
-                                <td>Aprovoi dokument dalës <strong>D-0089/2024</strong></td>
-                                <td><span class="badge bg-success">Sukses</span></td>
-                            </tr>
-                            <tr>
-                                <td><small class="text-muted">09:45</small></td>
-                                <td>
-                                    <i class="bi bi-person-circle text-info"></i> Besnik Kola
-                                </td>
-                                <td>Shtoi institucion të ri <strong>Bashkia Tiranë</strong></td>
-                                <td><span class="badge bg-success">Sukses</span></td>
-                            </tr>
-                            <tr>
-                                <td><small class="text-muted">09:30</small></td>
-                                <td>
-                                    <i class="bi bi-person-circle text-warning"></i> Diana Shehu
-                                </td>
-                                <td>Modifikoi cilësimet e protokollit</td>
-                                <td><span class="badge bg-info">Ndryshuar</span></td>
-                            </tr>
-                            <tr>
-                                <td><small class="text-muted">09:00</small></td>
-                                <td>
-                                    <i class="bi bi-person-circle text-danger"></i> Klodian Pira
-                                </td>
-                                <td>Fshiu përdorues <strong>test@example.com</strong></td>
-                                <td><span class="badge bg-danger">Fshirë</span></td>
-                            </tr>
+                            @if (ViewBag.RecentActivity != null)
+                            {
+                                @foreach (var activity in ViewBag.RecentActivity)
+                                {
+                                    <tr>
+                                        <td><small class="text-muted">@activity.Time</small></td>
+                                        <td>
+                                            <i class="bi bi-person-circle text-primary"></i> @activity.UserName
+                                        </td>
+                                        <td>
+                                            @switch (activity.DocumentType)
+                                            {
+                                                case 1:
+                                                    <text>Dokument hyrës</text>
+                                                    break;
+                                                case 2:
+                                                    <text>Dokument dalës</text>
+                                                    break;
+                                                case 3:
+                                                    <text>Dokument brendshëm</text>
+                                                    break;
+                                            }
+                                            <strong>@activity.ProtocolNumber</strong>
+                                        </td>
+                                        <td>
+                                            @switch (activity.Status)
+                                            {
+                                                case 1: // Draft
+                                                        <span class="badge bg-secondary">Draft</span>
+                                                    break;
+                                                case 2: // Registered
+                                                        <span class="badge bg-success">Regjistruar</span>
+                                                    break;
+                                                default:
+                                                    <span class="badge bg-info">Aktiv</span>
+                                                    break;
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">Nuk ka aktivitet të fundit</td>
+                                </tr>
+                            }
                         </tbody>
                     </table>
                 </div>
@@ -295,3 +311,65 @@
         font-size: .7rem;
     }
 </style>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        (function(){
+            try {
+                const areaEl = document.getElementById('myAreaChart');
+                if (areaEl) {
+                    const monthlyData = @Html.Raw(Json.Serialize(ViewBag.MonthlyData ?? new int[0]));
+                    const len = monthlyData.length || 0;
+                    const labels = [];
+                    for (let i = 0; i < len; i++) {
+                        const d = new Date();
+                        d.setMonth(d.getMonth() - (len - 1 - i));
+                        labels.push(d.toLocaleString('default', { month: 'short' }));
+                    }
+
+                    const data = monthlyData.map(v => Number(v || 0));
+
+                    new Chart(areaEl, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Dokumentet',
+                                data: data,
+                                borderColor: '#4e73df',
+                                backgroundColor: 'rgba(78,115,223,0.05)',
+                                tension: 0.4,
+                                fill: true
+                            }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: true }
+                    });
+                }
+
+                const pieEl = document.getElementById('myPieChart');
+                if (pieEl) {
+                    const types = @Html.Raw(Json.Serialize(ViewBag.DocumentTypes ?? new { Incoming = 0, Outgoing = 0, Internal = 0 }));
+                    const incoming = Number(types.Incoming || 0);
+                    const outgoing = Number(types.Outgoing || 0);
+                    const internalCount = Number(types.Internal || 0);
+
+                    new Chart(pieEl, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Hyrëse','Dalëse','Të brendshme'],
+                            datasets: [{
+                                data: [incoming, outgoing, internalCount],
+                                backgroundColor: ['#4e73df','#1cc88a','#36b9cc'],
+                                borderColor: '#fff',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: true }
+                    });
+                }
+            }
+            catch (err) { console.error('Dashboard charts init error:', err); }
+        })();
+    </script>
+}

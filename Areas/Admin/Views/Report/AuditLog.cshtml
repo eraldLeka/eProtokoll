@@ -24,16 +24,6 @@
             </h2>
             <p class="text-muted mt-2">Gjurmimi i të gjitha veprimeve në sistem</p>
         </div>
-        <div class="col-md-4 text-end">
-            <button type="button" class="btn btn-success" onclick="window.print()">
-                <i class="bi bi-printer me-1"></i>
-                Printo
-            </button>
-            <button type="button" class="btn btn-primary" id="exportBtn">
-                <i class="bi bi-download me-1"></i>
-                Eksporto
-            </button>
-        </div>
     </div>
 
     <!-- Statistika -->
@@ -60,7 +50,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="text-muted mb-1">Të Përfunduara</h6>
-                            <h3 class="mb-0 text-success">@Model.Count(t => t.IsCompleted)</h3>
+                            <h3 class="mb-0 text-success">@Model.Count(t => t.CompletedDate.HasValue)</h3>
                         </div>
                         <div class="text-success">
                             <i class="bi bi-check-circle-fill" style="font-size: 2rem;"></i>
@@ -76,7 +66,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="text-muted mb-1">Në Proces</h6>
-                            <h3 class="mb-0 text-warning">@Model.Count(t => t.IsInProgress)</h3>
+                            <h3 class="mb-0 text-warning">@Model.Count(t => !t.CompletedDate.HasValue && t.IsActive)</h3>
                         </div>
                         <div class="text-warning">
                             <i class="bi bi-hourglass-split" style="font-size: 2rem;"></i>
@@ -92,7 +82,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="text-muted mb-1">Të Vonuara</h6>
-                            <h3 class="mb-0 text-danger">@Model.Count(t => t.IsOverdue)</h3>
+                            <h3 class="mb-0 text-danger">@Model.Count(t => t.DueDate.HasValue && t.DueDate < DateTime.Now && !t.CompletedDate.HasValue)</h3>
                         </div>
                         <div class="text-danger">
                             <i class="bi bi-exclamation-triangle-fill" style="font-size: 2rem;"></i>
@@ -114,15 +104,15 @@
         <div class="card-body">
             <form method="get" asp-action="AuditLog">
                 <div class="row g-3">
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <label class="form-label">Data Fillimit</label>
                         <input type="date" name="startDate" class="form-control" value="@ViewBag.StartDate" />
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <label class="form-label">Data Përfundimit</label>
                         <input type="date" name="endDate" class="form-control" value="@ViewBag.EndDate" />
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <label class="form-label">Përdoruesi</label>
                         <select name="userId" class="form-select">
                             <option value="">Të gjithë</option>
@@ -132,21 +122,6 @@
                                     @user.UserName
                                 </option>
                             }
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Lloji i Veprimit</label>
-                        <select name="actionType" class="form-select">
-                            <option value="">Të gjitha</option>
-                            <option value="ForInformation">Për Informacion</option>
-                            <option value="ForAction">Për Veprim</option>
-                            <option value="ForResponse">Për Përgjigje</option>
-                            <option value="ForApproval">Për Miratim</option>
-                            <option value="ForSignature">Për Firmë</option>
-                            <option value="ForReview">Për Rishikim</option>
-                            <option value="ForComment">Për Koment</option>
-                            <option value="ForArchiving">Për Arkivim</option>
-                            <option value="Other">Tjetër</option>
                         </select>
                     </div>
                 </div>
@@ -181,14 +156,13 @@
                     <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th style="width: 10%;">Data & Ora</th>
-                                <th style="width: 15%;">Dokumenti</th>
-                                <th style="width: 12%;">Caktuar Nga</th>
-                                <th style="width: 12%;">Caktuar Për</th>
-                                <th style="width: 12%;">Lloji i Veprimit</th>
-                                <th style="width: 10%;">Statusi</th>
+                                <th style="width: 12%;">Data & Ora</th>
+                                <th style="width: 18%;">Dokumenti</th>
+                                <th style="width: 15%;">Caktuar Nga</th>
+                                <th style="width: 15%;">Caktuar Për</th>
+                                <th style="width: 12%;">Statusi</th>
                                 <th style="width: 10%;">Prioriteti</th>
-                                <th style="width: 19%;">Udhëzimet</th>
+                                <th style="width: 18%;">Shënime / Afati</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -209,73 +183,59 @@
                                             @if (!string.IsNullOrEmpty(log.Document.Subject))
                                             {
                                                 <small class="text-muted">
-                                                    @(log.Document.Subject.Length > 30
-                                                                                        ? log.Document.Subject.Substring(0, 30) + "..."
-                                                                                        : log.Document.Subject)
-                                </small>
-                                                                }
+                                                    @(log.Document.Subject.Length > 40 ? log.Document.Subject.Substring(0, 40) + "..." : log.Document.Subject)
+                                                </small>
+                                            }
                                         }
                                     </td>
                                     <td>
                                         <i class="bi bi-person-circle text-primary"></i>
-                                        @(log.AssignedByUser?.UserName ?? "System")
-                                    </td>
-                                    <td>
-                                        <i class="bi bi-person-check text-success"></i>
-                                        @(log.AssignedToUser?.UserName ?? "-")
-                                    </td>
-                                    <td>
-                                        @switch (log.ActionType)
+                                        @if (log.AssignedByUser != null)
                                         {
-                                            case eProtokoll.Models.ActionType.ForInformation:
-                                                <span class="badge bg-info"><i class="bi bi-info-circle"></i> Informacion</span>
-                                                break;
-                                            case eProtokoll.Models.ActionType.ForAction:
-                                                <span class="badge bg-warning"><i class="bi bi-lightning"></i> Veprim</span>
-                                                break;
-                                            case eProtokoll.Models.ActionType.ForResponse:
-                                                <span class="badge bg-primary"><i class="bi bi-reply"></i> Përgjigje</span>
-                                                break;
-                                            case eProtokoll.Models.ActionType.ForApproval:
-                                                <span class="badge bg-success"><i class="bi bi-check2-circle"></i> Miratim</span>
-                                                break;
-                                            case eProtokoll.Models.ActionType.ForSignature:
-                                                <span class="badge bg-danger"><i class="bi bi-pen"></i> Firmë</span>
-                                                break;
-                                            case eProtokoll.Models.ActionType.ForReview:
-                                                <span class="badge bg-secondary"><i class="bi bi-eye"></i> Rishikim</span>
-                                                break;
-                                            case eProtokoll.Models.ActionType.ForComment:
-                                                <span class="badge bg-info"><i class="bi bi-chat"></i> Koment</span>
-                                                break;
-                                            case eProtokoll.Models.ActionType.ForArchiving:
-                                                <span class="badge bg-dark"><i class="bi bi-archive"></i> Arkivim</span>
-                                                break;
-                                            default:
-                                                <span class="badge bg-secondary">Tjetër</span>
-                                                break;
-                                        }
-                                    </td>
-                                    <td>
-                                        @if (log.IsCompleted)
-                                        {
-                                            <span class="badge bg-success"><i class="bi bi-check-circle-fill"></i> Përfunduar</span>
-                                        }
-                                        else if (log.IsInProgress)
-                                        {
-                                            <span class="badge bg-warning"><i class="bi bi-hourglass-split"></i> Në Proces</span>
-                                        }
-                                        else if (log.IsRejected)
-                                        {
-                                            <span class="badge bg-danger"><i class="bi bi-x-circle-fill"></i> Refuzuar</span>
-                                        }
-                                        else if (log.IsAccepted)
-                                        {
-                                            <span class="badge bg-info"><i class="bi bi-check2"></i> Pranuar</span>
+                                            <small>@log.AssignedByUser.FirstName @log.AssignedByUser.LastName</small>
                                         }
                                         else
                                         {
-                                            <span class="badge bg-secondary"><i class="bi bi-clock"></i> I Caktuar</span>
+                                            <small>System</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        <i class="bi bi-person-check text-success"></i>
+                                        @if (log.AssignedToUser != null)
+                                        {
+                                            <small>@log.AssignedToUser.FirstName @log.AssignedToUser.LastName</small>
+                                        }
+                                        else
+                                        {
+                                            <small>-</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (log.CompletedDate.HasValue)
+                                        {
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-check-circle-fill"></i> Përfunduar
+                                            </span>
+                                            <br />
+                                            <small class="text-muted">@log.CompletedDate.Value.ToString("dd/MM/yyyy")</small>
+                                        }
+                                        else if (!log.IsActive)
+                                        {
+                                            <span class="badge bg-secondary">
+                                                <i class="bi bi-x-circle"></i> Joaktiv
+                                            </span>
+                                        }
+                                        else if (log.DueDate.HasValue && log.DueDate < DateTime.Now)
+                                        {
+                                            <span class="badge bg-danger">
+                                                <i class="bi bi-exclamation-triangle-fill"></i> I Vonuar
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="bi bi-hourglass-split"></i> Në Proces
+                                            </span>
                                         }
                                     </td>
                                     <td>
@@ -288,7 +248,7 @@
                                                 <span class="badge bg-primary">Normal</span>
                                                 break;
                                             case eProtokoll.Models.Priority.High:
-                                                <span class="badge bg-warning">I Lartë</span>
+                                                <span class="badge bg-warning text-dark">I Lartë</span>
                                                 break;
                                             case eProtokoll.Models.Priority.Urgent:
                                                 <span class="badge bg-danger">Urgjent</span>
@@ -296,19 +256,18 @@
                                         }
                                     </td>
                                     <td>
-                                        @if (!string.IsNullOrEmpty(log.Instructions))
+                                        @if (!string.IsNullOrEmpty(log.Notes))
                                         {
                                             <small class="text-muted">
-                                                @(log.Instructions.Length > 50
-                                                                                    ? log.Instructions.Substring(0, 50) + "..."
-                                                                                    : log.Instructions)
-                                </small>
-                                                                }
-                                        @if (log.HasDeadline && log.DueDate.HasValue)
+                                                <i class="bi bi-sticky"></i>
+                                                @(log.Notes.Length > 50 ? log.Notes.Substring(0, 50) + "..." : log.Notes)
+                                            </small>
+                                        }
+                                        @if (log.DueDate.HasValue)
                                         {
                                             <br />
-                                            <small class="text-danger">
-                                                <i class="bi bi-calendar-x"></i>
+                                            <small class="@(log.DueDate < DateTime.Now && !log.CompletedDate.HasValue ? "text-danger" : "text-info")">
+                                                <i class="bi bi-calendar-event"></i>
                                                 Afat: @log.DueDate.Value.ToString("dd/MM/yyyy")
                                             </small>
                                         }
@@ -343,22 +302,6 @@
         }
     </div>
 </div>
-
-@section Scripts {
-    <script>
-        $(document).ready(function() {
-            // Export functionality
-            $('#exportBtn').on('click', function() {
-                alert('Funksionaliteti i eksportimit do të implementohet së shpejti');
-            });
-
-            // Auto-submit form when filters change
-            $('select[name="userId"], select[name="actionType"]').on('change', function() {
-                $(this).closest('form').submit();
-            });
-        });
-    </script>
-}
 
 @section Styles {
     <style>

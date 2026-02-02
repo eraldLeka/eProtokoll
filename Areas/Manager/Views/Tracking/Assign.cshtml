@@ -1,0 +1,202 @@
+﻿@model eProtokoll.Models.DocumentTracking
+
+@{
+    ViewData["Title"] = "Cakto Dokument";
+    var document = ViewBag.Document as eProtokoll.Models.Document;
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger mb-3">
+        @TempData["ErrorMessage"]
+    </div>
+}
+
+
+<div class="container-fluid">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-action="Index">Gjurmimi</a></li>
+            <li class="breadcrumb-item active">Cakto Dokument</li>
+        </ol>
+    </nav>
+
+    <h2 class="mb-4">
+        <i class="bi bi-person-plus-fill text-purple"></i> Cakto Dokument
+    </h2>
+
+    @if (document != null)
+    {
+        <div class="alert alert-info mb-4">
+            <h5><i class="bi bi-file-earmark-text"></i> Dokumenti për Caktim</h5>
+            <strong>@document.ProtocolNumber</strong> - @document.Subject
+            @if (document.Classification != null)
+            {
+                <span class="badge bg-secondary ms-2">@document.Classification.Name</span>
+            }
+        </div>
+    }
+
+    <form asp-action="Assign" method="post">
+        @Html.AntiForgeryToken()
+
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+        <div class="card shadow-sm mb-3">
+            <div class="card-header bg-purple text-white">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> Informacioni i Caktimit</h5>
+            </div>
+            <div class="card-body">
+                @if (document == null)
+                {
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label asp-for="DocumentId" class="form-label">
+                                Zgjidhni Dokumentin <span class="text-danger">*</span>
+                            </label>
+                            <select asp-for="DocumentId" class="form-select" asp-items="ViewBag.Documents" required>
+                                <option value="">-- Zgjidhni dokumentin që doni të caktoni --</option>
+                            </select>
+                            <span asp-validation-for="DocumentId" class="text-danger"></span>
+                            <small class="form-text text-muted">
+                                Zgjidhni dokumentin për ta caktuar punonjësit.
+                            </small>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <!-- Dokument is pre-selected via URL parameter, use hidden input -->
+                    <input asp-for="DocumentId" type="hidden" />
+                }
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="AssignedToUserId" class="form-label">
+                            Cakto Për <span class="text-danger">*</span>
+                        </label>
+                        <select asp-for="AssignedToUserId" class="form-select" asp-items="ViewBag.Users" required>
+                            <option value="">-- Zgjidhni punonjësin --</option>
+                        </select>
+                        <span asp-validation-for="AssignedToUserId" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-3 mb-3">
+                        <label asp-for="AssignedDate" class="form-label">
+                            Data e Caktimit <span class="text-danger">*</span>
+                        </label>
+                        <input asp-for="AssignedDate" class="form-control" type="datetime-local" required />
+                        <span asp-validation-for="AssignedDate" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-3 mb-3">
+                        <label asp-for="DueDate" class="form-label">
+                            Afati Kohor
+                        </label>
+                        <input asp-for="DueDate" class="form-control" type="datetime-local" />
+                        <span asp-validation-for="DueDate" class="text-danger"></span>
+                        <small class="form-text text-muted">Opsionale</small>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label asp-for="Priority" class="form-label">
+                            Prioriteti
+                        </label>
+                        <select asp-for="Priority" class="form-select" asp-items="Html.GetEnumSelectList<Priority>()">
+                        </select>
+                        <span asp-validation-for="Priority" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-8 mb-3">
+                        <label asp-for="Notes" class="form-label">
+                            Shënime / Udhëzime
+                        </label>
+                        <textarea asp-for="Notes" class="form-control" rows="3"
+                                  placeholder="Shkruani udhëzime ose shënime për punonjësin..."></textarea>
+                        <span asp-validation-for="Notes" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="alert alert-success">
+            <i class="bi bi-info-circle"></i> <strong>Info:</strong>
+            Pasi të shtypni "Cakto Dokumentin", dokumenti do t'i caktohet automatikisht punonjësit të zgjedhur.
+        </div>
+
+        <div class="d-flex justify-content-between">
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="bi bi-x-circle"></i> Anulo
+            </a>
+            <button type="submit" class="btn btn-purple btn-lg px-5">
+                <i class="bi bi-check-circle-fill"></i> Cakto Dokumentin
+            </button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        // Nëse zgjidhet një dokument, shfaq një konfirmim
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const userSelect = document.querySelector('select[name="AssignedToUserId"]');
+            const userName = userSelect.options[userSelect.selectedIndex].text;
+
+            if (!confirm(`A jeni i sigurt që doni të caktoni këtë dokument për: ${userName}?`)) {
+                e.preventDefault();
+            }
+        });
+    </script>
+}
+
+@section Styles {
+    <style>
+        .text-purple {
+            color: #6f42c1 !important;
+        }
+
+        .btn-purple {
+            background-color: #6f42c1;
+            border-color: #6f42c1;
+            color: #fff;
+        }
+
+            .btn-purple:hover {
+                background-color: #5a32a3;
+                border-color: #5a32a3;
+                color: #fff;
+            }
+
+        .bg-purple {
+            background-color: #6f42c1 !important;
+        }
+
+        .card {
+            border: none;
+            border-radius: 10px;
+        }
+
+        .card-header {
+            border-radius: 10px 10px 0 0 !important;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .alert {
+            border-radius: 8px;
+        }
+
+        .breadcrumb {
+            background-color: transparent;
+            padding: 0;
+        }
+    </style>
+}

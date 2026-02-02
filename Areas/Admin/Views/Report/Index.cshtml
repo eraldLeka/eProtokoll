@@ -6,7 +6,6 @@
 }
 
 <div class="container-fluid">
-    <!-- Breadcrumb -->
     <nav aria-label="breadcrumb" class="mb-4">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
@@ -21,13 +20,7 @@
                 <i class="bi bi-bar-chart-fill me-2"></i>
                 Raportet dhe Statistikat
             </h2>
-            <p class="text-muted mt-2">Statistika të përgjithshme dhe raporte të detajuara</p>
-        </div>
-        <div class="col-md-4 text-end">
-            <button type="button" class="btn btn-success" onclick="window.print()">
-                <i class="bi bi-printer me-1"></i>
-                Printo Raportin
-            </button>
+            <p class="text-muted mt-2">Statistika të përgjithshme të sistemit</p>
         </div>
     </div>
 
@@ -123,25 +116,19 @@
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-3">
-                            <div class="text-center p-3 border rounded">
-                                <h4 class="text-secondary">@Model.DraftDocuments</h4>
-                                <p class="mb-0 small text-muted">Draft</p>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <div class="text-center p-3 border rounded">
                                 <h4 class="text-primary">@Model.RegisteredDocuments</h4>
                                 <p class="mb-0 small text-muted">I Protokolluar</p>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <div class="text-center p-3 border rounded">
                                 <h4 class="text-warning">@Model.InProgressDocuments</h4>
                                 <p class="mb-0 small text-muted">Në Proces</p>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <div class="text-center p-3 border rounded">
                                 <h4 class="text-success">@Model.CompletedDocuments</h4>
                                 <p class="mb-0 small text-muted">I Përfunduar</p>
@@ -295,95 +282,6 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <span>Total Klasifikime</span>
                         <h3 class="mb-0">@Model.TotalClassifications</h3>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Raporte të Detajuara -->
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">
-                        <i class="bi bi-file-earmark-bar-graph me-2"></i>
-                        Raporte të Detajuara
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <a asp-action="DocumentsByType" class="text-decoration-none">
-                                <div class="card h-100 border-primary">
-                                    <div class="card-body text-center">
-                                        <i class="bi bi-pie-chart text-primary" style="font-size: 3rem;"></i>
-                                        <h5 class="mt-3">Dokumente sipas Llojit</h5>
-                                        <p class="text-muted small">Raport i detajuar për llojet e dokumenteve</p>
-                                    </div>
-                                </div>
-                            </a>
-                        </div>
-
-                        <div class="col-md-4">
-                            <a asp-action="DocumentsByStatus" class="text-decoration-none">
-                                <div class="card h-100 border-success">
-                                    <div class="card-body text-center">
-                                        <i class="bi bi-check-circle text-success" style="font-size: 3rem;"></i>
-                                        <h5 class="mt-3">Dokumente sipas Statusit</h5>
-                                        <p class="text-muted small">Raport i detajuar për statusin e dokumenteve</p>
-                                    </div>
-                                </div>
-                            </a>
-                        </div>
-
-                        <div class="col-md-4">
-                            <a asp-action="DocumentsByInstitution" class="text-decoration-none">
-                                <div class="card h-100 border-warning">
-                                    <div class="card-body text-center">
-                                        <i class="bi bi-building text-warning" style="font-size: 3rem;"></i>
-                                        <h5 class="mt-3">Dokumente sipas Institucionit</h5>
-                                        <p class="text-muted small">Raport për institucione më aktive</p>
-                                    </div>
-                                </div>
-                            </a>
-                        </div>
-
-                        <div class="col-md-4">
-                            <a asp-action="MonthlyReport" class="text-decoration-none">
-                                <div class="card h-100 border-info">
-                                    <div class="card-body text-center">
-                                        <i class="bi bi-calendar-month text-info" style="font-size: 3rem;"></i>
-                                        <h5 class="mt-3">Raport Mujor</h5>
-                                        <p class="text-muted small">Statistika të detajuara mujore</p>
-                                    </div>
-                                </div>
-                            </a>
-                        </div>
-
-                        <div class="col-md-4">
-                            <a asp-action="ExportData" class="text-decoration-none">
-                                <div class="card h-100 border-secondary">
-                                    <div class="card-body text-center">
-                                        <i class="bi bi-download text-secondary" style="font-size: 3rem;"></i>
-                                        <h5 class="mt-3">Eksporto të Dhënat</h5>
-                                        <p class="text-muted small">Eksporto raportet në Excel/PDF</p>
-                                    </div>
-                                </div>
-                            </a>
-                        </div>
-
-                        <div class="col-md-4">
-                            <a asp-action="AuditLog" class="text-decoration-none">
-                                <div class="card h-100 border-danger">
-                                    <div class="card-body text-center">
-                                        <i class="bi bi-shield-lock text-danger" style="font-size: 3rem;"></i>
-                                        <h5 class="mt-3">Audit Log</h5>
-                                        <p class="text-muted small">Historiku i veprimeve në sistem</p>
-                                    </div>
-                                </div>
-                            </a>
-                        </div>
                     </div>
                 </div>
             </div>

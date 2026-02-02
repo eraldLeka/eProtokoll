@@ -1,23 +1,28 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using eProtokoll.Models;
+using eProtokoll.Services.Mappers;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using eProtokoll.Models;
 using Microsoft.Data.SqlClient;
 using System.Data;
 using System.Text;
-using eProtokoll.Services.Mappers;  // ← SHTUAR!
+using System.Security.Claims;
 
 namespace eProtokoll.Areas.Manager.Controllers
 {
     [Area("Manager")]
+    [Authorize(Roles = "Manager")]
     public class IncomingDocumentController : Controller
     {
         private readonly string _connectionString;
         private readonly IWebHostEnvironment _environment;
+        private readonly eProtokoll.Services.IProtocolNumberService _protocolNumberService;
 
-        public IncomingDocumentController(IConfiguration configuration, IWebHostEnvironment environment)
+        public IncomingDocumentController(IConfiguration configuration, IWebHostEnvironment environment, eProtokoll.Services.IProtocolNumberService protocolNumberService)
         {
             _connectionString = configuration.GetConnectionString("DefaultConnection");
             _environment = environment;
+            _protocolNumberService = protocolNumberService;
         }
 
         // GET: Manager/IncomingDocument
@@ -55,41 +60,9 @@ namespace eProtokoll.Areas.Manager.Controllers
                     parameters.Add(new SqlParameter("@SearchTerm", $"%{searchTerm}%"));
                 }
 
-                // Status filter
-                if (!string.IsNullOrEmpty(status) && Enum.TryParse<DocumentStatus>(status, out var docStatus))
-                {
-                    queryBuilder.Append(" AND d.Status = @Status");
-                    parameters.Add(new SqlParameter("@Status", (int)docStatus));
-                }
+                // Only simple searchTerm filter is applied. Other filters are ignored.
 
-                // Priority filter
-                if (!string.IsNullOrEmpty(priority) && Enum.TryParse<Priority>(priority, out var docPriority))
-                {
-                    queryBuilder.Append(" AND d.Priority = @Priority");
-                    parameters.Add(new SqlParameter("@Priority", (int)docPriority));
-                }
-
-                // Institution filter
-                if (!string.IsNullOrEmpty(institution) && int.TryParse(institution, out var institutionId))
-                {
-                    queryBuilder.Append(" AND d.InstitutionId = @InstitutionId");
-                    parameters.Add(new SqlParameter("@InstitutionId", institutionId));
-                }
-
-                // Date range filters
-                if (dateFrom.HasValue)
-                {
-                    queryBuilder.Append(" AND d.ReceivedDate >= @DateFrom");
-                    parameters.Add(new SqlParameter("@DateFrom", dateFrom.Value));
-                }
-
-                if (dateTo.HasValue)
-                {
-                    queryBuilder.Append(" AND d.ReceivedDate <= @DateTo");
-                    parameters.Add(new SqlParameter("@DateTo", dateTo.Value));
-                }
-
-                // Get total count - build separate count query with same WHERE clause
+                // Get total count
                 var countQueryBuilder = new StringBuilder(@"
                     SELECT COUNT(*) 
                     FROM Documents d
@@ -98,35 +71,10 @@ namespace eProtokoll.Areas.Manager.Controllers
                     LEFT JOIN AspNetUsers u ON d.CreatedBy = u.Id
                     WHERE d.DocumentType = 1");
 
-                // Apply same filters as main query
+                // Apply only simple searchTerm filter to count query
                 if (!string.IsNullOrEmpty(searchTerm))
                 {
                     countQueryBuilder.Append(" AND (d.Subject LIKE @SearchTerm OR d.Content LIKE @SearchTerm OR d.ProtocolNumber LIKE @SearchTerm)");
-                }
-
-                if (!string.IsNullOrEmpty(status))
-                {
-                    countQueryBuilder.Append(" AND d.Status = @Status");
-                }
-
-                if (!string.IsNullOrEmpty(priority))
-                {
-                    countQueryBuilder.Append(" AND d.Priority = @Priority");
-                }
-
-                if (!string.IsNullOrEmpty(institution))
-                {
-                    countQueryBuilder.Append(" AND d.InstitutionId = @InstitutionId");
-                }
-
-                if (dateFrom.HasValue)
-                {
-                    countQueryBuilder.Append(" AND d.ReceivedDate >= @DateFrom");
-                }
-
-                if (dateTo.HasValue)
-                {
-                    countQueryBuilder.Append(" AND d.ReceivedDate <= @DateTo");
                 }
 
                 int totalItems;
@@ -155,8 +103,7 @@ namespace eProtokoll.Areas.Manager.Controllers
                     {
                         while (await reader.ReadAsync())
                         {
-                            // NDRYSHIMI: Përdor DocumentMapper nga Services
-                            var document = DocumentMapper.MapToIncomingDocument(reader);  // ← NDRYSHUAR!
+                            var document = DocumentMapper.MapToIncomingDocument(reader);
 
                             // Populate Institution
                             if (!reader.IsDBNull(reader.GetOrdinal("InstitutionName")))
@@ -200,13 +147,8 @@ namespace eProtokoll.Areas.Manager.Controllers
                     }
                 }
 
-                // ViewBag for filters
+                // ViewBag for search and paging (only simple search supported)
                 ViewBag.SearchTerm = searchTerm;
-                ViewBag.SelectedStatus = status;
-                ViewBag.SelectedPriority = priority;
-                ViewBag.SelectedInstitution = institution;
-                ViewBag.DateFrom = dateFrom?.ToString("yyyy-MM-dd");
-                ViewBag.DateTo = dateTo?.ToString("yyyy-MM-dd");
                 ViewBag.CurrentPage = page;
                 ViewBag.TotalPages = totalPages;
                 ViewBag.TotalItems = totalItems;
@@ -263,21 +205,19 @@ namespace eProtokoll.Areas.Manager.Controllers
         // GET: Manager/IncomingDocument/Create
         public async Task<IActionResult> Create()
         {
-            var protocolNumber = await GenerateProtocolNumber();
+            // Do not generate protocol number on GET. It will be generated on POST to avoid pre-reserving numbers.
             var now = DateTime.Now;
             var currentTime = new TimeSpan(now.Hour, now.Minute, now.Second);
 
             var document = new IncomingDocument
             {
-                ProtocolNumber = protocolNumber,
+                // ProtocolNumber will be created when the form is submitted (POST)
                 ProtocolDate = DateTime.Now.Date,
                 ProtocolTime = currentTime,
                 ReceivedDate = DateTime.Now.Date,
                 ReceivedTime = currentTime,
                 Status = DocumentStatus.Registered,
                 Priority = Priority.Normal,
-                Language = "Shqip",
-                HasPhysicalCopy = true,
                 DeliveryMethod = DeliveryMethod.HandDelivery
             };
 
@@ -285,17 +225,37 @@ namespace eProtokoll.Areas.Manager.Controllers
             return View(document);
         }
 
+        // GET: Manager/IncomingDocument/PeekNextIncomingProtocolNumberAsync
+        [HttpGet]
+        public async Task<IActionResult> PeekNextIncomingProtocolNumberAsync()
+        {
+            try
+            {
+                var next = await _protocolNumberService.PeekNextIncomingProtocolNumberAsync();
+                return Content(next);
+            }
+            catch
+            {
+                return StatusCode(500);
+            }
+        }
+
         // POST: Manager/IncomingDocument/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(IncomingDocument model, IFormFile? attachmentFile)
         {
+            // Generate protocol number on POST to avoid reserving numbers on GET
+            var generatedProtocolNumber = await _protocolNumberService.GenerateNextIncomingProtocolNumberAsync();
+            model.ProtocolNumber = generatedProtocolNumber;
+            // Remove any modelstate entry for ProtocolNumber (it was not posted by the form)
+            ModelState.Remove(nameof(model.ProtocolNumber));
+
             if (ModelState.IsValid)
             {
                 // Set metadata
                 model.CreatedDate = DateTime.Now;
-                model.CreatedBy = User.Identity.Name;
-                model.DocumentType = DocumentType.Incoming;
+                model.CreatedBy = User.FindFirstValue(ClaimTypes.NameIdentifier); model.DocumentType = DocumentType.Incoming;
 
                 using (var connection = new SqlConnection(_connectionString))
                 {
@@ -306,24 +266,23 @@ namespace eProtokoll.Areas.Manager.Controllers
                         {
                             // Insert IncomingDocument
                             var query = @"INSERT INTO Documents (
-                                ProtocolNumber, ProtocolDate, ProtocolTime, DocumentType, Subject, Content,
-                                ReferenceNumber, ReferenceDate, ClassificationId, Status, Priority,
-                                HasDeadline, DeadlineDate, Notes, PageCount, Language, IsScanned,
-                                HasAttachments, IsArchived, ArchivedDate, ArchivedBy, CreatedDate, CreatedBy,
-                                ModifiedDate, ModifiedBy, InstitutionId, SenderName, SenderPosition,
-                                SenderEmail, SenderPhone, ReceivedDate, ReceivedTime, DeliveryMethod,
-                                OriginalDocumentNumber, OriginalDocumentDate, RequiresResponse,
-                                ResponseDeadline, IsResponded, ResponseDate, HasPhysicalCopy, PhysicalLocation
-                            ) OUTPUT INSERTED.DocumentId VALUES (
-                                @ProtocolNumber, @ProtocolDate, @ProtocolTime, @DocumentType, @Subject, @Content,
-                                @ReferenceNumber, @ReferenceDate, @ClassificationId, @Status, @Priority,
-                                @HasDeadline, @DeadlineDate, @Notes, @PageCount, @Language, @IsScanned,
-                                @HasAttachments, @IsArchived, @ArchivedDate, @ArchivedBy, @CreatedDate, @CreatedBy,
-                                @ModifiedDate, @ModifiedBy, @InstitutionId, @SenderName, @SenderPosition,
-                                @SenderEmail, @SenderPhone, @ReceivedDate, @ReceivedTime, @DeliveryMethod,
-                                @OriginalDocumentNumber, @OriginalDocumentDate, @RequiresResponse,
-                                @ResponseDeadline, @IsResponded, @ResponseDate, @HasPhysicalCopy, @PhysicalLocation
-                            )";
+    ProtocolNumber, ProtocolDate, ProtocolTime, DocumentType, Subject, Content,
+    ClassificationId, Status, Priority,
+    HasDeadline, DeadlineDate, Notes,HasAttachments, IsArchived, ArchivedDate, ArchivedBy, CreatedDate, CreatedBy,
+    ModifiedDate, ModifiedBy, InstitutionId, SenderName,
+    SenderEmail, ReceivedDate, ReceivedTime, DeliveryMethod,
+    OriginalDocumentNumber, OriginalDocumentDate, RequiresResponse,
+    ResponseDeadline, IsResponded, ResponseDate, Discriminator
+) OUTPUT INSERTED.DocumentId VALUES (
+    @ProtocolNumber, @ProtocolDate, @ProtocolTime, @DocumentType, @Subject, @Content,
+    @ClassificationId, @Status, @Priority,
+    @HasDeadline, @DeadlineDate, @Notes, 
+    @HasAttachments, @IsArchived, @ArchivedDate, @ArchivedBy, @CreatedDate, @CreatedBy,
+    @ModifiedDate, @ModifiedBy, @InstitutionId,@SenderName,
+    @SenderEmail, @ReceivedDate, @ReceivedTime, @DeliveryMethod,
+    @OriginalDocumentNumber, @OriginalDocumentDate, @RequiresResponse,
+    @ResponseDeadline, @IsResponded, @ResponseDate, @Discriminator
+)";
 
                             int documentId;
                             using (var command = new SqlCommand(query, connection, transaction))
@@ -348,14 +307,13 @@ namespace eProtokoll.Areas.Manager.Controllers
 
                                 // Insert attachment
                                 var attachmentQuery = @"INSERT INTO DocumentAttachments (
-                                    DocumentId, FileName, OriginalFileName, FilePath, FileSize, FileExtension,
-                                    ContentType, UploadedDate, UploadedBy, Category, IsVirusScanned,
-                                    AllowDownload, AllowPrint, DisplayOrder, IsPrimaryDocument
-                                ) VALUES (
-                                    @DocumentId, @FileName, @OriginalFileName, @FilePath, @FileSize, @FileExtension,
-                                    @ContentType, @UploadedDate, @UploadedBy, @Category, @IsVirusScanned,
-                                    @AllowDownload, @AllowPrint, @DisplayOrder, @IsPrimaryDocument
-                                )";
+    DocumentId, FileName, OriginalFileName, FilePath, FileSize, FileExtension,
+    ContentType, UploadedDate, UploadedBy, Category, DisplayOrder, IsPrimaryDocument
+) VALUES (
+    @DocumentId, @FileName, @OriginalFileName, @FilePath, @FileSize, @FileExtension,
+    @ContentType, @UploadedDate, @UploadedBy, @Category, @DisplayOrder, @IsPrimaryDocument
+)";
+
 
                                 using (var attachCommand = new SqlCommand(attachmentQuery, connection, transaction))
                                 {
@@ -367,11 +325,8 @@ namespace eProtokoll.Areas.Manager.Controllers
                                     attachCommand.Parameters.AddWithValue("@FileExtension", Path.GetExtension(attachmentFile.FileName));
                                     attachCommand.Parameters.AddWithValue("@ContentType", attachmentFile.ContentType);
                                     attachCommand.Parameters.AddWithValue("@UploadedDate", DateTime.Now);
-                                    attachCommand.Parameters.AddWithValue("@UploadedBy", User.Identity.Name);
+                                    attachCommand.Parameters.AddWithValue("@UploadedBy", User.FindFirstValue(ClaimTypes.NameIdentifier));
                                     attachCommand.Parameters.AddWithValue("@Category", (int)FileCategory.Document);
-                                    attachCommand.Parameters.AddWithValue("@IsVirusScanned", false);
-                                    attachCommand.Parameters.AddWithValue("@AllowDownload", true);
-                                    attachCommand.Parameters.AddWithValue("@AllowPrint", true);
                                     attachCommand.Parameters.AddWithValue("@DisplayOrder", 1);
                                     attachCommand.Parameters.AddWithValue("@IsPrimaryDocument", true);
 
@@ -423,8 +378,7 @@ namespace eProtokoll.Areas.Manager.Controllers
                     {
                         if (await reader.ReadAsync())
                         {
-                            // NDRYSHIMI: Përdor DocumentMapper nga Services
-                            document = DocumentMapper.MapToIncomingDocument(reader);  // ← NDRYSHUAR!
+                            document = DocumentMapper.MapToIncomingDocument(reader);
                         }
                     }
                 }
@@ -441,8 +395,7 @@ namespace eProtokoll.Areas.Manager.Controllers
                         {
                             while (await reader.ReadAsync())
                             {
-                                // NDRYSHIMI: Përdor AttachmentMapper nga Services
-                                document.Attachments.Add(AttachmentMapper.MapToDocumentAttachment(reader));  // ← NDRYSHUAR!
+                                document.Attachments.Add(AttachmentMapper.MapToDocumentAttachment(reader));
                             }
                         }
                     }
@@ -475,9 +428,7 @@ namespace eProtokoll.Areas.Manager.Controllers
                             var query = @"UPDATE Documents SET
                                 InstitutionId = @InstitutionId,
                                 SenderName = @SenderName,
-                                SenderPosition = @SenderPosition,
                                 SenderEmail = @SenderEmail,
-                                SenderPhone = @SenderPhone,
                                 Subject = @Subject,
                                 Content = @Content,
                                 ReceivedDate = @ReceivedDate,
@@ -490,8 +441,6 @@ namespace eProtokoll.Areas.Manager.Controllers
                                 Priority = @Priority,
                                 RequiresResponse = @RequiresResponse,
                                 ResponseDeadline = @ResponseDeadline,
-                                HasPhysicalCopy = @HasPhysicalCopy,
-                                PhysicalLocation = @PhysicalLocation,
                                 Notes = @Notes,
                                 ModifiedDate = @ModifiedDate,
                                 ModifiedBy = @ModifiedBy
@@ -502,9 +451,7 @@ namespace eProtokoll.Areas.Manager.Controllers
                                 command.Parameters.AddWithValue("@DocumentId", id);
                                 command.Parameters.AddWithValue("@InstitutionId", model.InstitutionId);
                                 command.Parameters.AddWithValue("@SenderName", model.SenderName);
-                                command.Parameters.AddWithValue("@SenderPosition", (object)model.SenderPosition ?? DBNull.Value);
                                 command.Parameters.AddWithValue("@SenderEmail", (object)model.SenderEmail ?? DBNull.Value);
-                                command.Parameters.AddWithValue("@SenderPhone", (object)model.SenderPhone ?? DBNull.Value);
                                 command.Parameters.AddWithValue("@Subject", model.Subject);
                                 command.Parameters.AddWithValue("@Content", (object)model.Content ?? DBNull.Value);
                                 command.Parameters.AddWithValue("@ReceivedDate", model.ReceivedDate);
@@ -517,8 +464,6 @@ namespace eProtokoll.Areas.Manager.Controllers
                                 command.Parameters.AddWithValue("@Priority", (int)model.Priority);
                                 command.Parameters.AddWithValue("@RequiresResponse", model.RequiresResponse);
                                 command.Parameters.AddWithValue("@ResponseDeadline", (object)model.ResponseDeadline ?? DBNull.Value);
-                                command.Parameters.AddWithValue("@HasPhysicalCopy", model.HasPhysicalCopy);
-                                command.Parameters.AddWithValue("@PhysicalLocation", (object)model.PhysicalLocation ?? DBNull.Value);
                                 command.Parameters.AddWithValue("@Notes", (object)model.Notes ?? DBNull.Value);
                                 command.Parameters.AddWithValue("@ModifiedDate", DateTime.Now);
                                 command.Parameters.AddWithValue("@ModifiedBy", (object)User.Identity?.Name ?? DBNull.Value);
@@ -551,14 +496,12 @@ namespace eProtokoll.Areas.Manager.Controllers
 
                                 // Insert attachment
                                 var attachmentQuery = @"INSERT INTO DocumentAttachments (
-                                    DocumentId, FileName, OriginalFileName, FilePath, FileSize, FileExtension,
-                                    ContentType, UploadedDate, UploadedBy, Category, IsVirusScanned,
-                                    AllowDownload, AllowPrint, DisplayOrder
-                                ) VALUES (
-                                    @DocumentId, @FileName, @OriginalFileName, @FilePath, @FileSize, @FileExtension,
-                                    @ContentType, @UploadedDate, @UploadedBy, @Category, @IsVirusScanned,
-                                    @AllowDownload, @AllowPrint, @DisplayOrder
-                                )";
+    DocumentId, FileName, OriginalFileName, FilePath, FileSize, FileExtension,
+    ContentType, UploadedDate, UploadedBy, Category, DisplayOrder, IsPrimaryDocument
+) VALUES (
+    @DocumentId, @FileName, @OriginalFileName, @FilePath, @FileSize, @FileExtension,
+    @ContentType, @UploadedDate, @UploadedBy, @Category, @DisplayOrder, @IsPrimaryDocument
+)";
 
                                 using (var attachCommand = new SqlCommand(attachmentQuery, connection, transaction))
                                 {
@@ -570,12 +513,10 @@ namespace eProtokoll.Areas.Manager.Controllers
                                     attachCommand.Parameters.AddWithValue("@FileExtension", Path.GetExtension(attachmentFile.FileName));
                                     attachCommand.Parameters.AddWithValue("@ContentType", attachmentFile.ContentType);
                                     attachCommand.Parameters.AddWithValue("@UploadedDate", DateTime.Now);
-                                    attachCommand.Parameters.AddWithValue("@UploadedBy", User.Identity?.Name ?? "System");
+                                    attachCommand.Parameters.AddWithValue("@UploadedBy", User.FindFirstValue(ClaimTypes.NameIdentifier));
                                     attachCommand.Parameters.AddWithValue("@Category", (int)FileCategory.Document);
-                                    attachCommand.Parameters.AddWithValue("@IsVirusScanned", false);
-                                    attachCommand.Parameters.AddWithValue("@AllowDownload", true);
-                                    attachCommand.Parameters.AddWithValue("@AllowPrint", true);
-                                    attachCommand.Parameters.AddWithValue("@DisplayOrder", maxOrder + 1);
+                                    attachCommand.Parameters.AddWithValue("@DisplayOrder", 1);
+                                    attachCommand.Parameters.AddWithValue("@IsPrimaryDocument", true);
 
                                     await attachCommand.ExecuteNonQueryAsync();
                                 }
@@ -635,8 +576,7 @@ namespace eProtokoll.Areas.Manager.Controllers
                     {
                         if (await reader.ReadAsync())
                         {
-                            // NDRYSHIMI: Përdor DocumentMapper nga Services
-                            document = DocumentMapper.MapToIncomingDocument(reader);  // ← NDRYSHUAR!
+                            document = DocumentMapper.MapToIncomingDocument(reader);
 
                             // Institution
                             if (!reader.IsDBNull(reader.GetOrdinal("InstitutionName")))
@@ -688,8 +628,7 @@ namespace eProtokoll.Areas.Manager.Controllers
                     {
                         while (await reader.ReadAsync())
                         {
-                            // NDRYSHIMI: Përdor AttachmentMapper nga Services
-                            document.Attachments.Add(AttachmentMapper.MapToDocumentAttachment(reader));  // ← NDRYSHUAR!
+                            document.Attachments.Add(AttachmentMapper.MapToDocumentAttachment(reader));
                         }
                     }
                 }
@@ -709,8 +648,7 @@ namespace eProtokoll.Areas.Manager.Controllers
                     {
                         while (await reader.ReadAsync())
                         {
-                            // NDRYSHIMI: Përdor TrackingMapper nga Services
-                            var tracking = TrackingMapper.MapToDocumentTracking(reader);  // ← NDRYSHUAR!
+                            var tracking = TrackingMapper.MapToDocumentTracking(reader);
                             if (!reader.IsDBNull(reader.GetOrdinal("AssignedToUserName")))
                             {
                                 tracking.AssignedToUser = new ApplicationUser
@@ -740,8 +678,7 @@ namespace eProtokoll.Areas.Manager.Controllers
                     {
                         while (await reader.ReadAsync())
                         {
-                            // NDRYSHIMI: Përdor DeadlineMapper nga Services
-                            var deadline = DeadlineMapper.MapToDeadline(reader);  // ← NDRYSHUAR!
+                            var deadline = DeadlineMapper.MapToDeadline(reader);
                             if (!reader.IsDBNull(reader.GetOrdinal("ResponsibleUserName")))
                             {
                                 deadline.ResponsibleUser = new ApplicationUser
@@ -779,15 +716,14 @@ namespace eProtokoll.Areas.Manager.Controllers
                     {
                         while (await reader.ReadAsync())
                         {
-                            // NDRYSHIMI: Përdor AttachmentMapper nga Services
-                            attachments.Add(AttachmentMapper.MapToDocumentAttachment(reader));  // ← NDRYSHUAR!
+                            attachments.Add(AttachmentMapper.MapToDocumentAttachment(reader));
                         }
                     }
                 }
 
                 // Get protocol number for message
                 string protocolNumber = "";
-                var queryProtocol = "SELECT ProtocolNumber FROM Documents WHERE DocumentId = @DocumentId AND DocumentType = 0";
+                var queryProtocol = "SELECT ProtocolNumber FROM Documents WHERE DocumentId = @DocumentId AND DocumentType = 1";
                 using (var command = new SqlCommand(queryProtocol, connection))
                 {
                     command.Parameters.AddWithValue("@DocumentId", id);
@@ -850,8 +786,7 @@ namespace eProtokoll.Areas.Manager.Controllers
                     {
                         if (await reader.ReadAsync())
                         {
-                            // NDRYSHIMI: Përdor AttachmentMapper nga Services
-                            attachment = AttachmentMapper.MapToDocumentAttachment(reader);  // ← NDRYSHUAR!
+                            attachment = AttachmentMapper.MapToDocumentAttachment(reader);
                         }
                     }
                 }
@@ -881,140 +816,6 @@ namespace eProtokoll.Areas.Manager.Controllers
                 catch (Exception ex)
                 {
                     return Json(new { success = false, message = $"Gabim: {ex.Message}" });
-                }
-            }
-        }
-
-        // ========== HELPER METHODS (mbeten këtu - nuk janë mapping!) ==========
-
-        private async Task<string> GenerateProtocolNumber()
-        {
-            using (var connection = new SqlConnection(_connectionString))
-            {
-                await connection.OpenAsync();
-                using (var transaction = connection.BeginTransaction())
-                {
-                    try
-                    {
-                        var currentYear = DateTime.Now.Year;
-                        ProtocolSettings settings = null;
-
-                        // Get settings
-                        var query = "SELECT * FROM ProtocolSettings WHERE ProtocolSettingsId = 1";
-                        using (var command = new SqlCommand(query, connection, transaction))
-                        {
-                            using (var reader = await command.ExecuteReaderAsync())
-                            {
-                                if (await reader.ReadAsync())
-                                {
-                                    // NDRYSHIMI: Përdor ProtocolSettingsMapper nga Services
-                                    settings = ProtocolSettingsMapper.MapToProtocolSettings(reader);  // ← NDRYSHUAR!
-                                }
-                            }
-                        }
-
-                        // Create default settings if not exists
-                        if (settings == null)
-                        {
-                            var insertQuery = @"INSERT INTO ProtocolSettings (
-                                Year, IncomingPrefix, IncomingStartNumber, IncomingCurrentNumber,
-                                OutgoingPrefix, OutgoingStartNumber, OutgoingCurrentNumber,
-                                InternalPrefix, InternalStartNumber, InternalCurrentNumber,
-                                ProtocolNumberFormat, NumberPadding, AutoResetYearly,
-                                ShowYearInNumber, UseSeparatorSlash, IsActive
-                            ) VALUES (
-                                @Year, @IncomingPrefix, @IncomingStartNumber, @IncomingCurrentNumber,
-                                @OutgoingPrefix, @OutgoingStartNumber, @OutgoingCurrentNumber,
-                                @InternalPrefix, @InternalStartNumber, @InternalCurrentNumber,
-                                @ProtocolNumberFormat, @NumberPadding, @AutoResetYearly,
-                                @ShowYearInNumber, @UseSeparatorSlash, @IsActive
-                            )";
-
-                            using (var command = new SqlCommand(insertQuery, connection, transaction))
-                            {
-                                command.Parameters.AddWithValue("@Year", currentYear);
-                                command.Parameters.AddWithValue("@IncomingPrefix", "H");
-                                command.Parameters.AddWithValue("@IncomingStartNumber", 1);
-                                command.Parameters.AddWithValue("@IncomingCurrentNumber", 0);
-                                command.Parameters.AddWithValue("@OutgoingPrefix", "D");
-                                command.Parameters.AddWithValue("@OutgoingStartNumber", 1);
-                                command.Parameters.AddWithValue("@OutgoingCurrentNumber", 0);
-                                command.Parameters.AddWithValue("@InternalPrefix", "B");
-                                command.Parameters.AddWithValue("@InternalStartNumber", 1);
-                                command.Parameters.AddWithValue("@InternalCurrentNumber", 0);
-                                command.Parameters.AddWithValue("@ProtocolNumberFormat", "{PREFIX}-{NUMBER}/{YEAR}");
-                                command.Parameters.AddWithValue("@NumberPadding", 4);
-                                command.Parameters.AddWithValue("@AutoResetYearly", true);
-                                command.Parameters.AddWithValue("@ShowYearInNumber", true);
-                                command.Parameters.AddWithValue("@UseSeparatorSlash", true);
-                                command.Parameters.AddWithValue("@IsActive", true);
-
-                                await command.ExecuteNonQueryAsync();
-                            }
-
-                            settings = new ProtocolSettings
-                            {
-                                Year = currentYear,
-                                IncomingPrefix = "H",
-                                IncomingCurrentNumber = 0,
-                                IncomingStartNumber = 1,
-                                ProtocolNumberFormat = "{PREFIX}-{NUMBER}/{YEAR}",
-                                NumberPadding = 4,
-                                ShowYearInNumber = true
-                            };
-                        }
-
-                        // Check for yearly reset
-                        if (settings.AutoResetYearly && settings.Year != currentYear)
-                        {
-                            var resetQuery = @"UPDATE ProtocolSettings SET
-                                Year = @Year,
-                                IncomingCurrentNumber = @ResetNumber,
-                                OutgoingCurrentNumber = @ResetNumber,
-                                InternalCurrentNumber = @ResetNumber
-                                WHERE ProtocolSettingsId = 1";
-
-                            using (var command = new SqlCommand(resetQuery, connection, transaction))
-                            {
-                                command.Parameters.AddWithValue("@Year", currentYear);
-                                command.Parameters.AddWithValue("@ResetNumber", settings.IncomingStartNumber - 1);
-                                await command.ExecuteNonQueryAsync();
-                            }
-
-                            settings.Year = currentYear;
-                            settings.IncomingCurrentNumber = settings.IncomingStartNumber - 1;
-                        }
-
-                        // Increment number
-                        var updateQuery = @"UPDATE ProtocolSettings SET 
-                            IncomingCurrentNumber = IncomingCurrentNumber + 1 
-                            WHERE ProtocolSettingsId = 1";
-
-                        using (var command = new SqlCommand(updateQuery, connection, transaction))
-                        {
-                            await command.ExecuteNonQueryAsync();
-                        }
-
-                        settings.IncomingCurrentNumber++;
-
-                        // Generate protocol number
-                        var number = settings.IncomingCurrentNumber.ToString(new string('0', settings.NumberPadding));
-                        var protocolNumber = settings.ProtocolNumberFormat
-                            .Replace("{PREFIX}", settings.IncomingPrefix ?? "H")
-                            .Replace("{NUMBER}", number)
-                            .Replace("{YEAR}", settings.ShowYearInNumber ? currentYear.ToString() : "")
-                            .Replace("{SUFFIX}", settings.IncomingSuffix ?? "");
-
-                        protocolNumber = protocolNumber.Replace("//", "/").Replace("--", "-").Trim('-', '/');
-
-                        transaction.Commit();
-                        return protocolNumber;
-                    }
-                    catch (Exception)
-                    {
-                        transaction.Rollback();
-                        throw;
-                    }
                 }
             }
         }
@@ -1084,17 +885,12 @@ namespace eProtokoll.Areas.Manager.Controllers
             command.Parameters.AddWithValue("@DocumentType", (int)DocumentType.Incoming);
             command.Parameters.AddWithValue("@Subject", model.Subject);
             command.Parameters.AddWithValue("@Content", (object)model.Content ?? DBNull.Value);
-            command.Parameters.AddWithValue("@ReferenceNumber", (object)model.ReferenceNumber ?? DBNull.Value);
-            command.Parameters.AddWithValue("@ReferenceDate", (object)model.ReferenceDate ?? DBNull.Value);
             command.Parameters.AddWithValue("@ClassificationId", model.ClassificationId);
             command.Parameters.AddWithValue("@Status", (int)model.Status);
             command.Parameters.AddWithValue("@Priority", (int)model.Priority);
             command.Parameters.AddWithValue("@HasDeadline", model.HasDeadline);
             command.Parameters.AddWithValue("@DeadlineDate", (object)model.DeadlineDate ?? DBNull.Value);
             command.Parameters.AddWithValue("@Notes", (object)model.Notes ?? DBNull.Value);
-            command.Parameters.AddWithValue("@PageCount", (object)model.PageCount ?? DBNull.Value);
-            command.Parameters.AddWithValue("@Language", (object)model.Language ?? DBNull.Value);
-            command.Parameters.AddWithValue("@IsScanned", model.IsScanned);
             command.Parameters.AddWithValue("@HasAttachments", false);
             command.Parameters.AddWithValue("@IsArchived", model.IsArchived);
             command.Parameters.AddWithValue("@ArchivedDate", (object)model.ArchivedDate ?? DBNull.Value);
@@ -1105,9 +901,7 @@ namespace eProtokoll.Areas.Manager.Controllers
             command.Parameters.AddWithValue("@ModifiedBy", (object)model.ModifiedBy ?? DBNull.Value);
             command.Parameters.AddWithValue("@InstitutionId", model.InstitutionId);
             command.Parameters.AddWithValue("@SenderName", model.SenderName);
-            command.Parameters.AddWithValue("@SenderPosition", (object)model.SenderPosition ?? DBNull.Value);
             command.Parameters.AddWithValue("@SenderEmail", (object)model.SenderEmail ?? DBNull.Value);
-            command.Parameters.AddWithValue("@SenderPhone", (object)model.SenderPhone ?? DBNull.Value);
             command.Parameters.AddWithValue("@ReceivedDate", model.ReceivedDate);
             command.Parameters.AddWithValue("@ReceivedTime", model.ReceivedTime);
             command.Parameters.AddWithValue("@DeliveryMethod", (int)model.DeliveryMethod);
@@ -1117,15 +911,8 @@ namespace eProtokoll.Areas.Manager.Controllers
             command.Parameters.AddWithValue("@ResponseDeadline", (object)model.ResponseDeadline ?? DBNull.Value);
             command.Parameters.AddWithValue("@IsResponded", model.IsResponded);
             command.Parameters.AddWithValue("@ResponseDate", (object)model.ResponseDate ?? DBNull.Value);
-            command.Parameters.AddWithValue("@HasPhysicalCopy", model.HasPhysicalCopy);
-            command.Parameters.AddWithValue("@PhysicalLocation", (object)model.PhysicalLocation ?? DBNull.Value);
-        }
+            command.Parameters.AddWithValue("@Discriminator", "IncomingDocument");
 
-        // ❌ FSHIHEN TË GJITHA MAPPING METHODS - TANI NË SERVICES/MAPPERS/MAPPERS.CS:
-        // - MapToIncomingDocument
-        // - MapToDocumentAttachment
-        // - MapToDocumentTracking
-        // - MapToDeadline
-        // - MapToProtocolSettings
+        }
     }
 }

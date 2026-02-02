@@ -94,7 +94,7 @@
                                         <option value="">-- Zgjidh Nivelin --</option>
                                     </select>
                                     <span asp-validation-for="Level" class="text-danger"></span>
-                                    <small class="text-muted">Përcakton kush ka akses në dokumentet me këtë klasifikim</small>
+                                    <small class="text-muted d-block mt-1" id="levelDescription">Përcakton kush ka akses në dokumentet me këtë klasifikim</small>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -106,84 +106,6 @@
                                     <input asp-for="RetentionYears" class="form-control" type="number" min="1" max="99" />
                                     <span asp-validation-for="RetentionYears" class="text-danger"></span>
                                     <small class="text-muted">Sa vite duhet të ruhen dokumentet</small>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label asp-for="MinimumRoleRequired" class="form-label">
-                                <i class="bi bi-person-badge text-warning"></i>
-                                Roli Minimal për Qasje
-                            </label>
-                            <select asp-for="MinimumRoleRequired" class="form-select">
-                                <option value="">-- Nuk Kërkohet Rol Specifik --</option>
-                                <option value="Administrator">Administrator</option>
-                                <option value="Manager">Menaxher</option>
-                                <option value="Employee">Punonjës</option>
-                            </select>
-                            <span asp-validation-for="MinimumRoleRequired" class="text-danger"></span>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="form-check form-switch mb-3">
-                                    <input asp-for="RequiresApproval" class="form-check-input" type="checkbox" />
-                                    <label asp-for="RequiresApproval" class="form-check-label">
-                                        <i class="bi bi-check-circle text-warning"></i>
-                                        Kërkon Miratim për Qasje
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-check form-switch mb-3">
-                                    <input asp-for="EnableAuditLog" class="form-check-input" type="checkbox" checked />
-                                    <label asp-for="EnableAuditLog" class="form-check-label">
-                                        <i class="bi bi-journal-text text-warning"></i>
-                                        Aktivizo Audit Log
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Lejet e Veprimit -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-info text-white">
-                        <h5 class="mb-0">
-                            <i class="bi bi-gear me-2"></i>
-                            Lejet e Veprimit
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <p class="text-muted mb-3">Përcaktoni çfarë veprimesh janë të lejuara për dokumentet me këtë klasifikim</p>
-
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="form-check form-switch mb-3">
-                                    <input asp-for="AllowPrint" class="form-check-input" type="checkbox" checked />
-                                    <label asp-for="AllowPrint" class="form-check-label">
-                                        <i class="bi bi-printer-fill text-info"></i>
-                                        Lejo Printimin
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-check form-switch mb-3">
-                                    <input asp-for="AllowDownload" class="form-check-input" type="checkbox" checked />
-                                    <label asp-for="AllowDownload" class="form-check-label">
-                                        <i class="bi bi-download text-info"></i>
-                                        Lejo Shkarkimin
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-check form-switch mb-3">
-                                    <input asp-for="AllowCopy" class="form-check-input" type="checkbox" checked />
-                                    <label asp-for="AllowCopy" class="form-check-label">
-                                        <i class="bi bi-files text-info"></i>
-                                        Lejo Kopjimin
-                                    </label>
                                 </div>
                             </div>
                         </div>
@@ -264,14 +186,18 @@
                 </div>
                 <div class="card-body">
                     <h6 class="text-primary">
-                        <i class="bi bi-lightbulb-fill"></i> Këshilla për Klasifikimet
+                        <i class="bi bi-lightbulb-fill"></i> Nivelet e Klasifikimit
                     </h6>
                     <ul class="small">
-                        <li class="mb-2"><strong>Publik:</strong> Për dokumenta që janë të aksesueshëm për të gjithë</li>
-                        <li class="mb-2"><strong>I Brendshëm:</strong> Vetëm për stafin e autorizuar</li>
-                        <li class="mb-2"><strong>Konfidencial:</strong> Për disa punonjës të caktuar</li>
-                        <li class="mb-2"><strong>Sekret:</strong> Vetëm menaxherët dhe administratorët</li>
-                        <li class="mb-2"><strong>Tepër Sekret:</strong> Vetëm administratorët</li>
+                        <li class="mb-2">
+                            <strong class="text-success">Publik:</strong> Të gjithë punonjësit mund ta shohin
+                        </li>
+                        <li class="mb-2">
+                            <strong class="text-warning">I Kufizuar:</strong> Vetëm punonjësit e përzgjedhur (assigned)
+                        </li>
+                        <li class="mb-2">
+                            <strong class="text-danger">Sekret:</strong> Vetëm menaxherët dhe administratorët
+                        </li>
                     </ul>
 
                     <hr />
@@ -280,7 +206,7 @@
                         <i class="bi bi-shield-check"></i> Siguria
                     </h6>
                     <p class="small text-muted">
-                        Aktivizoni <strong>Audit Log</strong> për të gjurmuar të gjitha veprimet e kryera në dokumentet me këtë klasifikim.
+                        Niveli i klasifikimit kontrollon automatikisht kush mund të shikojë dokumentet. Nuk ka nevojë për konfigurime shtesë.
                     </p>
 
                     <hr />
@@ -289,7 +215,16 @@
                         <i class="bi bi-calendar-range"></i> Ruajtja
                     </h6>
                     <p class="small text-muted">
-                        Koha e ruajtjes përcakton sa vite duhet të mbahen dokumentet para se të arkivohen ose fshihen.
+                        Koha e ruajtjes përcakton sa vite duhet të mbahen dokumentet para se të arkivohen.
+                    </p>
+
+                    <hr />
+
+                    <h6 class="text-primary">
+                        <i class="bi bi-palette"></i> Ngjyra
+                    </h6>
+                    <p class="small text-muted">
+                        Zgjidhni ngjyra të ndryshme për nivele të ndryshme sigurie për identifikim të shpejtë vizual.
                     </p>
                 </div>
             </div>
@@ -321,15 +256,19 @@
                 let description = '';
 
                 switch(level) {
-                    case '1': description = 'Publik - Të gjithë mund ta shohin'; break;
-                    case '2': description = 'I Brendshëm - Vetëm punonjësit e autorizuar'; break;
-                    case '3': description = 'Konfidencial - Vetëm disa punonjës të caktuar'; break;
-                    case '4': description = 'Sekret - Vetëm menaxherët dhe administratorët'; break;
-                    case '5': description = 'Tepër Sekret - Vetëm administratorët'; break;
+                    case '0':
+                        description = '✅ <strong>Publik:</strong> Të gjithë punonjësit mund ta shohin';
+                        break;
+                    case '1':
+                        description = '⚠️ <strong>I Kufizuar:</strong> Vetëm punonjësit e përzgjedhur (assigned)';
+                        break;
+                    case '2':
+                        description = '🔒 <strong>Sekret:</strong> Vetëm menaxherët dhe administratorët';
+                        break;
                 }
 
                 if (description) {
-                    $('#Level').next('.text-danger').after(`<small class="text-info d-block mt-1">${description}</small>`);
+                    $('#levelDescription').html(description);
                 }
             });
 
@@ -368,6 +307,11 @@
 
         .alert {
             border-left: 4px solid;
+        }
+
+        #levelDescription {
+            min-height: 24px;
+            font-weight: 500;
         }
     </style>
 }

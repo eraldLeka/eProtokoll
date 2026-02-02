@@ -1,12 +1,15 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using eProtokoll.Models;
+﻿using eProtokoll.Models;
+using eProtokoll.Services.Mappers;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using System.Data;
-using eProtokoll.Services.Mappers;
+using System.Security.Claims;
 
 namespace eProtokoll.Areas.Admin.Controllers
 {
     [Area("Admin")]
+    [Authorize(Roles = "Administrator")]
     public class ClassificationController : Controller
     {
         private readonly string _connectionString;
@@ -15,6 +18,7 @@ namespace eProtokoll.Areas.Admin.Controllers
         {
             _connectionString = configuration.GetConnectionString("DefaultConnection");
         }
+
         // GET: Admin/Classification
         public async Task<IActionResult> Index()
         {
@@ -49,10 +53,6 @@ namespace eProtokoll.Areas.Admin.Controllers
             var model = new Classification
             {
                 IsActive = true,
-                AllowPrint = true,
-                AllowDownload = true,
-                AllowCopy = true,
-                EnableAuditLog = true,
                 RetentionYears = 5,
                 SortOrder = 0
             };
@@ -69,6 +69,8 @@ namespace eProtokoll.Areas.Admin.Controllers
             {
                 try
                 {
+                    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
                     using (var connection = new SqlConnection(_connectionString))
                     {
                         await connection.OpenAsync();
@@ -84,15 +86,13 @@ namespace eProtokoll.Areas.Admin.Controllers
                         }
 
                         classification.CreatedDate = DateTime.Now;
-                        classification.CreatedBy = User.Identity?.Name ?? "System";
+                        classification.CreatedBy = userId;
 
                         var queryInsert = @"INSERT INTO Classifications 
-                            (Name, Level, Description, RetentionYears, RequiresApproval, MinimumRoleRequired, 
-                            AllowPrint, AllowDownload, AllowCopy, EnableAuditLog, ColorCode, SortOrder, 
+                            (Name, Level, Description, RetentionYears, ColorCode, SortOrder, 
                             IsActive, IsDefault, CreatedDate, CreatedBy)
                             VALUES 
-                            (@Name, @Level, @Description, @RetentionYears, @RequiresApproval, @MinimumRoleRequired,
-                            @AllowPrint, @AllowDownload, @AllowCopy, @EnableAuditLog, @ColorCode, @SortOrder,
+                            (@Name, @Level, @Description, @RetentionYears, @ColorCode, @SortOrder,
                             @IsActive, @IsDefault, @CreatedDate, @CreatedBy)";
 
                         using (var command = new SqlCommand(queryInsert, connection))
@@ -101,12 +101,6 @@ namespace eProtokoll.Areas.Admin.Controllers
                             command.Parameters.AddWithValue("@Level", (int)classification.Level);
                             command.Parameters.AddWithValue("@Description", (object)classification.Description ?? DBNull.Value);
                             command.Parameters.AddWithValue("@RetentionYears", classification.RetentionYears);
-                            command.Parameters.AddWithValue("@RequiresApproval", classification.RequiresApproval);
-                            command.Parameters.AddWithValue("@MinimumRoleRequired", (object)classification.MinimumRoleRequired ?? DBNull.Value);
-                            command.Parameters.AddWithValue("@AllowPrint", classification.AllowPrint);
-                            command.Parameters.AddWithValue("@AllowDownload", classification.AllowDownload);
-                            command.Parameters.AddWithValue("@AllowCopy", classification.AllowCopy);
-                            command.Parameters.AddWithValue("@EnableAuditLog", classification.EnableAuditLog);
                             command.Parameters.AddWithValue("@ColorCode", (object)classification.ColorCode ?? DBNull.Value);
                             command.Parameters.AddWithValue("@SortOrder", classification.SortOrder);
                             command.Parameters.AddWithValue("@IsActive", classification.IsActive);
@@ -180,6 +174,8 @@ namespace eProtokoll.Areas.Admin.Controllers
             {
                 try
                 {
+                    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
                     using (var connection = new SqlConnection(_connectionString))
                     {
                         await connection.OpenAsync();
@@ -196,19 +192,13 @@ namespace eProtokoll.Areas.Admin.Controllers
                         }
 
                         classification.ModifiedDate = DateTime.Now;
-                        classification.ModifiedBy = User.Identity?.Name ?? "System";
+                        classification.ModifiedBy = userId;
 
                         var queryUpdate = @"UPDATE Classifications SET
                             Name = @Name,
                             Level = @Level,
                             Description = @Description,
                             RetentionYears = @RetentionYears,
-                            RequiresApproval = @RequiresApproval,
-                            MinimumRoleRequired = @MinimumRoleRequired,
-                            AllowPrint = @AllowPrint,
-                            AllowDownload = @AllowDownload,
-                            AllowCopy = @AllowCopy,
-                            EnableAuditLog = @EnableAuditLog,
                             ColorCode = @ColorCode,
                             SortOrder = @SortOrder,
                             IsActive = @IsActive,
@@ -224,12 +214,6 @@ namespace eProtokoll.Areas.Admin.Controllers
                             command.Parameters.AddWithValue("@Level", (int)classification.Level);
                             command.Parameters.AddWithValue("@Description", (object)classification.Description ?? DBNull.Value);
                             command.Parameters.AddWithValue("@RetentionYears", classification.RetentionYears);
-                            command.Parameters.AddWithValue("@RequiresApproval", classification.RequiresApproval);
-                            command.Parameters.AddWithValue("@MinimumRoleRequired", (object)classification.MinimumRoleRequired ?? DBNull.Value);
-                            command.Parameters.AddWithValue("@AllowPrint", classification.AllowPrint);
-                            command.Parameters.AddWithValue("@AllowDownload", classification.AllowDownload);
-                            command.Parameters.AddWithValue("@AllowCopy", classification.AllowCopy);
-                            command.Parameters.AddWithValue("@EnableAuditLog", classification.EnableAuditLog);
                             command.Parameters.AddWithValue("@ColorCode", (object)classification.ColorCode ?? DBNull.Value);
                             command.Parameters.AddWithValue("@SortOrder", classification.SortOrder);
                             command.Parameters.AddWithValue("@IsActive", classification.IsActive);
@@ -371,6 +355,8 @@ namespace eProtokoll.Areas.Admin.Controllers
         {
             try
             {
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
                 using (var connection = new SqlConnection(_connectionString))
                 {
                     await connection.OpenAsync();
@@ -407,7 +393,7 @@ namespace eProtokoll.Areas.Admin.Controllers
                         command.Parameters.AddWithValue("@Id", id);
                         command.Parameters.AddWithValue("@IsActive", newStatus);
                         command.Parameters.AddWithValue("@ModifiedDate", DateTime.Now);
-                        command.Parameters.AddWithValue("@ModifiedBy", User.Identity?.Name ?? "System");
+                        command.Parameters.AddWithValue("@ModifiedBy", userId);
 
                         await command.ExecuteNonQueryAsync();
                     }
@@ -437,11 +423,12 @@ namespace eProtokoll.Areas.Admin.Controllers
                     return Json(new { success = false, message = "Nuk ka klasifikime të zgjedhura!" });
                 }
 
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
                 using (var connection = new SqlConnection(_connectionString))
                 {
                     await connection.OpenAsync();
 
-                    // Build parameterized query to prevent SQL injection
                     var parameters = new List<SqlParameter>();
                     var paramNames = new List<string>();
 
@@ -461,7 +448,7 @@ namespace eProtokoll.Areas.Admin.Controllers
                     using (var command = new SqlCommand(query, connection))
                     {
                         command.Parameters.AddWithValue("@ModifiedDate", DateTime.Now);
-                        command.Parameters.AddWithValue("@ModifiedBy", User.Identity?.Name ?? "System");
+                        command.Parameters.AddWithValue("@ModifiedBy", userId);
                         command.Parameters.AddRange(parameters.ToArray());
 
                         int rowsAffected = await command.ExecuteNonQueryAsync();
@@ -491,11 +478,12 @@ namespace eProtokoll.Areas.Admin.Controllers
                     return Json(new { success = false, message = "Nuk ka klasifikime të zgjedhura!" });
                 }
 
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
                 using (var connection = new SqlConnection(_connectionString))
                 {
                     await connection.OpenAsync();
 
-                    // Build parameterized query to prevent SQL injection
                     var parameters = new List<SqlParameter>();
                     var paramNames = new List<string>();
 
@@ -515,7 +503,7 @@ namespace eProtokoll.Areas.Admin.Controllers
                     using (var command = new SqlCommand(query, connection))
                     {
                         command.Parameters.AddWithValue("@ModifiedDate", DateTime.Now);
-                        command.Parameters.AddWithValue("@ModifiedBy", User.Identity?.Name ?? "System");
+                        command.Parameters.AddWithValue("@ModifiedBy", userId);
                         command.Parameters.AddRange(parameters.ToArray());
 
                         int rowsAffected = await command.ExecuteNonQueryAsync();
@@ -585,7 +573,6 @@ namespace eProtokoll.Areas.Admin.Controllers
                         });
                     }
 
-                    // Build parameterized query to prevent SQL injection
                     var parameters = new List<SqlParameter>();
                     var paramNames = new List<string>();
 
@@ -614,23 +601,6 @@ namespace eProtokoll.Areas.Admin.Controllers
             catch (Exception ex)
             {
                 return Json(new { success = false, message = $"Gabim: {ex.Message}" });
-            }
-        }
-
-        // Helper method për të kontrolluar ekzistencën
-        private async Task<bool> ClassificationExists(int id)
-        {
-            using (var connection = new SqlConnection(_connectionString))
-            {
-                var query = "SELECT COUNT(*) FROM Classifications WHERE ClassificationId = @Id";
-                using (var command = new SqlCommand(query, connection))
-                {
-                    command.Parameters.AddWithValue("@Id", id);
-                    await connection.OpenAsync();
-                    var result = await command.ExecuteScalarAsync();
-                    int count = result != null ? Convert.ToInt32(result) : 0;
-                    return count > 0;
-                }
             }
         }
     }

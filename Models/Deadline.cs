@@ -4,7 +4,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace eProtokoll.Models
 {
     /// <summary>
-    /// Afatet për dokumentet - Menaxhimi i afateve për kthim përgjigje dhe veprime të tjera
+    /// Afatet për dokumentet - Menaxhimi i afateve për kthim përgjigje dhe veprime
+    /// Harmonik me strukturën e DocumentTracking dhe sistemin tonë të DocumentStatus
     /// </summary>
     public class Deadline
     {
@@ -58,9 +59,6 @@ namespace eProtokoll.Models
         [Display(Name = "Departamenti Përgjegjës")]
         public string? ResponsibleDepartment { get; set; }
 
-        [Display(Name = "Statusi i Afatit")]
-        public DeadlineStatus Status { get; set; } = DeadlineStatus.Pending;
-
         [Display(Name = "Data e Fillimit")]
         [DataType(DataType.Date)]
         public DateTime? StartDate { get; set; }
@@ -82,10 +80,6 @@ namespace eProtokoll.Models
         [Display(Name = "Koment i Përfundimit")]
         [DataType(DataType.MultilineText)]
         public string? CompletionNotes { get; set; }
-
-        [Display(Name = "Përqindja e Përfundimit")]
-        [Range(0, 100)]
-        public int ProgressPercentage { get; set; } = 0;
 
         [Display(Name = "Është i Vonuar")]
         public bool IsOverdue
@@ -114,52 +108,6 @@ namespace eProtokoll.Models
             }
         }
 
-        [Display(Name = "Dërgo Njoftim")]
-        public bool SendNotification { get; set; } = true;
-
-        [Display(Name = "Ditë Para Njoftimit")]
-        [Range(0, 365)]
-        public int NotificationDaysBefore { get; set; } = 3;
-
-        [Display(Name = "Njoftimi është Dërguar")]
-        public bool NotificationSent { get; set; } = false;
-
-        [Display(Name = "Data e Njoftimit")]
-        public DateTime? NotificationSentDate { get; set; }
-
-        [Display(Name = "Dërgo Përkujtues")]
-        public bool SendReminder { get; set; } = true;
-
-        [Display(Name = "Intervali i Përkujtuesit (ditë)")]
-        [Range(1, 30)]
-        public int ReminderIntervalDays { get; set; } = 1;
-
-        [Display(Name = "Përkujtuesi i Fundit")]
-        public DateTime? LastReminderDate { get; set; }
-
-        [Display(Name = "Numri i Përkujtuesve")]
-        public int ReminderCount { get; set; } = 0;
-
-        [Display(Name = "Eskalimi Automatik")]
-        public bool AutoEscalate { get; set; } = false;
-
-        [StringLength(450)]
-        [Display(Name = "Eskalim tek")]
-        public string? EscalateToUserId { get; set; }
-
-        [ForeignKey("EscalateToUserId")]
-        public virtual ApplicationUser? EscalateToUser { get; set; }
-
-        [Display(Name = "Ditë para Eskalimit")]
-        [Range(0, 30)]
-        public int EscalateDaysBefore { get; set; } = 1;
-
-        [Display(Name = "Është Eskaluar")]
-        public bool IsEscalated { get; set; } = false;
-
-        [Display(Name = "Data e Eskalimit")]
-        public DateTime? EscalatedDate { get; set; }
-
         [Display(Name = "Është i Zgjatur")]
         public bool IsExtended { get; set; } = false;
 
@@ -178,18 +126,34 @@ namespace eProtokoll.Models
         [Display(Name = "Data e Zgjatjes")]
         public DateTime? ExtensionDate { get; set; }
 
-        [Display(Name = "Kërkon Miratim")]
-        public bool RequiresApproval { get; set; } = false;
+        [Display(Name = "Dërgo Njoftim")]
+        public bool SendNotification { get; set; } = true;
 
-        [Display(Name = "Është Miratuar")]
-        public bool IsApproved { get; set; } = false;
+        [Display(Name = "Ditë Para Njoftimit")]
+        [Range(0, 30)]
+        public int NotificationDaysBefore { get; set; } = 3;
+
+        [Display(Name = "Njoftimi është Dërguar")]
+        public bool NotificationSent { get; set; } = false;
+
+        [Display(Name = "Data e Njoftimit")]
+        public DateTime? NotificationSentDate { get; set; }
+
+        [Display(Name = "Përkujtuesi i Fundit")]
+        public DateTime? LastReminderDate { get; set; }
 
         [StringLength(450)]
-        [Display(Name = "Miratuar nga")]
-        public string? ApprovedBy { get; set; }
+        [Display(Name = "Eskalim tek")]
+        public string? EscalateToUserId { get; set; }
 
-        [Display(Name = "Data e Miratimit")]
-        public DateTime? ApprovedDate { get; set; }
+        [ForeignKey("EscalateToUserId")]
+        public virtual ApplicationUser? EscalateToUser { get; set; }
+
+        [Display(Name = "Është Eskaluar")]
+        public bool IsEscalated { get; set; } = false;
+
+        [Display(Name = "Data e Eskalimit")]
+        public DateTime? EscalatedDate { get; set; }
 
         [Display(Name = "Është Aktiv")]
         public bool IsActive { get; set; } = true;
@@ -219,7 +183,7 @@ namespace eProtokoll.Models
     }
 
     /// <summary>
-    /// Llojet e afateve
+    /// Llojet e afateve - të thjeshtuara
     /// </summary>
     public enum DeadlineType
     {
@@ -229,52 +193,13 @@ namespace eProtokoll.Models
         [Display(Name = "Afat Veprimi")]
         Action = 2,
 
-        [Display(Name = "Afat Miratimi")]
-        Approval = 3,
-
         [Display(Name = "Afat Dorëzimi")]
-        Submission = 4,
+        Submission = 3,
 
         [Display(Name = "Afat Rishikimi")]
-        Review = 5,
-
-        [Display(Name = "Afat Raportimi")]
-        Reporting = 6,
-
-        [Display(Name = "Afat Implementimi")]
-        Implementation = 7,
-
-        [Display(Name = "Afat Arkivimi")]
-        Archiving = 8,
+        Review = 4,
 
         [Display(Name = "Tjetër")]
-        Other = 9
-    }
-
-    /// <summary>
-    /// Statusi i afatit
-    /// </summary>
-    public enum DeadlineStatus
-    {
-        [Display(Name = "Në Pritje")]
-        Pending = 1,
-
-        [Display(Name = "Në Proces")]
-        InProgress = 2,
-
-        [Display(Name = "I Përfunduar")]
-        Completed = 3,
-
-        [Display(Name = "I Vonuar")]
-        Overdue = 4,
-
-        [Display(Name = "I Zgjatur")]
-        Extended = 5,
-
-        [Display(Name = "I Anulluar")]
-        Cancelled = 6,
-
-        [Display(Name = "I Eskaluar")]
-        Escalated = 7
+        Other = 5
     }
 }

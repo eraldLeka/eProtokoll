@@ -167,7 +167,7 @@ namespace eProtokoll.Migrations
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime?>("CreatedDate")
+                    b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Department")
@@ -204,7 +204,7 @@ namespace eProtokoll.Migrations
                         .HasMaxLength(36)
                         .HasColumnType("nvarchar(36)");
 
-                    b.Property<DateTime?>("ModifiedData")
+                    b.Property<DateTime?>("ModifiedDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("NormalizedEmail")
@@ -270,22 +270,13 @@ namespace eProtokoll.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ClassificationId"));
 
-                    b.Property<bool>("AllowCopy")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("AllowDownload")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("AllowPrint")
-                        .HasColumnType("bit");
-
                     b.Property<string>("ColorCode")
                         .HasMaxLength(7)
                         .HasColumnType("nvarchar(7)");
 
                     b.Property<string>("CreatedBy")
-                        .HasMaxLength(36)
-                        .HasColumnType("nvarchar(36)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
@@ -293,9 +284,6 @@ namespace eProtokoll.Migrations
                     b.Property<string>("Description")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
-
-                    b.Property<bool>("EnableAuditLog")
-                        .HasColumnType("bit");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -306,13 +294,9 @@ namespace eProtokoll.Migrations
                     b.Property<int>("Level")
                         .HasColumnType("int");
 
-                    b.Property<string>("MinimumRoleRequired")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
                     b.Property<string>("ModifiedBy")
-                        .HasMaxLength(36)
-                        .HasColumnType("nvarchar(36)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime?>("ModifiedDate")
                         .HasColumnType("datetime2");
@@ -321,9 +305,6 @@ namespace eProtokoll.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
-
-                    b.Property<bool>("RequiresApproval")
-                        .HasColumnType("bit");
 
                     b.Property<int>("RetentionYears")
                         .HasColumnType("int");
@@ -344,54 +325,39 @@ namespace eProtokoll.Migrations
                         new
                         {
                             ClassificationId = 1,
-                            AllowCopy = true,
-                            AllowDownload = true,
-                            AllowPrint = true,
                             ColorCode = "#28a745",
-                            CreatedDate = new DateTime(2026, 1, 10, 16, 39, 5, 205, DateTimeKind.Local).AddTicks(1326),
+                            CreatedDate = new DateTime(2026, 1, 16, 10, 8, 12, 716, DateTimeKind.Local).AddTicks(2732),
                             Description = "Dokumente publike që mund të shihen nga të gjithë",
-                            EnableAuditLog = true,
                             IsActive = true,
                             IsDefault = true,
-                            Level = 1,
+                            Level = 0,
                             Name = "Publik",
-                            RequiresApproval = false,
                             RetentionYears = 5,
                             SortOrder = 1
                         },
                         new
                         {
                             ClassificationId = 2,
-                            AllowCopy = true,
-                            AllowDownload = true,
-                            AllowPrint = true,
-                            ColorCode = "#17a2b8",
-                            CreatedDate = new DateTime(2026, 1, 10, 16, 39, 5, 205, DateTimeKind.Local).AddTicks(1343),
-                            Description = "Vetëm për punonjësit e autorizuar (assigned)",
-                            EnableAuditLog = true,
+                            ColorCode = "#ffc107",
+                            CreatedDate = new DateTime(2026, 1, 16, 10, 8, 12, 716, DateTimeKind.Local).AddTicks(2736),
+                            Description = "Vetëm për punonjësit e përzgjedhur (assigned)",
                             IsActive = true,
                             IsDefault = false,
-                            Level = 2,
-                            Name = "I kufizuar",
-                            RequiresApproval = false,
+                            Level = 1,
+                            Name = "I Kufizuar",
                             RetentionYears = 10,
                             SortOrder = 2
                         },
                         new
                         {
                             ClassificationId = 3,
-                            AllowCopy = false,
-                            AllowDownload = false,
-                            AllowPrint = false,
-                            ColorCode = "#fd7e14",
-                            CreatedDate = new DateTime(2026, 1, 10, 16, 39, 5, 205, DateTimeKind.Local).AddTicks(1356),
+                            ColorCode = "#dc3545",
+                            CreatedDate = new DateTime(2026, 1, 16, 10, 8, 12, 716, DateTimeKind.Local).AddTicks(2740),
                             Description = "Vetëm menaxherët dhe administratorët",
-                            EnableAuditLog = true,
                             IsActive = true,
                             IsDefault = false,
-                            Level = 3,
+                            Level = 2,
                             Name = "Sekret",
-                            RequiresApproval = true,
                             RetentionYears = 20,
                             SortOrder = 3
                         });
@@ -404,16 +370,6 @@ namespace eProtokoll.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DeadlineId"));
-
-                    b.Property<string>("ApprovedBy")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime?>("ApprovedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("AutoEscalate")
-                        .HasColumnType("bit");
 
                     b.Property<string>("CompletedBy")
                         .HasMaxLength(450)
@@ -447,9 +403,6 @@ namespace eProtokoll.Migrations
                     b.Property<TimeSpan?>("DueTime")
                         .HasColumnType("time");
 
-                    b.Property<int>("EscalateDaysBefore")
-                        .HasColumnType("int");
-
                     b.Property<string>("EscalateToUserId")
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
@@ -469,9 +422,6 @@ namespace eProtokoll.Migrations
                         .HasColumnType("nvarchar(500)");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsApproved")
                         .HasColumnType("bit");
 
                     b.Property<bool>("IsCompleted")
@@ -512,18 +462,6 @@ namespace eProtokoll.Migrations
                     b.Property<int>("Priority")
                         .HasColumnType("int");
 
-                    b.Property<int>("ProgressPercentage")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ReminderCount")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ReminderIntervalDays")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("RequiresApproval")
-                        .HasColumnType("bit");
-
                     b.Property<string>("ResponsibleDepartment")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
@@ -535,14 +473,8 @@ namespace eProtokoll.Migrations
                     b.Property<bool>("SendNotification")
                         .HasColumnType("bit");
 
-                    b.Property<bool>("SendReminder")
-                        .HasColumnType("bit");
-
                     b.Property<DateTime?>("StartDate")
                         .HasColumnType("datetime2");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -564,9 +496,9 @@ namespace eProtokoll.Migrations
 
                     b.HasIndex("EscalateToUserId");
 
-                    b.HasIndex("ResponsibleUserId");
+                    b.HasIndex("IsCompleted");
 
-                    b.HasIndex("Status");
+                    b.HasIndex("ResponsibleUserId");
 
                     b.ToTable("Deadlines");
                 });
@@ -592,7 +524,6 @@ namespace eProtokoll.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("CreatedBy")
-                        .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
@@ -619,13 +550,6 @@ namespace eProtokoll.Migrations
                     b.Property<bool>("IsArchived")
                         .HasColumnType("bit");
 
-                    b.Property<bool>("IsScanned")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Language")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
                     b.Property<string>("ModifiedBy")
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
@@ -636,9 +560,6 @@ namespace eProtokoll.Migrations
                     b.Property<string>("Notes")
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
-
-                    b.Property<int?>("PageCount")
-                        .HasColumnType("int");
 
                     b.Property<int>("Priority")
                         .HasColumnType("int");
@@ -654,12 +575,8 @@ namespace eProtokoll.Migrations
                     b.Property<TimeSpan>("ProtocolTime")
                         .HasColumnType("time");
 
-                    b.Property<DateTime?>("ReferenceDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ReferenceNumber")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                    b.Property<bool>("RequiresResponse")
+                        .HasColumnType("bit");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -699,33 +616,12 @@ namespace eProtokoll.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AttachmentId"));
 
-                    b.Property<bool>("AllowDownload")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("AllowPrint")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("AntivirusEngine")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<DateTime?>("ArchivedDate")
-                        .HasColumnType("datetime2");
-
                     b.Property<int>("Category")
                         .HasColumnType("int");
 
                     b.Property<string>("ContentType")
-                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("DeletedBy")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime?>("DeletedDate")
-                        .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
                         .HasMaxLength(500)
@@ -737,22 +633,9 @@ namespace eProtokoll.Migrations
                     b.Property<int>("DocumentId")
                         .HasColumnType("int");
 
-                    b.Property<int>("DownloadCount")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("Duration")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("ExpirationDate")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("FileExtension")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("FileHash")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("FileName")
                         .IsRequired()
@@ -767,96 +650,11 @@ namespace eProtokoll.Migrations
                     b.Property<long>("FileSize")
                         .HasColumnType("bigint");
 
-                    b.Property<bool>("HasOCR")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("HasThumbnail")
-                        .HasColumnType("bit");
-
-                    b.Property<int?>("Height")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsArchived")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsCompressed")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsDownloaded")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsEncrypted")
-                        .HasColumnType("bit");
-
                     b.Property<bool>("IsPrimaryDocument")
                         .HasColumnType("bit");
 
-                    b.Property<bool>("IsPrinted")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsPublic")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsScanned")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsVirusFree")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsVirusScanned")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("LastDownloadedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("LastPrintedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("LastViewedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Metadata")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("ModifiedBy")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime?>("ModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<DateTime?>("OCRProcessedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("OCRText")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("OriginalFileName")
                         .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int?>("PageCount")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("PreviousVersionId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("PrintCount")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("RequiresAuthorization")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("ThumbnailPath")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
@@ -868,114 +666,15 @@ namespace eProtokoll.Migrations
                     b.Property<DateTime>("UploadedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("Version")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ViewCount")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("VirusScanDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("Width")
-                        .HasColumnType("int");
-
                     b.HasKey("AttachmentId");
 
                     b.HasIndex("DocumentId");
-
-                    b.HasIndex("FileHash");
-
-                    b.HasIndex("PreviousVersionId");
 
                     b.HasIndex("UploadedBy");
 
                     b.HasIndex("UploadedDate");
 
                     b.ToTable("DocumentAttachments");
-                });
-
-            modelBuilder.Entity("eProtokoll.Models.DocumentResponse", b =>
-                {
-                    b.Property<int>("ResponseId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ResponseId"));
-
-                    b.Property<string>("ApprovedByUserId")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime?>("ApprovedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("ModifiedBy")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime?>("ModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("OutgoingDocumentId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("RejectedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("RejectionReason")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<string>("ResponseNotes")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<string>("ResponseSubject")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("ScannedPdfName")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("ScannedPdfPath")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<long>("ScannedPdfSize")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("SubmittedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("TrackingId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("VersionNumber")
-                        .HasColumnType("int");
-
-                    b.HasKey("ResponseId");
-
-                    b.HasIndex("ApprovedByUserId");
-
-                    b.HasIndex("OutgoingDocumentId");
-
-                    b.HasIndex("TrackingId");
-
-                    b.ToTable("DocumentResponses");
                 });
 
             modelBuilder.Entity("eProtokoll.Models.DocumentTracking", b =>
@@ -986,12 +685,6 @@ namespace eProtokoll.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TrackingId"));
 
-                    b.Property<DateTime?>("AcceptedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("ActionType")
-                        .HasColumnType("int");
-
                     b.Property<string>("AssignedByUserId")
                         .IsRequired()
                         .HasMaxLength(450)
@@ -1000,33 +693,16 @@ namespace eProtokoll.Migrations
                     b.Property<DateTime>("AssignedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<TimeSpan>("AssignedTime")
-                        .HasColumnType("time");
-
                     b.Property<string>("AssignedToUserId")
                         .IsRequired()
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("AttachedFiles")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
                     b.Property<DateTime?>("CompletedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("CompletionComment")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<int>("CompletionPercentage")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
-
-                    b.Property<int?>("DelegatedToTrackingId")
-                        .HasColumnType("int");
 
                     b.Property<int>("DocumentId")
                         .HasColumnType("int");
@@ -1034,81 +710,14 @@ namespace eProtokoll.Migrations
                     b.Property<DateTime?>("DueDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<decimal?>("DurationHours")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<bool>("HasDeadline")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Instructions")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<bool>("IsAccepted")
-                        .HasColumnType("bit");
-
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
-
-                    b.Property<bool>("IsCompleted")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsDelegated")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsInProgress")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsOverdue")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsRead")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsRejected")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("ModifiedBy")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime?>("ModifiedDate")
-                        .HasColumnType("datetime2");
 
                     b.Property<string>("Notes")
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
-                    b.Property<int?>("ParentTrackingId")
-                        .HasColumnType("int");
-
                     b.Property<int>("Priority")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("ReadDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("RejectedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("RejectionReason")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<bool>("RequiresReport")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("RequiresResponse")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("SequenceNumber")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("StartedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("Status")
                         .HasColumnType("int");
 
                     b.HasKey("TrackingId");
@@ -1117,15 +726,9 @@ namespace eProtokoll.Migrations
 
                     b.HasIndex("AssignedToUserId");
 
-                    b.HasIndex("DelegatedToTrackingId");
-
                     b.HasIndex("DocumentId");
 
                     b.HasIndex("DueDate");
-
-                    b.HasIndex("ParentTrackingId");
-
-                    b.HasIndex("Status");
 
                     b.ToTable("DocumentTrackings");
                 });
@@ -1167,8 +770,8 @@ namespace eProtokoll.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("CreatedBy")
-                        .HasMaxLength(36)
-                        .HasColumnType("nvarchar(36)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
@@ -1185,8 +788,8 @@ namespace eProtokoll.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("ModifiedBy")
-                        .HasMaxLength(36)
-                        .HasColumnType("nvarchar(36)");
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime?>("ModifiedDate")
                         .HasColumnType("datetime2");
@@ -1209,7 +812,6 @@ namespace eProtokoll.Migrations
                         .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("ShortName")
-                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
@@ -1391,7 +993,7 @@ namespace eProtokoll.Migrations
                             ProtocolSettingsId = 1,
                             AllowManualEdit = false,
                             AutoResetYearly = true,
-                            CreatedDate = new DateTime(2026, 1, 10, 16, 39, 5, 205, DateTimeKind.Local).AddTicks(1773),
+                            CreatedDate = new DateTime(2026, 1, 16, 10, 8, 12, 716, DateTimeKind.Local).AddTicks(3054),
                             IncomingCurrentNumber = 1,
                             IncomingPrefix = "H",
                             IncomingStartNumber = 1,
@@ -1415,37 +1017,11 @@ namespace eProtokoll.Migrations
                 {
                     b.HasBaseType("eProtokoll.Models.Document");
 
-                    b.Property<DateTime?>("AssignedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("AssignedTo")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
                     b.Property<int>("DeliveryMethod")
                         .HasColumnType("int");
 
-                    b.Property<string>("DeliveryNotes")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("EnvelopeNumber")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("HasPhysicalCopy")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("HasSeal")
-                        .HasColumnType("bit");
-
                     b.Property<int>("InstitutionId")
                         .HasColumnType("int");
-
-                    b.Property<bool>("IsConfidential")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsOriginal")
-                        .HasColumnType("bit");
 
                     b.Property<bool>("IsResponded")
                         .HasColumnType("bit");
@@ -1454,10 +1030,6 @@ namespace eProtokoll.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("OriginalDocumentNumber")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("PhysicalLocation")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
@@ -1470,9 +1042,6 @@ namespace eProtokoll.Migrations
 
                     b.Property<TimeSpan>("ReceivedTime")
                         .HasColumnType("time");
-
-                    b.Property<bool>("RequiresResponse")
-                        .HasColumnType("bit");
 
                     b.Property<DateTime?>("ResponseDate")
                         .HasColumnType("datetime2");
@@ -1492,21 +1061,15 @@ namespace eProtokoll.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<string>("SenderPhone")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<string>("SenderPosition")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasIndex("AssignedTo");
-
                     b.HasIndex("InstitutionId");
 
                     b.HasIndex("ReceivedBy");
 
                     b.HasIndex("ReceivedDate");
+
+                    b.HasIndex("ResponseDocumentId")
+                        .IsUnique()
+                        .HasFilter("[ResponseDocumentId] IS NOT NULL");
 
                     b.HasDiscriminator().HasValue("IncomingDocument");
                 });
@@ -1515,43 +1078,7 @@ namespace eProtokoll.Migrations
                 {
                     b.HasBaseType("eProtokoll.Models.Document");
 
-                    b.Property<bool>("ActionCompleted")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("ActionCompletedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("ActionDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ActionRequired")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("ApprovalComment")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("ApprovedBy")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime?>("ApprovedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CarbonCopyList")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<string>("CirculationList")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<int?>("CirculationOrder")
-                        .HasColumnType("int");
-
                     b.Property<string>("FromDepartment")
-                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
@@ -1559,61 +1086,7 @@ namespace eProtokoll.Migrations
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<bool>("HasDigitalSignature")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("HasPhysicalCopy")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("InternalReferenceNumber")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<int>("InternalType")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsApproved")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsCirculation")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsConfidential")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsRead")
-                        .HasColumnType("bit");
-
                     b.Property<bool>("IsResponded")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("NumberOfCopies")
-                        .HasColumnType("int");
-
-                    b.Property<string>("PhysicalLocation")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("ReadBy")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime?>("ReadDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("RelatedDocumentId")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("RequiresApproval")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("RequiresAttention")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("RequiresResponse")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("RequiresSignature")
                         .HasColumnType("bit");
 
                     b.Property<DateTime?>("ResponseDate")
@@ -1625,15 +1098,7 @@ namespace eProtokoll.Migrations
                     b.Property<int?>("ResponseDocumentId")
                         .HasColumnType("int");
 
-                    b.Property<string>("SignedBy")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime?>("SignedDate")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("ToDepartment")
-                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
@@ -1641,17 +1106,11 @@ namespace eProtokoll.Migrations
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
-                    b.HasIndex("ApprovedBy");
-
                     b.HasIndex("FromDepartment");
 
                     b.HasIndex("FromUserId");
 
-                    b.HasIndex("RelatedDocumentId");
-
                     b.HasIndex("ResponseDocumentId");
-
-                    b.HasIndex("SignedBy");
 
                     b.HasIndex("ToDepartment");
 
@@ -1659,20 +1118,8 @@ namespace eProtokoll.Migrations
 
                     b.ToTable("Documents", t =>
                         {
-                            t.Property("HasPhysicalCopy")
-                                .HasColumnName("InternalDocument_HasPhysicalCopy");
-
-                            t.Property("IsConfidential")
-                                .HasColumnName("InternalDocument_IsConfidential");
-
                             t.Property("IsResponded")
                                 .HasColumnName("InternalDocument_IsResponded");
-
-                            t.Property("PhysicalLocation")
-                                .HasColumnName("InternalDocument_PhysicalLocation");
-
-                            t.Property("RequiresResponse")
-                                .HasColumnName("InternalDocument_RequiresResponse");
 
                             t.Property("ResponseDate")
                                 .HasColumnName("InternalDocument_ResponseDate");
@@ -1695,54 +1142,20 @@ namespace eProtokoll.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("CarbonCopyList")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<DateTime?>("ConfirmationDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ConfirmedBy")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
                     b.Property<int>("DeliveryMethod")
                         .HasColumnType("int");
 
                     b.Property<bool>("HasArchiveCopy")
                         .HasColumnType("bit");
 
-                    b.Property<bool>("HasDigitalSignature")
-                        .HasColumnType("bit");
-
                     b.Property<int>("InstitutionId")
                         .HasColumnType("int");
-
-                    b.Property<bool>("IsDeliveryConfirmed")
-                        .HasColumnType("bit");
 
                     b.Property<bool>("IsResponse")
                         .HasColumnType("bit");
 
-                    b.Property<bool>("IsSealed")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("NumberOfCopies")
-                        .HasColumnType("int");
-
                     b.Property<int?>("OriginalIncomingDocumentId")
                         .HasColumnType("int");
-
-                    b.Property<string>("PreparedBy")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime?>("PreparedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("RecipientAddress")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("RecipientEmail")
                         .HasMaxLength(100)
@@ -1753,91 +1166,15 @@ namespace eProtokoll.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<string>("RecipientPhone")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<string>("RecipientPosition")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<bool>("RequiresDeliveryConfirmation")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("SentBy")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime?>("SentDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<TimeSpan?>("SentTime")
-                        .HasColumnType("time");
-
-                    b.Property<string>("ShipmentCompany")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<decimal?>("ShipmentCost")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("ShipmentNotes")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int>("ShipmentStatus")
-                        .HasColumnType("int");
-
-                    b.Property<string>("SignedBy")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<DateTime?>("SignedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("SignerPosition")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("TrackingNumber")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
                     b.HasIndex("InstitutionId");
-
-                    b.HasIndex("OriginalIncomingDocumentId")
-                        .IsUnique()
-                        .HasFilter("[OriginalIncomingDocumentId] IS NOT NULL");
-
-                    b.HasIndex("PreparedBy");
-
-                    b.HasIndex("SentBy");
-
-                    b.HasIndex("SentDate");
 
                     b.ToTable("Documents", t =>
                         {
-                            t.Property("CarbonCopyList")
-                                .HasColumnName("OutgoingDocument_CarbonCopyList");
-
                             t.Property("DeliveryMethod")
                                 .HasColumnName("OutgoingDocument_DeliveryMethod");
 
-                            t.Property("HasDigitalSignature")
-                                .HasColumnName("OutgoingDocument_HasDigitalSignature");
-
                             t.Property("InstitutionId")
                                 .HasColumnName("OutgoingDocument_InstitutionId");
-
-                            t.Property("NumberOfCopies")
-                                .HasColumnName("OutgoingDocument_NumberOfCopies");
-
-                            t.Property("SignedBy")
-                                .HasColumnName("OutgoingDocument_SignedBy");
-
-                            t.Property("SignedDate")
-                                .HasColumnName("OutgoingDocument_SignedDate");
                         });
 
                     b.HasDiscriminator().HasValue("OutgoingDocument");
@@ -1945,8 +1282,7 @@ namespace eProtokoll.Migrations
                     b.HasOne("eProtokoll.Models.ApplicationUser", "Creator")
                         .WithMany("CreatedDocuments")
                         .HasForeignKey("CreatedBy")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Classification");
 
@@ -1961,11 +1297,6 @@ namespace eProtokoll.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("eProtokoll.Models.DocumentAttachment", "PreviousVersion")
-                        .WithMany("Versions")
-                        .HasForeignKey("PreviousVersionId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("eProtokoll.Models.ApplicationUser", "Uploader")
                         .WithMany()
                         .HasForeignKey("UploadedBy")
@@ -1974,32 +1305,7 @@ namespace eProtokoll.Migrations
 
                     b.Navigation("Document");
 
-                    b.Navigation("PreviousVersion");
-
                     b.Navigation("Uploader");
-                });
-
-            modelBuilder.Entity("eProtokoll.Models.DocumentResponse", b =>
-                {
-                    b.HasOne("eProtokoll.Models.ApplicationUser", "ApprovedByUser")
-                        .WithMany()
-                        .HasForeignKey("ApprovedByUserId");
-
-                    b.HasOne("eProtokoll.Models.Document", "OutgoingDocument")
-                        .WithMany()
-                        .HasForeignKey("OutgoingDocumentId");
-
-                    b.HasOne("eProtokoll.Models.DocumentTracking", "Tracking")
-                        .WithMany()
-                        .HasForeignKey("TrackingId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ApprovedByUser");
-
-                    b.Navigation("OutgoingDocument");
-
-                    b.Navigation("Tracking");
                 });
 
             modelBuilder.Entity("eProtokoll.Models.DocumentTracking", b =>
@@ -2016,39 +1322,21 @@ namespace eProtokoll.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("eProtokoll.Models.DocumentTracking", "DelegatedToTracking")
-                        .WithMany()
-                        .HasForeignKey("DelegatedToTrackingId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("eProtokoll.Models.Document", "Document")
                         .WithMany("Trackings")
                         .HasForeignKey("DocumentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("eProtokoll.Models.DocumentTracking", "ParentTracking")
-                        .WithMany("SubDelegations")
-                        .HasForeignKey("ParentTrackingId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.Navigation("AssignedByUser");
 
                     b.Navigation("AssignedToUser");
 
-                    b.Navigation("DelegatedToTracking");
-
                     b.Navigation("Document");
-
-                    b.Navigation("ParentTracking");
                 });
 
             modelBuilder.Entity("eProtokoll.Models.IncomingDocument", b =>
                 {
-                    b.HasOne("eProtokoll.Models.ApplicationUser", "AssignedUser")
-                        .WithMany()
-                        .HasForeignKey("AssignedTo");
-
                     b.HasOne("eProtokoll.Models.Institution", "Institution")
                         .WithMany("IncomingDocuments")
                         .HasForeignKey("InstitutionId")
@@ -2059,50 +1347,36 @@ namespace eProtokoll.Migrations
                         .WithMany()
                         .HasForeignKey("ReceivedBy");
 
-                    b.Navigation("AssignedUser");
+                    b.HasOne("eProtokoll.Models.OutgoingDocument", "ResponseDocument")
+                        .WithOne("OriginalIncomingDocument")
+                        .HasForeignKey("eProtokoll.Models.IncomingDocument", "ResponseDocumentId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Institution");
 
                     b.Navigation("Receiver");
+
+                    b.Navigation("ResponseDocument");
                 });
 
             modelBuilder.Entity("eProtokoll.Models.InternalDocument", b =>
                 {
-                    b.HasOne("eProtokoll.Models.ApplicationUser", "Approver")
-                        .WithMany()
-                        .HasForeignKey("ApprovedBy");
-
                     b.HasOne("eProtokoll.Models.ApplicationUser", "FromUser")
                         .WithMany()
                         .HasForeignKey("FromUserId");
-
-                    b.HasOne("eProtokoll.Models.InternalDocument", "RelatedDocument")
-                        .WithMany()
-                        .HasForeignKey("RelatedDocumentId")
-                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("eProtokoll.Models.InternalDocument", "ResponseDocument")
                         .WithMany()
                         .HasForeignKey("ResponseDocumentId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("eProtokoll.Models.ApplicationUser", "Signer")
-                        .WithMany()
-                        .HasForeignKey("SignedBy");
-
                     b.HasOne("eProtokoll.Models.ApplicationUser", "ToUser")
                         .WithMany()
                         .HasForeignKey("ToUserId");
 
-                    b.Navigation("Approver");
-
                     b.Navigation("FromUser");
 
-                    b.Navigation("RelatedDocument");
-
                     b.Navigation("ResponseDocument");
-
-                    b.Navigation("Signer");
 
                     b.Navigation("ToUser");
                 });
@@ -2115,26 +1389,7 @@ namespace eProtokoll.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("eProtokoll.Models.IncomingDocument", "OriginalIncomingDocument")
-                        .WithOne("ResponseDocument")
-                        .HasForeignKey("eProtokoll.Models.OutgoingDocument", "OriginalIncomingDocumentId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("eProtokoll.Models.ApplicationUser", "Preparer")
-                        .WithMany()
-                        .HasForeignKey("PreparedBy");
-
-                    b.HasOne("eProtokoll.Models.ApplicationUser", "Sender")
-                        .WithMany()
-                        .HasForeignKey("SentBy");
-
                     b.Navigation("Institution");
-
-                    b.Navigation("OriginalIncomingDocument");
-
-                    b.Navigation("Preparer");
-
-                    b.Navigation("Sender");
                 });
 
             modelBuilder.Entity("eProtokoll.Models.ApplicationUser", b =>
@@ -2160,16 +1415,6 @@ namespace eProtokoll.Migrations
                     b.Navigation("Trackings");
                 });
 
-            modelBuilder.Entity("eProtokoll.Models.DocumentAttachment", b =>
-                {
-                    b.Navigation("Versions");
-                });
-
-            modelBuilder.Entity("eProtokoll.Models.DocumentTracking", b =>
-                {
-                    b.Navigation("SubDelegations");
-                });
-
             modelBuilder.Entity("eProtokoll.Models.Institution", b =>
                 {
                     b.Navigation("IncomingDocuments");
@@ -2177,9 +1422,9 @@ namespace eProtokoll.Migrations
                     b.Navigation("OutgoingDocuments");
                 });
 
-            modelBuilder.Entity("eProtokoll.Models.IncomingDocument", b =>
+            modelBuilder.Entity("eProtokoll.Models.OutgoingDocument", b =>
                 {
-                    b.Navigation("ResponseDocument");
+                    b.Navigation("OriginalIncomingDocument");
                 });
 #pragma warning restore 612, 618
         }

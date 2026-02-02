@@ -23,7 +23,7 @@
                         <div>
                             <h6 class="text-muted mb-1 text-uppercase small">Total</h6>
                             <h2 class="mb-0 fw-bold">@ViewBag.TotalDocuments</h2>
-                            <small class="text-success"><i class="bi bi-arrow-up"></i> @ViewBag.MonthDocuments muajin</small>
+                            <small class="text-success"><i class="bi bi-arrow-up"></i> @ViewBag.MonthDocuments total</small>
                         </div>
                         <div class="stat-icon bg-primary-subtle text-primary">
                             <i class="bi bi-files"></i>
@@ -173,11 +173,9 @@
                                                         <span class="badge bg-info"><i class="bi bi-arrow-down-circle"></i> Hyrës</span>
                                                         ; break;
                                                     case DocumentType.Outgoing:
-
                                                         <span class="badge bg-success"><i class="bi bi-arrow-up-circle"></i> Dalës</span>
                                                         ; break;
                                                     case DocumentType.Internal:
-
                                                         <span class="badge bg-warning text-dark"><i class="bi bi-arrow-left-right"></i> Brendshëm</span>
                                                         ; break;
                                                 }
@@ -185,20 +183,14 @@
                                             <td>
                                                 @switch (doc.Status)
                                                 {
-                                                    case DocumentStatus.Draft:
-                                                        <span class="badge bg-secondary">Draft</span>
-                                                        ; break;
                                                     case DocumentStatus.Registered:
-
-                                                        <span class="badge bg-info">Protokolluar</span>
+                                                        <span class="badge bg-info">I Protokolluar</span>
                                                         ; break;
                                                     case DocumentStatus.InProgress:
-
                                                         <span class="badge bg-primary">Në Proces</span>
                                                         ; break;
                                                     case DocumentStatus.Completed:
-
-                                                        <span class="badge bg-success">Përfunduar</span>
+                                                        <span class="badge bg-success">I Përfunduar</span>
                                                         ; break;
                                                 }
                                             </td>
@@ -278,55 +270,65 @@
 </div>
 
 @section Scripts {
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script>
-        $(document).ready(function() {
-            const dailyCtx = document.getElementById('dailyActivityChart');
-            if (dailyCtx) {
-                const dailyData = @Html.Raw(Json.Serialize(ViewBag.DailyStats));
-                new Chart(dailyCtx, {
-                    type: 'line',
-                    data: {
-                        labels: dailyData.map(d => d.date),
-                        datasets: [{
-                            label: 'Dokumentet',
-                            data: dailyData.map(d => d.count),
-                            borderColor: '#0d6efd',
-                            backgroundColor: 'rgba(13,110,253,0.1)',
-                            tension: 0.4,
-                            fill: true
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: true,
-                        plugins: { legend: { display: false } },
-                        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
-                    }
-                });
-            }
+        console.log('Chart.js loaded:', typeof Chart !== 'undefined');
 
-            const pieCtx = document.getElementById('documentTypesChart');
-            if (pieCtx) {
-                new Chart(pieCtx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Hyrëse', 'Dalëse', 'Brendshme'],
-                        datasets: [{
-                            data: [@ViewBag.TotalIncoming, @ViewBag.TotalOutgoing, @ViewBag.TotalInternal],
-                            backgroundColor: ['#0dcaf0', '#198754', '#ffc107'],
-                            borderWidth: 2,
-                            borderColor: '#fff'
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: true,
-                        plugins: { legend: { display: false } }
-                    }
-                });
-            }
-        });
+        // Daily activity chart
+        const dailyData = @Html.Raw(Json.Serialize(ViewBag.DailyStats ?? new object[0]));
+        console.log('Daily data:', dailyData);
+
+        const dailyEl = document.getElementById('dailyActivityChart');
+        if (dailyEl && dailyData && dailyData.length > 0) {
+            const labels = dailyData.map(d => d.Date || d.date);
+            const data = dailyData.map(d => d.Count || d.count || 0);
+
+            new Chart(dailyEl, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Dokumentet',
+                        data: data,
+                        borderColor: '#0d6efd',
+                        backgroundColor: 'rgba(13,110,253,0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                }
+            });
+        }
+
+        // Document types pie
+        const pieEl = document.getElementById('documentTypesChart');
+        if (pieEl) {
+            const incoming = Number(@(ViewBag.TotalIncoming ?? 0));
+            const outgoing = Number(@(ViewBag.TotalOutgoing ?? 0));
+            const internalCount = Number(@(ViewBag.TotalInternal ?? 0));
+
+            new Chart(pieEl, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Hyrëse', 'Dalëse', 'Brendshme'],
+                    datasets: [{
+                        data: [incoming, outgoing, internalCount],
+                        backgroundColor: ['#0dcaf0', '#198754', '#ffc107'],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
     </script>
 }
 

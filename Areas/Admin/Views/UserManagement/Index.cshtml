@@ -265,7 +265,7 @@
                                     </td>
                                     <td>
                                         <small class="text-muted">
-                                            @(user.CreatedDate?.ToString("dd/MM/yyyy") ?? "-")
+                                            @(user.CreatedDate != default ? user.CreatedDate.ToString("dd/MM/yyyy") : "-")
                                         </small>
                                     </td>
                                     <td class="text-end">
