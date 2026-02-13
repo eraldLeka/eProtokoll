@@ -152,16 +152,6 @@
                         Lista e Dokumenteve (@ViewBag.TotalItems)
                     </h5>
                 </div>
-                <div class="col-auto">
-                    <button type="button" class="btn btn-sm btn-outline-success" id="exportExcelBtn">
-                        <i class="bi bi-file-earmark-excel me-1"></i>
-                        Excel
-                    </button>
-                    <button type="button" class="btn btn-sm btn-outline-danger" id="exportPdfBtn">
-                        <i class="bi bi-file-earmark-pdf me-1"></i>
-                        PDF
-                    </button>
-                </div>
             </div>
         </div>
         <div class="card-body p-0">
@@ -177,7 +167,6 @@
                                 <th style="width: 10%;">Data e Protokollimit</th>
                                 <th style="width: 10%;">Prioriteti</th>
                                 <th style="width: 10%;">Statusi</th>
-                                <th style="width: 8%;">Shtojca</th>
                                 <th style="width: 10%;" class="text-end">Veprime</th>
                             </tr>
                         </thead>
@@ -264,27 +253,12 @@
                                                 break;
                                         }
                                     </td>
-                                    <td class="text-center">
-                                        @if (doc.HasAttachments)
-                                        {
-                                            <i class="bi bi-paperclip text-success fs-5" title="Ka shtojca"></i>
-                                        }
-                                        else
-                                        {
-                                            <i class="bi bi-dash text-muted"></i>
-                                        }
-                                    </td>
                                     <td class="text-end">
                                         <div class="btn-group btn-group-sm" role="group">
                                             <a asp-area="Manager" asp-controller="OutgoingDocument" asp-action="Details" asp-route-id="@doc.DocumentId"
                                                class="btn btn-outline-info"
                                                title="Detajet">
                                                 <i class="bi bi-eye-fill"></i>
-                                            </a>
-                                            <a asp-area="Manager" asp-controller="OutgoingDocument" asp-action="Edit" asp-route-id="@doc.DocumentId"
-                                               class="btn btn-outline-primary"
-                                               title="Modifiko">
-                                                <i class="bi bi-pencil-fill"></i>
                                             </a>
                                             @if (doc.Status != DocumentStatus.Completed)
                                             {

@@ -1,13 +1,10 @@
 ﻿using eProtokoll.Models;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace eProtokoll.Data
 {
-    /// <summary>
-    /// Konteksti i databazës për aplikacionin eProtokoll
-    /// </summary>
-    public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
+   
+    public class ApplicationDbContext : DbContext
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
@@ -30,12 +27,9 @@ namespace eProtokoll.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // ============================================================
-            // KONFIGURIMI I MODELEVE
-            // ============================================================
-
+           
             // ApplicationUser
-            modelBuilder.Entity<ApplicationUser>(entity =>
+            modelBuilder.Entity<Users>(entity =>
             {
                 entity.HasIndex(e => e.Email).IsUnique();
                 entity.HasIndex(e => e.UserName).IsUnique();
@@ -162,12 +156,6 @@ namespace eProtokoll.Data
             {
                 entity.HasIndex(e => e.FromDepartment);
                 entity.HasIndex(e => e.ToDepartment);
-
-                // Self-referencing për dokumentet që përgjigjen njëri-tjetrin
-                entity.HasOne(d => d.ResponseDocument)
-                    .WithMany()
-                    .HasForeignKey(d => d.ResponseDocumentId)
-                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             // DocumentTracking
@@ -185,7 +173,6 @@ namespace eProtokoll.Data
             });
 
             // Deadline
-            // Deadline
             modelBuilder.Entity<Deadline>(entity =>
             {
                 entity.HasIndex(e => e.DocumentId);
@@ -201,12 +188,7 @@ namespace eProtokoll.Data
                     .HasForeignKey(d => d.CompletedBy)
                     .OnDelete(DeleteBehavior.Restrict);
 
-                // Relacioni me EscalateToUser
-                entity.HasOne(d => d.EscalateToUser)
-                    .WithMany()
-                    .HasForeignKey(d => d.EscalateToUserId)
-                    .OnDelete(DeleteBehavior.Restrict);
-
+           
                 // Relacioni me Creator
                 entity.HasOne(d => d.Creator)
                     .WithMany()

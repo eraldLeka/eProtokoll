@@ -31,7 +31,7 @@ namespace eProtokoll.Areas.Admin.Controllers
                 connection.Open();
 
                 // Users count
-                var usersCmd = new SqlCommand("SELECT COUNT(*) FROM AspNetUsers", connection);
+                var usersCmd = new SqlCommand("SELECT COUNT(*) FROM Users", connection);
                 ViewBag.TotalUsers = (int)usersCmd.ExecuteScalar();
 
                 // Documents count
@@ -50,13 +50,13 @@ namespace eProtokoll.Areas.Admin.Controllers
 
                 // Active deadlines
                 var deadlinesCmd = new SqlCommand(
-    "SELECT COUNT(*) FROM Deadlines WHERE IsCompleted = 0 AND IsActive = 1",
-    connection);
+                    "SELECT COUNT(*) FROM Deadlines WHERE IsCompleted = 0",
+                    connection);
                 ViewBag.ActiveDeadlines = (int)deadlinesCmd.ExecuteScalar();
 
                 // Users this month
                 var usersMonthCmd = new SqlCommand(
-                    @"SELECT COUNT(*) FROM AspNetUsers 
+                    @"SELECT COUNT(*) FROM Users 
                       WHERE MONTH(CreatedDate) = MONTH(GETDATE()) 
                       AND YEAR(CreatedDate) = YEAR(GETDATE())",
                     connection);
@@ -89,7 +89,7 @@ namespace eProtokoll.Areas.Admin.Controllers
                         d.DocumentType,
                         d.Status
                     FROM Documents d
-                    INNER JOIN AspNetUsers u ON d.CreatedBy = u.Id
+                    INNER JOIN Users u ON d.CreatedBy = u.Id
                     ORDER BY d.ProtocolDate DESC";
 
                 using (var command = new SqlCommand(query, connection))

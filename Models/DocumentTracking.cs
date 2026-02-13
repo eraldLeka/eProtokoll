@@ -3,9 +3,6 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace eProtokoll.Models
 {
-    /// <summary>
-    /// Gjurmimi i dokumenteve - Delegimi i dokumenteve tek punonjësit
-    /// </summary>
     public class DocumentTracking
     {
         [Key]
@@ -16,26 +13,21 @@ namespace eProtokoll.Models
         public int DocumentId { get; set; }
 
         [ForeignKey("DocumentId")]
-        [Display(Name = "Dokumenti")]
         public virtual Document? Document { get; set; }
 
         [Required(ErrorMessage = "Përdoruesi i caktuar është i detyrueshëm")]
-        [StringLength(450)]
         [Display(Name = "Caktuar Për")]
-        public string AssignedToUserId { get; set; }
+        public int AssignedToUserId { get; set; }
 
         [ForeignKey("AssignedToUserId")]
-        [Display(Name = "Përdoruesi")]
-        public virtual ApplicationUser? AssignedToUser { get; set; }
+        public virtual Users? AssignedToUser { get; set; }
 
         [Required(ErrorMessage = "Përdoruesi që cakton është i detyrueshëm")]
-        [StringLength(450)]
         [Display(Name = "Caktuar Nga")]
-        public string AssignedByUserId { get; set; }
+        public int AssignedByUserId { get; set; }
 
         [ForeignKey("AssignedByUserId")]
-        [Display(Name = "Caktuar Nga")]
-        public virtual ApplicationUser? AssignedByUser { get; set; }
+        public virtual Users? AssignedByUser { get; set; }
 
         [Required]
         [Display(Name = "Data e Caktimit")]

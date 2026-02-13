@@ -1,26 +1,33 @@
-﻿using Microsoft.AspNetCore.Identity;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace eProtokoll.Models
 {
-    public class ApplicationUser : IdentityUser
+    public class Users
     {
-        // ===================== BASIC INFO =====================
+        public int Id { get; set; }
 
-        [Required(ErrorMessage = "Emri është i detyrueshëm")]
-        [StringLength(50, ErrorMessage = "Emri nuk mund të jetë më shumë se 50 karaktere")]
+        //login fields
+        [Required]
+        public string UserName { get; set; }
+       
+        [Required]
+        public string PasswordHash { get; set; } = null!;
+
+        [Required]
+        [StringLength(50)]
         [Display(Name = "Emri")]
         public string FirstName { get; set; } = null!;
 
-        [Required(ErrorMessage = "Mbiemri është i detyrueshëm")]
-        [StringLength(50, ErrorMessage = "Mbiemri nuk mund të jetë më shumë se 50 karaktere")]
+        [Required]
+        [StringLength(50)]
         [Display(Name = "Mbiemri")]
         public string LastName { get; set; } = null!;
-
-        [Display(Name = "Emri i plotë")]
         public string FullName => $"{FirstName} {LastName}";
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; }
 
-        // ===================== WORK INFO =====================
+        public int? PhoneNumber { get; set; }
 
         [StringLength(100)]
         [Display(Name = "Pozicioni")]
@@ -30,15 +37,11 @@ namespace eProtokoll.Models
         [Display(Name = "Departmenti")]
         public string? Department { get; set; }
 
-        // ===================== BUSINESS ROLE =====================
-        // ❗ Vetëm për logjikë biznesi / UI
-        // ❌ NUK përdoret për [Authorize]
 
         [Required]
         [Display(Name = "Roli")]
         public UserRole Role { get; set; }
 
-        // ===================== STATUS & AUDIT =====================
 
         [Display(Name = "Aktiv")]
         public bool IsActive { get; set; } = true;
@@ -53,18 +56,11 @@ namespace eProtokoll.Models
         [Display(Name = "Modifikuar nga")]
         public string? ModifiedBy { get; set; }
 
-        // ===================== NAVIGATION PROPERTIES =====================
 
-        [Display(Name = "Dokumentet e krijuara")]
         public virtual ICollection<Document> CreatedDocuments { get; set; } = new List<Document>();
-
-        [Display(Name = "Dokumentet e caktuara")]
         public virtual ICollection<DocumentTracking> AssignedDocuments { get; set; } = new List<DocumentTracking>();
-
-        [Display(Name = "Afatet")]
         public virtual ICollection<Deadline> Deadlines { get; set; } = new List<Deadline>();
 
-        // ===================== ENUM =====================
 
         public enum UserRole
         {

@@ -4,7 +4,6 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - eProtokoll Admin</title>
-
     <!-- Bootstrap 5 lokal -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="~/lib/bootstrap-icons/font/bootstrap-icons.css">
@@ -144,7 +143,7 @@
                     <hr>
                     <ul class="nav flex-column mb-2">
                         <li class="nav-item">
-                            <form asp-controller="Account" asp-action="Logout" method="post">
+                            <form asp-area="" asp-controller="Account" asp-action="Logout" method="post">
                                 @Html.AntiForgeryToken()
                                 <button type="submit" class="nav-link border-0 bg-transparent text-start w-100">
                                     <i class="bi bi-box-arrow-right"></i> Dilni

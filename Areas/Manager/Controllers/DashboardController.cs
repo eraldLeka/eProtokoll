@@ -110,7 +110,7 @@ namespace eProtokoll.Areas.Manager.Controllers
                             // Populate Creator
                             if (!reader.IsDBNull(reader.GetOrdinal("CreatorUserName")))
                             {
-                                document.Creator = new ApplicationUser
+                                document.Creator = new Users
                                 {
                                     UserName = reader.GetString(reader.GetOrdinal("CreatorUserName")),
                                     FirstName = reader.GetString(reader.GetOrdinal("CreatorFirstName")),

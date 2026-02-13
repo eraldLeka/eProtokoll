@@ -1,5 +1,6 @@
 ﻿using eProtokoll.Models;
 using eProtokoll.Services.Mappers;
+using eProtokoll.Services.ProtocolNumber;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
@@ -13,9 +14,9 @@ namespace eProtokoll.Areas.Admin.Controllers
     public class SettingsController : Controller
     {
         private readonly string _connectionString;
-        private readonly eProtokoll.Services.IProtocolNumberService _protocolNumberService;
+        private readonly IProtocolNumberService _protocolNumberService;
 
-        public SettingsController(IConfiguration configuration, eProtokoll.Services.IProtocolNumberService protocolNumberService)
+        public SettingsController(IConfiguration configuration, IProtocolNumberService protocolNumberService)
         {
             _connectionString = configuration.GetConnectionString("DefaultConnection");
             _protocolNumberService = protocolNumberService;

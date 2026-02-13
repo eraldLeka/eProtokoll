@@ -146,33 +146,20 @@
                                 <i class="bi bi-bar-chart"></i> Raporte Statistikore
                             </a>
                         </li>
-                    </ul>
-
-                    <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
-                        <span>VEGLAT</span>
-                    </h6>
-                    <ul class="nav flex-column mb-2">
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Scanner" asp-action="Index">
-                                <i class="bi bi-scanner"></i> Skanimi
-                            </a>
-                        </li>
-
-                    </ul>
                     <hr>
                     <ul class="nav flex-column mb-2">
                         <li class="nav-item">
-                            <form asp-controller="Account" asp-action="Logout" method="post">
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="nav-link border-0 bg-transparent text-start w-100">
-                                    <i class="bi bi-box-arrow-right"></i> Dilni
-                                </button>
-                            </form>
+                                <form asp-area="" asp-controller="Account" asp-action="Logout" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="nav-link border-0 bg-transparent text-start w-100">
+                                        <i class="bi bi-box-arrow-right"></i> Dilni
+                                    </button>
+                                </form>
+
                         </li>
                     </ul>
                 </div>
             </nav>
-
             <!-- Main Content -->
             <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
                 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">

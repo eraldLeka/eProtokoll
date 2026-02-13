@@ -1,75 +1,59 @@
 ﻿using eProtokoll.Data;
-using eProtokoll.Models;
+using eProtokoll.Repositories;
 using eProtokoll.Services;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
+using eProtokoll.Services.ProtocolNumber;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
-//database
+// Connection String
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString));
-
-//identity
-builder.Services
-    .AddIdentity<ApplicationUser, IdentityRole>(options =>
+// Cookie Authentication (pa Identity)
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
     {
-        options.SignIn.RequireConfirmedAccount = false;
+        options.LoginPath = "/Account/Login";
+        options.LogoutPath = "/Account/Logout";
+        options.AccessDeniedPath = "/Account/AccessDenied";
+        options.ExpireTimeSpan = TimeSpan.FromDays(30);
+        options.SlidingExpiration = true;
+    });
 
-        options.Password.RequireDigit = true;
-        options.Password.RequiredLength = 6;
-        options.Password.RequireNonAlphanumeric = false;
-        options.Password.RequireUppercase = false;
-    })
-    .AddEntityFrameworkStores<ApplicationDbContext>()
-    .AddDefaultTokenProviders();
+builder.Services.AddAuthorization();
 
-//bcrypt
-builder.Services.AddScoped<IPasswordHasher<ApplicationUser>, BCryptPasswordHasher<ApplicationUser>>();
-
-//cookie
-builder.Services.ConfigureApplicationCookie(options =>
-{
-    options.LoginPath = "/Account/Login";
-    options.LogoutPath = "/Account/Logout";
-    options.AccessDeniedPath = "/Account/AccessDenied";
-
-    options.ExpireTimeSpan = TimeSpan.FromDays(30);
-    options.SlidingExpiration = true;
-});
-
-//mvc
+// MVC
 builder.Services.AddControllersWithViews();
-builder.Services.AddRazorPages();
-// protocol number service
-builder.Services.AddScoped<eProtokoll.Services.IProtocolNumberService, eProtokoll.Services.ProtocolNumberService>();
+
+// ADO.NET — injekto connectionString
+builder.Services.AddSingleton(connectionString);
+
+// Repositories
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+
+// Services
+builder.Services.AddScoped<IProtocolNumberService, ProtocolNumberService>();
 
 var app = builder.Build();
 
-//seed data
+// Seed admin user (me ADO.NET)
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     try
     {
-        var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-        var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
-
-        await DbSeeder.SeedRoles(roleManager);
-        await DbSeeder.SeedAdminUser(userManager);
+        var userRepo = services.GetRequiredService<IUserRepository>();
+        await DbSeeder.SeedAdminUser(userRepo);
     }
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while seeding roles or admin user.");
+        logger.LogError(ex, "An error occurred while seeding admin user.");
     }
 }
 
-//middleware
+// Middleware
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -78,13 +62,11 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
-
 app.UseAuthentication();
 app.UseAuthorization();
 
-// routes
+// Routes
 app.MapControllerRoute(
     name: "areas",
     pattern: "{area:exists}/{controller=Dashboard}/{action=Index}/{id?}");
@@ -93,7 +75,4 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Account}/{action=Login}/{id?}");
 
-
-app.MapRazorPages();
-
-        app.Run();
+app.Run();

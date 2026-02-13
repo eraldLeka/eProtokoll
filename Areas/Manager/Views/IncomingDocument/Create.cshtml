@@ -37,12 +37,6 @@
                 {
                     <div asp-validation-summary="All" class="alert alert-danger"></div>
                 }
-
-                <div class="mb-3">
-                    <label class="form-label">Numri i Protokollit (parashikuar)</label>
-                    <input type="text" id="predictedProtocolNumber" class="form-control" readonly />
-                </div>
-
                 <!-- Protocol Information -->
                 <div class="card shadow-sm mb-4">
                     <div class="card-header bg-info text-white">
@@ -53,7 +47,7 @@
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-4">
+                            <div class="col-md-6">
                                 <div class="mb-3">
                                     <label asp-for="ProtocolNumber" class="form-label">
                                         <i class="bi bi-file-text text-info"></i>
@@ -62,27 +56,8 @@
                                     <input asp-for="ProtocolNumber"
                                            class="form-control form-control-lg fw-bold text-info"
                                            readonly />
-                                    <input type="hidden" asp-for="ProtocolNumber" />
                                     <span asp-validation-for="ProtocolNumber" class="text-danger"></span>
                                     <small class="text-muted">Gjenerohet automatikisht</small>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label asp-for="ProtocolDate" class="form-label">
-                                        Data e Protokollimit <span class="text-danger">*</span>
-                                    </label>
-                                    <input asp-for="ProtocolDate" class="form-control" type="date" />
-                                    <span asp-validation-for="ProtocolDate" class="text-danger"></span>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label asp-for="ProtocolTime" class="form-label">
-                                        Ora e Protokollimit <span class="text-danger">*</span>
-                                    </label>
-                                    <input asp-for="ProtocolTime" class="form-control" type="time" />
-                                    <span asp-validation-for="ProtocolTime" class="text-danger"></span>
                                 </div>
                             </div>
                         </div>
@@ -122,21 +97,8 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label asp-for="SenderEmail" class="form-label">
-                                        <i class="bi bi-envelope text-primary"></i>
-                                        Email
-                                    </label>
-                                    <input asp-for="SenderEmail" class="form-control" type="email" placeholder="email@example.com" />
-                                    <span asp-validation-for="SenderEmail" class="text-danger"></span>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
-
                 <!-- Document Content -->
                 <div class="card shadow-sm mb-4">
                     <div class="card-header bg-success text-white">
@@ -157,7 +119,7 @@
                         <div class="mb-3">
                             <label asp-for="Content" class="form-label">
                                 <i class="bi bi-text-paragraph text-success"></i>
-                                Përmbajtja/Përshkrimi
+                                Përshkrimi
                             </label>
                             <textarea asp-for="Content" class="form-control" rows="5" placeholder="Përshkrimi i shkurtër i përmbajtjes së dokumentit..."></textarea>
                             <span asp-validation-for="Content" class="text-danger"></span>
@@ -171,16 +133,6 @@
                                     </label>
                                     <input asp-for="OriginalDocumentNumber" class="form-control" placeholder="Nr. që ka dokumenti i institucionit dërgues" />
                                     <span asp-validation-for="OriginalDocumentNumber" class="text-danger"></span>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label asp-for="OriginalDocumentDate" class="form-label">
-                                        <i class="bi bi-calendar text-success"></i>
-                                        Data Origjinale
-                                    </label>
-                                    <input asp-for="OriginalDocumentDate" class="form-control" type="date" />
-                                    <span asp-validation-for="OriginalDocumentDate" class="text-danger"></span>
                                 </div>
                             </div>
                         </div>
@@ -208,27 +160,7 @@
                                     </select>
                                     <span asp-validation-for="ClassificationId" class="text-danger"></span>
                                 </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="mb-3">
-                                    <label asp-for="Status" class="form-label">
-                                        Statusi <span class="text-danger">*</span>
-                                    </label>
-                                    <select asp-for="Status" class="form-select" asp-items="Html.GetEnumSelectList<DocumentStatus>()">
-                                    </select>
-                                    <span asp-validation-for="Status" class="text-danger"></span>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="mb-3">
-                                    <label asp-for="Priority" class="form-label">
-                                        Prioriteti <span class="text-danger">*</span>
-                                    </label>
-                                    <select asp-for="Priority" class="form-select" asp-items="Html.GetEnumSelectList<Priority>()">
-                                    </select>
-                                    <span asp-validation-for="Priority" class="text-danger"></span>
-                                </div>
-                            </div>
+                            </div
                         </div>
                         <div class="row">
                             <div class="col-md-4">
@@ -241,87 +173,32 @@
                                     <span asp-validation-for="ReceivedDate" class="text-danger"></span>
                                 </div>
                             </div>
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label asp-for="ReceivedTime" class="form-label">
-                                        <i class="bi bi-clock text-warning"></i>
-                                        Ora e Marrjes <span class="text-danger">*</span>
-                                    </label>
-                                    <input asp-for="ReceivedTime" class="form-control" type="time" />
-                                    <span asp-validation-for="ReceivedTime" class="text-danger"></span>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label asp-for="DeliveryMethod" class="form-label">
-                                        <i class="bi bi-truck text-warning"></i>
-                                        Mënyra e Dërgesës <span class="text-danger">*</span>
-                                    </label>
-                                    <select asp-for="DeliveryMethod" class="form-select" asp-items="Html.GetEnumSelectList<DeliveryMethod>()">
-                                    </select>
-                                    <span asp-validation-for="DeliveryMethod" class="text-danger"></span>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
-
-                <!-- Response & Deadline -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-secondary text-white">
-                        <h5 class="mb-0">
-                            <i class="bi bi-reply me-2"></i>
-                            Përgjigja dhe Afati
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-check form-switch mb-3">
-                                    <input asp-for="RequiresResponse" class="form-check-input" type="checkbox" id="requiresResponseSwitch" />
-                                    <label asp-for="RequiresResponse" class="form-check-label" for="requiresResponseSwitch">
-                                        <i class="bi bi-chat-dots text-secondary"></i>
-                                        Kërkon Përgjigje
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="col-md-6" id="responseDeadlineField" style="display: none;">
-                                <div class="mb-3">
-                                    <label asp-for="ResponseDeadline" class="form-label">
-                                        <i class="bi bi-calendar-x text-danger"></i>
-                                        Data e Kthimit të Përgjigjes
-                                    </label>
-                                    <input asp-for="ResponseDeadline" class="form-control" type="date" />
-                                    <span asp-validation-for="ResponseDeadline" class="text-danger"></span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- File Upload -->
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-dark text-white">
-                <h5 class="mb-0">
-                    <i class="bi bi-paperclip me-2"></i>
-                    Bashkëngjitja e Dokumentit
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="mb-3">
-                    <label for="attachmentFile" class="form-label">
-                        <i class="bi bi-file-earmark-arrow-up text-dark"></i>
-                        Ngarko Skedarin
-                    </label>
-                    <input type="file" class="form-control" id="attachmentFile" name="attachmentFile" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" />
-                    <small class="text-muted">Formatet e lejuara: PDF, Word, Imazhe (max 10MB)</small>
-                </div>
-                <div class="alert alert-info mb-0 d-none" id="attachmentInfoAlert">
-                    <i class="bi bi-info-circle me-2"></i>
-                    <strong>Këshillë:</strong> Rekomandohet që të ngarkoni versionin e skanuar të dokumentit origjinal.
-                </div>
-            </div>
-        </div>
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-dark text-white">
+                            <h5 class="mb-0">
+                                <i class="bi bi-paperclip me-2"></i>
+                                Bashkëngjitja e Dokumentit
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                            <label for="attachmentFile" class="form-label">
+                                <i class="bi bi-file-earmark-arrow-up text-dark"></i>
+                                Ngarko Skedarin
+                                <span class="text-danger">*</span>
+                            </label>
+
+                                <input type="file" class="form-control" id="attachmentFile" name="attachmentFile" accept=".pdf" required />
+                            </div>
+                            <div class="alert alert-info mb-0 d-none" id="attachmentInfoAlert">
+                                <i class="bi bi-info-circle me-2"></i>
+                            </div>
+                        </div>
+                    </div>
 
                 <!-- Notes -->
                 <div class="card shadow-sm mb-4">
@@ -359,124 +236,14 @@
                     </div>
                 </div>
             </form>
-        </div>
-
-        <!-- Sidebar Help -->
-        <div class="col-lg-3">
-            <div class="card shadow-sm border-info sticky-top" style="top: 20px;">
-                <div class="card-header bg-info text-white">
-                    <h5 class="mb-0">
-                        <i class="bi bi-info-circle me-2"></i>
-                        Udhëzime
-                    </h5>
-                </div>
-                <div class="card-body small">
-                    <h6 class="text-info">
-                        <i class="bi bi-lightbulb-fill"></i> Hapat për Regjistrim
-                    </h6>
-                    <ol class="ps-3">
-                        <li class="mb-2">Kontrollo numrin e protokollit (auto)</li>
-                        <li class="mb-2">Zgjidh institucionin dërgues</li>
-                        <li class="mb-2">Plotëso të dhënat e dërguesit</li>
-                        <li class="mb-2">Shkruaj subjektin dhe përmbajtjen</li>
-                        <li class="mb-2">Vendos klasifikimin e duhur</li>
-                        <li class="mb-2">Shëno datën dhe orën e marrjes</li>
-                        <li class="mb-2">Ngarko skedarin (opsionale)</li>
-                        <li class="mb-2">Ruaj dokumentin</li>
-                    </ol>
-                    <hr />
-                    <h6 class="text-info">
-                        <i class="bi bi-exclamation-triangle-fill"></i> Fusha të Detyrueshme
-                    </h6>
-                    <ul class="ps-3">
-                        <li>Numri i Protokollit</li>
-                        <li>Institucioni Dërgues</li>
-                        <li>Emri i Dërguesit</li>
-                        <li>Subjekti</li>
-                        <li>Klasifikimi</li>
-                        <li>Data e Marrjes</li>
-                        <li>Mënyra e Dërgesës</li>
-                    </ul>
-                    <hr />
-                    <h6 class="text-info">
-                        <i class="bi bi-shield-check"></i> Klasifikimet
-                    </h6>
-                    <p class="mb-0 text-muted small">
-                        Zgjidhni klasifikimin e duhur sipas rëndësisë dhe konfidencialitetit të dokumentit.
-                    </p>
-                    <hr />
+        </div
                     <div class="alert alert-info mb-0 small">
                         <i class="bi bi-person-check me-1"></i>
                         <strong>Krijuar nga:</strong> @User.Identity?.Name
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
-
-    <script>
-        $(document).ready(function() {
-            // Show/hide response deadline field
-            function toggleResponseDeadline() {
-                if ($('#requiresResponseSwitch').is(':checked')) {
-                    $('#responseDeadlineField').slideDown();
-                } else {
-                    $('#responseDeadlineField').slideUp();
-                    $('#ResponseDeadline').val('');
-                }
-            }
-
-            $('#requiresResponseSwitch').on('change', toggleResponseDeadline);
-            toggleResponseDeadline();
-
-            // File upload validation
-            	$('#attachmentFile').on('change', function() {
-                const file = this.files[0];
-                const $alert = $('#attachmentInfoAlert');
-                $alert.addClass('d-none');
-                if (file) {
-                    const fileSize = file.size / 1024 / 1024;
-                    const allowedTypes = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png'];
-                    const fileExt = '.' + file.name.split('.').pop().toLowerCase();
-
-                    if (fileSize > 10) {
-                        alert('Skedari është shumë i madh! Madhësia maksimale është 10MB.');
-                        $(this).val('');
-                        return false;
-                    }
-
-                    if (!allowedTypes.includes(fileExt)) {
-                        alert('Format i pasaktë! Formatet e lejuara janë: PDF, Word, Imazhe');
-                        $(this).val('');
-                        return false;
-                    }
-
-                    // show informational alert briefly instead of permanent red box
-                    $alert.removeClass('d-none');
-                    setTimeout(() => $alert.addClass('d-none'), 4000);
-                }
-            });
-
-            // Fetch predicted protocol number via AJAX and display
-            (function(){
-                var url = '@Url.Action("PeekNextIncomingProtocolNumberAsync", "IncomingDocument", new { area = "Manager" })';
-                // Try fetch
-                fetch(url).then(function(resp){
-                    if (!resp.ok) return null; return resp.text();
-                }).then(function(text){
-                    if (text) {
-                        $('#predictedProtocolNumber').val(text);
-                    }
-                }).catch(function(){ /* ignore */ });
-            })();
-        });
-    </script>
+    @await Html.PartialAsync("_ValidationScriptsPartial")
 }
 
 @section Styles {

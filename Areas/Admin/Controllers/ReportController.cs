@@ -322,7 +322,7 @@ namespace eProtokoll.Areas.Admin.Controllers
 
                             if (!reader.IsDBNull(reader.GetOrdinal("AssignedToUserName")))
                             {
-                                tracking.AssignedToUser = new ApplicationUser
+                                tracking.AssignedToUser = new Users
                                 {
                                     UserName = reader.GetString(reader.GetOrdinal("AssignedToUserName")),
                                     FirstName = reader.GetString(reader.GetOrdinal("AssignedToFirstName")),
@@ -332,7 +332,7 @@ namespace eProtokoll.Areas.Admin.Controllers
 
                             if (!reader.IsDBNull(reader.GetOrdinal("AssignedByUserName")))
                             {
-                                tracking.AssignedByUser = new ApplicationUser
+                                tracking.AssignedByUser = new Users
                                 {
                                     UserName = reader.GetString(reader.GetOrdinal("AssignedByUserName")),
                                     FirstName = reader.GetString(reader.GetOrdinal("AssignedByFirstName")),

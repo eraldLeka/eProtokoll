@@ -13,13 +13,13 @@ namespace eProtokoll.Areas.Admin.Controllers
     public class UserManagementController : Controller
     {
         private readonly string _connectionString;
-        private readonly UserManager<ApplicationUser> _userManager;
-        private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly UserManager<Users> _userManager;
+        private readonly SignInManager<Users> _signInManager;
 
         public UserManagementController(
             IConfiguration configuration,
-            UserManager<ApplicationUser> userManager,
-            SignInManager<ApplicationUser> signInManager)
+            UserManager<Users> userManager,
+            SignInManager<Users> signInManager)
         {
             _connectionString = configuration.GetConnectionString("DefaultConnection");
             _userManager = userManager;
@@ -29,7 +29,7 @@ namespace eProtokoll.Areas.Admin.Controllers
         // GET: Admin/UserManagement
         public async Task<IActionResult> Index(string searchTerm = "", string role = "", string status = "")
         {
-            var users = new List<ApplicationUser>();
+            var users = new List<Users>();
 
             using (var connection = new SqlConnection(_connectionString))
             {
@@ -47,7 +47,7 @@ namespace eProtokoll.Areas.Admin.Controllers
                 }
 
                 // Role filter
-                if (!string.IsNullOrEmpty(role) && Enum.TryParse<ApplicationUser.UserRole>(role, out var userRole))
+                if (!string.IsNullOrEmpty(role) && Enum.TryParse<Users.UserRole>(role, out var userRole))
                 {
                     query += " AND Role = @Role";
                     parameters.Add(new SqlParameter("@Role", (int)userRole));
@@ -88,7 +88,7 @@ namespace eProtokoll.Areas.Admin.Controllers
         // GET: Admin/UserManagement/Create
         public IActionResult Create()
         {
-            var user = new ApplicationUser
+            var user = new Users
             {
                 IsActive = true
             };
@@ -99,7 +99,7 @@ namespace eProtokoll.Areas.Admin.Controllers
         // POST: Admin/UserManagement/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(ApplicationUser model, string Password, string ConfirmPassword)
+        public async Task<IActionResult> Create(Users model, string Password, string ConfirmPassword)
         {
             bool hasErrors = false;
 
@@ -171,7 +171,7 @@ namespace eProtokoll.Areas.Admin.Controllers
             }
 
             // ===================== KRIJIMI I PËRDORUESIT =====================
-            var user = new ApplicationUser
+            var user = new Users
             {
                 UserName = model.UserName,
                 Email = model.Email,
@@ -179,11 +179,10 @@ namespace eProtokoll.Areas.Admin.Controllers
                 LastName = model.LastName,
                 Position = model.Position,
                 Department = model.Department,
-                Role = model.Role,       // Enum për logjikë biznesi / UI
+                Role = model.Role,       
                 PhoneNumber = model.PhoneNumber,
                 IsActive = model.IsActive,
                 CreatedDate = DateTime.Now,
-                EmailConfirmed = true
             };
 
             var result = await _userManager.CreateAsync(user, Password);
@@ -228,9 +227,9 @@ namespace eProtokoll.Areas.Admin.Controllers
         // POST: Admin/UserManagement/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(string id, ApplicationUser model, string Password, string ConfirmPassword)
+        public async Task<IActionResult> Edit(string id, Users model, string Password, string ConfirmPassword)
         {
-            if (id != model.Id)
+            if (int.Parse(id) != model.Id)
             {
                 return NotFound();
             }
@@ -478,7 +477,7 @@ namespace eProtokoll.Areas.Admin.Controllers
         }
 
         // Helper method - Find user by username (ADO.NET)
-        private async Task<ApplicationUser> FindByUsernameAsync(string username)
+        private async Task<Users> FindByUsernameAsync(string username)
         {
             using (var connection = new SqlConnection(_connectionString))
             {
@@ -501,7 +500,7 @@ namespace eProtokoll.Areas.Admin.Controllers
         }
 
         // Helper method - Find user by email (ADO.NET)
-        private async Task<ApplicationUser> FindByEmailAsync(string email)
+        private async Task<Users> FindByEmailAsync(string email)
         {
             using (var connection = new SqlConnection(_connectionString))
             {

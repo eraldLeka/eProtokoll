@@ -2,9 +2,6 @@
 
 namespace eProtokoll.Models
 {
-    /// <summary>
-    /// Cilësimet e protokollimit të dokumenteve - Numri i protokollit dhe parametrat e tjerë
-    /// </summary>
     public class ProtocolSettings
     {
         [Key]
@@ -85,9 +82,7 @@ namespace eProtokoll.Models
         [Display(Name = "Gjatësia e Numrit (Zeros)")]
         [Range(1, 10, ErrorMessage = "Gjatësia duhet të jetë midis 1 dhe 10")]
         public int NumberPadding { get; set; } = 4;
-        // Shembull: 4 = 0001, 5 = 00001
 
-        // === Cilësime të Përgjithshme ===
         [Display(Name = "Rivendos Automatikisht Çdo Vit")]
         public bool AutoResetYearly { get; set; } = true;
 

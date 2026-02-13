@@ -47,16 +47,11 @@
                         <span class="badge bg-secondary fs-6">I Ulët</span>
                         break;
                 }
-                @if (Model.IsArchived)
-                {
-                    <span class="badge bg-dark fs-6"><i class="bi bi-archive"></i> Arkivuar</span>
-                }
             </div>
         </div>
         <div class="col-md-4 text-end">
             <div class="btn-group">
                 <button onclick="window.print()" class="btn btn-outline-secondary"><i class="bi bi-printer"></i></button>
-                <a asp-action="Edit" asp-route-id="@Model.DocumentId" class="btn btn-primary"><i class="bi bi-pencil"></i> Modifiko</a>
                 <button data-bs-toggle="modal" data-bs-target="#deleteModal" class="btn btn-danger"><i class="bi bi-trash"></i></button>
             </div>
         </div>
@@ -101,10 +96,6 @@
                             {
                                 <h6><i class="bi bi-box-arrow-right text-danger"></i> <span class="text-muted">Nuk është specifikuar</span></h6>
                             }
-                            @if (Model.FromUser != null)
-                            {
-                                <small class="text-muted">Nga: @Model.FromUser.FullName</small>
-                            }
                         </div>
                         <div class="col-md-6">
                             <small class="text-muted">Departamenti Marrës</small>
@@ -116,31 +107,10 @@
                             {
                                 <h6><i class="bi bi-box-arrow-in-left text-success"></i> <span class="text-muted">Nuk është specifikuar</span></h6>
                             }
-                            @if (Model.ToUser != null)
-                            {
-                                <small class="text-muted">Për: @Model.ToUser.FullName</small>
-                            }
                         </div>
                     </div>
                 </div>
             </div>
-
-            <!-- Document Content -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-primary text-white"><h5 class="mb-0"><i class="bi bi-file-text"></i> Përmbajtja</h5></div>
-                <div class="card-body">
-                    <small class="text-muted">Subjekti</small>
-                    <h5>@Model.Subject</h5>
-
-                    @if (!string.IsNullOrEmpty(Model.Content))
-                    {
-                        <hr />
-                        <small class="text-muted">Përmbajtja</small>
-                        <p class="bg-light p-3 rounded mt-2">@Model.Content</p>
-                    }
-                </div>
-            </div>
-
             <!-- Classification & Details -->
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-secondary text-white"><h5 class="mb-0"><i class="bi bi-shield-lock"></i> Klasifikimi dhe Detaje</h5></div>
@@ -171,70 +141,8 @@
                             </h6>
                         </div>
                     </div>
-                    @if (Model.HasDeadline && Model.DeadlineDate.HasValue)
-                    {
-                        <div class="row mt-3">
-                            <div class="col-12">
-                                <small class="text-muted">Afati</small>
-                                <h6><i class="bi bi-calendar-check text-danger"></i> @Model.DeadlineDate.Value.ToString("dd/MM/yyyy")</h6>
-                            </div>
-                        </div>
-                    }
                 </div>
             </div>
-
-            <!-- Response Settings -->
-            @if (Model.RequiresResponse)
-            {
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-success text-white"><h5 class="mb-0"><i class="bi bi-chat-dots"></i> Përgjigja</h5></div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <h6><i class="bi bi-chat-dots"></i> Kërkon Përgjigje</h6>
-                            @if (Model.ResponseDeadline.HasValue)
-                            {
-                                <small class="text-muted">Afati: @Model.ResponseDeadline.Value.ToString("dd/MM/yyyy")</small>
-                            }
-                            @if (Model.IsResponded && Model.ResponseDate.HasValue)
-                            {
-                                <br />
-                                <span class="badge bg-success mt-2">Përgjigjur më @Model.ResponseDate.Value.ToString("dd/MM/yyyy")</span>
-                                @if (Model.ResponseDocument != null)
-                                {
-                                    <br />
-                                    <small class="text-muted">Dokumenti i përgjigjes: @Model.ResponseDocument.ProtocolNumber</small>
-                                }
-                            }
-                            else if (Model.ResponseDeadline.HasValue && Model.ResponseDeadline.Value < DateTime.Now)
-                            {
-                                <br />
-                                <span class="badge bg-danger mt-2">Afati ka skaduar</span>
-                            }
-                        </div>
-                    </div>
-                </div>
-            }
-
-            <!-- Archival Status -->
-            @if (Model.IsArchived)
-            {
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-dark text-white"><h5 class="mb-0"><i class="bi bi-archive"></i> Statusi i Arkivimit</h5></div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <small class="text-muted">Data e Arkivimit</small>
-                                <h6><i class="bi bi-calendar"></i> @Model.ArchivedDate?.ToString("dd/MM/yyyy")</h6>
-                            </div>
-                            <div class="col-md-6">
-                                <small class="text-muted">Arkivuar nga</small>
-                                <h6><i class="bi bi-person"></i> @Model.ArchivedBy</h6>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            }
-
             <!-- Attachments -->
             @if (Model.Attachments != null && Model.Attachments.Any())
             {
@@ -361,11 +269,6 @@
                                 <div class="card-body p-3">
                                     <div class="d-flex justify-content-between">
                                         <div>
-                                            <h6><i class="bi bi-calendar-x"></i> @deadline.Title</h6>
-                                            <p class="mb-1">@deadline.Description</p>
-                                            <small class="text-muted">Përgjegjës: @deadline.ResponsibleUser?.FullName</small>
-                                        </div>
-                                        <div>
                                             @if (deadline.IsCompleted)
                                             {
                                                 <span class="badge bg-success">Përfunduar</span>
@@ -460,32 +363,6 @@
                         </h6>
                     </div>
                     <div class="mb-3 pb-3 border-bottom">
-                        <small class="text-muted">Kërkon Përgjigje</small>
-                        <h6>
-                            @if (Model.RequiresResponse)
-                            {
-                                <span class="badge bg-success"><i class="bi bi-check-circle"></i> Po</span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-secondary"><i class="bi bi-x-circle"></i> Jo</span>
-                            }
-                        </h6>
-                    </div>
-                    <div class="mb-3 pb-3 border-bottom">
-                        <small class="text-muted">Ka Afat</small>
-                        <h6>
-                            @if (Model.HasDeadline)
-                            {
-                                <span class="badge bg-danger"><i class="bi bi-calendar-check"></i> Po</span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-secondary"><i class="bi bi-calendar"></i> Jo</span>
-                            }
-                        </h6>
-                    </div>
-                    <div class="mb-3 pb-3 border-bottom">
                         <small class="text-muted">Shtojca</small>
                         <h6>
                             @if (Model.HasAttachments)
@@ -498,34 +375,14 @@
                             }
                         </h6>
                     </div>
-                    <div class="mb-3">
-                        <small class="text-muted">Arkivuar</small>
-                        <h6>
-                            @if (Model.IsArchived)
-                            {
-                                <span class="badge bg-dark"><i class="bi bi-archive"></i> Po</span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-secondary"><i class="bi bi-archive"></i> Jo</span>
-                            }
-                        </h6>
-                    </div>
                 </div>
             </div>
 
             <!-- Metadata -->
             <div class="card shadow-sm mt-3 bg-light">
                 <div class="card-body small">
-                    <div><strong>ID:</strong> @Model.DocumentId</div>
                     <div><strong>Krijuar nga:</strong> @Model.Creator?.FullName</div>
                     <div><strong>Data e krijimit:</strong> @Model.CreatedDate.ToString("dd/MM/yyyy HH:mm")</div>
-                    @if (Model.ModifiedDate.HasValue)
-                    {
-                        <hr />
-                        <div><strong>Modifikuar:</strong> @Model.ModifiedDate.Value.ToString("dd/MM/yyyy HH:mm")</div>
-                        <div><strong>Modifikuar nga:</strong> @Model.ModifiedBy</div>
-                    }
                 </div>
             </div>
 
@@ -533,15 +390,8 @@
             <div class="card shadow-sm mt-3">
                 <div class="card-body p-2">
                     <div class="d-grid gap-2">
-                        <a asp-action="Edit" asp-route-id="@Model.DocumentId" class="btn btn-sm btn-primary"><i class="bi bi-pencil"></i> Modifiko</a>
                         <a asp-action="Details" asp-route-id="@Model.DocumentId" class="btn btn-sm btn-outline-info"><i class="bi bi-eye"></i> Shiko</a>
                         <button onclick="window.print()" class="btn btn-sm btn-outline-secondary"><i class="bi bi-printer"></i> Printo</button>
-                        @if (!Model.IsArchived)
-                        {
-                            <button class="btn btn-sm btn-outline-dark" onclick="archiveDocument(@Model.DocumentId)">
-                                <i class="bi bi-archive"></i> Arkivo
-                            </button>
-                        }
                     </div>
                 </div>
             </div>
@@ -572,30 +422,6 @@
     </div>
 </div>
 
-<!-- Archive Modal -->
-<div class="modal fade" id="archiveModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-dark text-white">
-                <h5 class="modal-title"><i class="bi bi-archive"></i> Arkivo Dokumentin</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p>Arkivo dokumentin: <strong id="archiveProtocol"></strong>?</p>
-                <div class="mb-3">
-                    <label for="archiveLocation" class="form-label">Vendndodhja e Arkivimit:</label>
-                    <input type="text" class="form-control" id="archiveLocation" placeholder="p.sh. Arkivi A, Rafte 2">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anulo</button>
-                <button type="button" class="btn btn-dark" id="confirmArchive">
-                    <i class="bi bi-archive"></i> Arkivo
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
 
 @section Scripts {
     <script>

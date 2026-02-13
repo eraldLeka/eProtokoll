@@ -96,9 +96,9 @@ namespace eProtokoll.Areas.Manager.Controllers
 
                             if (!reader.IsDBNull(reader.GetOrdinal("AssignedToUserName")))
                             {
-                                tracking.AssignedToUser = new ApplicationUser
+                                tracking.AssignedToUser = new Users
                                 {
-                                    Id = reader.GetString(reader.GetOrdinal("AssignedToUserId")),
+                                    Id = reader.GetInt32(reader.GetOrdinal("AssignedToUserId")),
                                     UserName = reader.GetString(reader.GetOrdinal("AssignedToUserName")),
                                     FirstName = reader.IsDBNull(reader.GetOrdinal("AssignedToFirstName")) ? null : reader.GetString(reader.GetOrdinal("AssignedToFirstName")),
                                     LastName = reader.IsDBNull(reader.GetOrdinal("AssignedToLastName")) ? null : reader.GetString(reader.GetOrdinal("AssignedToLastName"))
@@ -107,9 +107,9 @@ namespace eProtokoll.Areas.Manager.Controllers
 
                             if (!reader.IsDBNull(reader.GetOrdinal("AssignedByUserName")))
                             {
-                                tracking.AssignedByUser = new ApplicationUser
+                                tracking.AssignedByUser = new Users
                                 {
-                                    Id = reader.GetString(reader.GetOrdinal("AssignedByUserId")),
+                                    Id = reader.GetInt32(reader.GetOrdinal("AssignedByUserId")),
                                     UserName = reader.GetString(reader.GetOrdinal("AssignedByUserName")),
                                     FirstName = reader.IsDBNull(reader.GetOrdinal("AssignedByFirstName")) ? null : reader.GetString(reader.GetOrdinal("AssignedByFirstName")),
                                     LastName = reader.IsDBNull(reader.GetOrdinal("AssignedByLastName")) ? null : reader.GetString(reader.GetOrdinal("AssignedByLastName"))
@@ -205,13 +205,10 @@ namespace eProtokoll.Areas.Manager.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Assign(DocumentTracking model)
         {
-            // Ensure AssignedByUserId is set from current user before validating model
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.Identity?.Name;
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             model.AssignedByUserId = userId;
-            // Remove any existing ModelState entry for AssignedByUserId so validation uses the populated value
             ModelState.Remove(nameof(model.AssignedByUserId));
 
-            // Validate DocumentId is selected (not 0 or null)
             if (model.DocumentId <= 0)
             {
                 TempData["ErrorMessage"] = "Ju lutemi, zgjidhni një dokument nga lista.";
@@ -219,7 +216,6 @@ namespace eProtokoll.Areas.Manager.Controllers
                 return View(model);
             }
 
-            // If model state is invalid, show errors
             if (!ModelState.IsValid)
             {
                 var errors = string.Join("; ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
@@ -233,7 +229,6 @@ namespace eProtokoll.Areas.Manager.Controllers
             {
                 await connection.OpenAsync();
 
-                // Validate that the selected DocumentId exists to avoid FK conflicts
                 using (var checkCmd = new SqlCommand("SELECT COUNT(*) FROM Documents WHERE DocumentId = @DocumentId", connection))
                 {
                     checkCmd.Parameters.AddWithValue("@DocumentId", model.DocumentId);
@@ -339,7 +334,7 @@ namespace eProtokoll.Areas.Manager.Controllers
 
                             if (!reader.IsDBNull(reader.GetOrdinal("AssignedToUserName")))
                             {
-                                tracking.AssignedToUser = new ApplicationUser
+                                tracking.AssignedToUser = new Users
                                 {
                                     UserName = reader.GetString(reader.GetOrdinal("AssignedToUserName")),
                                     FirstName = reader.IsDBNull(reader.GetOrdinal("AssignedToFirstName")) ? null : reader.GetString(reader.GetOrdinal("AssignedToFirstName")),
@@ -349,7 +344,7 @@ namespace eProtokoll.Areas.Manager.Controllers
 
                             if (!reader.IsDBNull(reader.GetOrdinal("AssignedByUserName")))
                             {
-                                tracking.AssignedByUser = new ApplicationUser
+                                tracking.AssignedByUser = new Users
                                 {
                                     UserName = reader.GetString(reader.GetOrdinal("AssignedByUserName")),
                                     FirstName = reader.IsDBNull(reader.GetOrdinal("AssignedByFirstName")) ? null : reader.GetString(reader.GetOrdinal("AssignedByFirstName")),
@@ -405,64 +400,6 @@ namespace eProtokoll.Areas.Manager.Controllers
 
                     if (rowsAffected > 0)
                         return Json(new { success = true, message = "Gjurmimi u përfundua me sukses!" });
-                    else
-                        return Json(new { success = false, message = "Gjurmimi nuk u gjet!" });
-                }
-            }
-        }
-
-        // POST: Manager/Tracking/Accept/5
-        [HttpPost]
-        public async Task<IActionResult> Accept(int id)
-        {
-            using (var connection = new SqlConnection(_connectionString))
-            {
-                await connection.OpenAsync();
-
-                var query = @"UPDATE DocumentTrackings SET
-                    Notes = CASE WHEN Notes IS NULL OR LEN(RTRIM(Notes)) = 0 THEN @Note ELSE Notes + CHAR(13) + CHAR(10) + @Note END
-                    WHERE TrackingId = @TrackingId";
-
-                using (var command = new SqlCommand(query, connection))
-                {
-                    command.Parameters.AddWithValue("@TrackingId", id);
-                    var user = User.Identity?.Name ?? "System";
-                    var note = $"Accepted by {user} at {DateTime.Now}";
-                    command.Parameters.AddWithValue("@Note", note);
-
-                    var rowsAffected = await command.ExecuteNonQueryAsync();
-
-                    if (rowsAffected > 0)
-                        return Json(new { success = true, message = "Gjurmimi u pranua me sukses!" });
-                    else
-                        return Json(new { success = false, message = "Gjurmimi nuk u gjet!" });
-                }
-            }
-        }
-
-        // POST: Manager/Tracking/Start/5
-        [HttpPost]
-        public async Task<IActionResult> Start(int id)
-        {
-            using (var connection = new SqlConnection(_connectionString))
-            {
-                await connection.OpenAsync();
-
-                var query = @"UPDATE DocumentTrackings SET
-                    Notes = CASE WHEN Notes IS NULL OR LEN(RTRIM(Notes)) = 0 THEN @Note ELSE Notes + CHAR(13) + CHAR(10) + @Note END
-                    WHERE TrackingId = @TrackingId";
-
-                using (var command = new SqlCommand(query, connection))
-                {
-                    command.Parameters.AddWithValue("@TrackingId", id);
-                    var user = User.Identity?.Name ?? "System";
-                    var note = $"Started by {user} at {DateTime.Now}";
-                    command.Parameters.AddWithValue("@Note", note);
-
-                    var rowsAffected = await command.ExecuteNonQueryAsync();
-
-                    if (rowsAffected > 0)
-                        return Json(new { success = true, message = "Gjurmimi u nis me sukses!" });
                     else
                         return Json(new { success = false, message = "Gjurmimi nuk u gjet!" });
                 }
@@ -537,9 +474,7 @@ namespace eProtokoll.Areas.Manager.Controllers
             {
                 await connection.OpenAsync();
 
-                // Merr dokumentet që NUK janë caktuar akoma (ose vetëm dokumentin e zgjedhur)
                 var documents = new List<dynamic>();
-                // Load all documents (include already existing documents in Documents table)
                 var documentQuery = @"
                     SELECT d.DocumentId, d.ProtocolNumber, d.Subject 
                     FROM Documents d
@@ -547,10 +482,6 @@ namespace eProtokoll.Areas.Manager.Controllers
 
                 using (var command = new SqlCommand(documentQuery, connection))
                 {
-                    // Note: we intentionally load all documents from the Documents table so the Assign UI
-                    // can pick any existing document. Selection of already-assigned documents can be done
-                    // via business rules elsewhere if needed.
-
                     using (var reader = await command.ExecuteReaderAsync())
                     {
                         while (await reader.ReadAsync())
@@ -571,7 +502,7 @@ namespace eProtokoll.Areas.Manager.Controllers
                 ViewBag.Documents = new SelectList(documents, "DocumentId", "DisplayText", selectedDocumentId);
 
                 // Merr përdoruesit aktivë
-                var users = new List<ApplicationUser>();
+                var users = new List<Users>();
                 using (var command = new SqlCommand(@"
                     SELECT Id, UserName, FirstName, LastName 
                     FROM AspNetUsers 
@@ -582,9 +513,9 @@ namespace eProtokoll.Areas.Manager.Controllers
                     {
                         while (await reader.ReadAsync())
                         {
-                            var user = new ApplicationUser
+                            var user = new Users
                             {
-                                Id = reader.GetString(reader.GetOrdinal("Id")),
+                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
                                 UserName = reader.GetString(reader.GetOrdinal("UserName")),
                                 FirstName = reader.IsDBNull(reader.GetOrdinal("FirstName"))
                                     ? null

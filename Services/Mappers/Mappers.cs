@@ -1,10 +1,8 @@
 ﻿using eProtokoll.Models;
 using Microsoft.Data.SqlClient;
-
 namespace eProtokoll.Services.Mappers
 {
     // ==================== DOCUMENT MAPPERS ====================
-
     public static class DocumentMapper
     {
         public static Document MapToDocument(SqlDataReader reader)
@@ -21,28 +19,13 @@ namespace eProtokoll.Services.Mappers
                 ClassificationId = reader.GetInt32(reader.GetOrdinal("ClassificationId")),
                 Status = (DocumentStatus)reader.GetInt32(reader.GetOrdinal("Status")),
                 Priority = (Priority)reader.GetInt32(reader.GetOrdinal("Priority")),
-
-                RequiresResponse = !reader.IsDBNull(reader.GetOrdinal("RequiresResponse"))
-                    && reader.GetBoolean(reader.GetOrdinal("RequiresResponse")),
-                HasDeadline = !reader.IsDBNull(reader.GetOrdinal("HasDeadline"))
-                    && reader.GetBoolean(reader.GetOrdinal("HasDeadline")),
-
-                DeadlineDate = reader.IsDBNull(reader.GetOrdinal("DeadlineDate")) ? null : reader.GetDateTime(reader.GetOrdinal("DeadlineDate")),
                 Notes = reader.IsDBNull(reader.GetOrdinal("Notes")) ? null : reader.GetString(reader.GetOrdinal("Notes")),
                 HasAttachments = !reader.IsDBNull(reader.GetOrdinal("HasAttachments"))
                     && reader.GetBoolean(reader.GetOrdinal("HasAttachments")),
-                IsArchived = !reader.IsDBNull(reader.GetOrdinal("IsArchived"))
-                    && reader.GetBoolean(reader.GetOrdinal("IsArchived")),
-
-                ArchivedDate = reader.IsDBNull(reader.GetOrdinal("ArchivedDate")) ? null : reader.GetDateTime(reader.GetOrdinal("ArchivedDate")),
-                ArchivedBy = reader.IsDBNull(reader.GetOrdinal("ArchivedBy")) ? null : reader.GetString(reader.GetOrdinal("ArchivedBy")),
-                CreatedBy = reader.GetString(reader.GetOrdinal("CreatedBy")),
+                CreatedBy = reader.GetInt32(reader.GetOrdinal("CreatedBy")),
                 CreatedDate = reader.GetDateTime(reader.GetOrdinal("CreatedDate")),
-                ModifiedBy = reader.IsDBNull(reader.GetOrdinal("ModifiedBy")) ? null : reader.GetString(reader.GetOrdinal("ModifiedBy")),
-                ModifiedDate = reader.IsDBNull(reader.GetOrdinal("ModifiedDate")) ? null : reader.GetDateTime(reader.GetOrdinal("ModifiedDate"))
             };
         }
-
         public static IncomingDocument MapToIncomingDocument(SqlDataReader reader)
         {
             return new IncomingDocument
@@ -57,33 +40,15 @@ namespace eProtokoll.Services.Mappers
                 ClassificationId = reader.GetInt32(reader.GetOrdinal("ClassificationId")),
                 Status = (DocumentStatus)reader.GetInt32(reader.GetOrdinal("Status")),
                 Priority = (Priority)reader.GetInt32(reader.GetOrdinal("Priority")),
-
-                RequiresResponse = !reader.IsDBNull(reader.GetOrdinal("RequiresResponse"))
-                    && reader.GetBoolean(reader.GetOrdinal("RequiresResponse")),
-                HasDeadline = !reader.IsDBNull(reader.GetOrdinal("HasDeadline"))
-                    && reader.GetBoolean(reader.GetOrdinal("HasDeadline")),
-
-                DeadlineDate = reader.IsDBNull(reader.GetOrdinal("DeadlineDate")) ? null : reader.GetDateTime(reader.GetOrdinal("DeadlineDate")),
                 Notes = reader.IsDBNull(reader.GetOrdinal("Notes")) ? null : reader.GetString(reader.GetOrdinal("Notes")),
                 HasAttachments = !reader.IsDBNull(reader.GetOrdinal("HasAttachments"))
                     && reader.GetBoolean(reader.GetOrdinal("HasAttachments")),
-                IsArchived = !reader.IsDBNull(reader.GetOrdinal("IsArchived"))
-                    && reader.GetBoolean(reader.GetOrdinal("IsArchived")),
-
-                ArchivedDate = reader.IsDBNull(reader.GetOrdinal("ArchivedDate")) ? null : reader.GetDateTime(reader.GetOrdinal("ArchivedDate")),
-                ArchivedBy = reader.IsDBNull(reader.GetOrdinal("ArchivedBy")) ? null : reader.GetString(reader.GetOrdinal("ArchivedBy")),
-                CreatedBy = reader.GetString(reader.GetOrdinal("CreatedBy")),
+                CreatedBy = reader.GetInt32(reader.GetOrdinal("CreatedBy")),
                 CreatedDate = reader.GetDateTime(reader.GetOrdinal("CreatedDate")),
-                ModifiedBy = reader.IsDBNull(reader.GetOrdinal("ModifiedBy")) ? null : reader.GetString(reader.GetOrdinal("ModifiedBy")),
-                ModifiedDate = reader.IsDBNull(reader.GetOrdinal("ModifiedDate")) ? null : reader.GetDateTime(reader.GetOrdinal("ModifiedDate")),
-
                 InstitutionId = reader.GetInt32(reader.GetOrdinal("InstitutionId")),
                 SenderName = reader.GetString(reader.GetOrdinal("SenderName")),
-                SenderEmail = reader.IsDBNull(reader.GetOrdinal("SenderEmail")) ? null : reader.GetString(reader.GetOrdinal("SenderEmail")),
                 ReceivedDate = reader.GetDateTime(reader.GetOrdinal("ReceivedDate")),
-                ReceivedTime = reader.GetTimeSpan(reader.GetOrdinal("ReceivedTime")),
-                ReceivedBy = reader.IsDBNull(reader.GetOrdinal("ReceivedBy")) ? null : reader.GetString(reader.GetOrdinal("ReceivedBy")),
-                DeliveryMethod = (DeliveryMethod)reader.GetInt32(reader.GetOrdinal("DeliveryMethod")),
+                ReceivedBy = reader.IsDBNull(reader.GetOrdinal("ReceivedBy")) ? null : (int?)reader.GetInt32(reader.GetOrdinal("ReceivedBy")),
                 OriginalDocumentNumber = reader.IsDBNull(reader.GetOrdinal("OriginalDocumentNumber")) ? null : reader.GetString(reader.GetOrdinal("OriginalDocumentNumber")),
                 OriginalDocumentDate = reader.IsDBNull(reader.GetOrdinal("OriginalDocumentDate")) ? null : reader.GetDateTime(reader.GetOrdinal("OriginalDocumentDate")),
                 ResponseDeadline = reader.IsDBNull(reader.GetOrdinal("ResponseDeadline")) ? null : reader.GetDateTime(reader.GetOrdinal("ResponseDeadline")),
@@ -110,42 +75,16 @@ namespace eProtokoll.Services.Mappers
                 ClassificationId = reader.GetInt32(reader.GetOrdinal("ClassificationId")),
                 Status = (DocumentStatus)reader.GetInt32(reader.GetOrdinal("Status")),
                 Priority = (Priority)reader.GetInt32(reader.GetOrdinal("Priority")),
-
-                RequiresResponse = !reader.IsDBNull(reader.GetOrdinal("RequiresResponse"))
-                    && reader.GetBoolean(reader.GetOrdinal("RequiresResponse")),
-                HasDeadline = !reader.IsDBNull(reader.GetOrdinal("HasDeadline"))
-                    && reader.GetBoolean(reader.GetOrdinal("HasDeadline")),
-
-                DeadlineDate = reader.IsDBNull(reader.GetOrdinal("DeadlineDate")) ? null : reader.GetDateTime(reader.GetOrdinal("DeadlineDate")),
                 Notes = reader.IsDBNull(reader.GetOrdinal("Notes")) ? null : reader.GetString(reader.GetOrdinal("Notes")),
                 HasAttachments = !reader.IsDBNull(reader.GetOrdinal("HasAttachments"))
                     && reader.GetBoolean(reader.GetOrdinal("HasAttachments")),
-                IsArchived = !reader.IsDBNull(reader.GetOrdinal("IsArchived"))
-                    && reader.GetBoolean(reader.GetOrdinal("IsArchived")),
-
-                ArchivedDate = reader.IsDBNull(reader.GetOrdinal("ArchivedDate")) ? null : reader.GetDateTime(reader.GetOrdinal("ArchivedDate")),
-                ArchivedBy = reader.IsDBNull(reader.GetOrdinal("ArchivedBy")) ? null : reader.GetString(reader.GetOrdinal("ArchivedBy")),
-                CreatedBy = reader.GetString(reader.GetOrdinal("CreatedBy")),
+                CreatedBy = reader.GetInt32(reader.GetOrdinal("CreatedBy")),
                 CreatedDate = reader.GetDateTime(reader.GetOrdinal("CreatedDate")),
-                ModifiedBy = reader.IsDBNull(reader.GetOrdinal("ModifiedBy")) ? null : reader.GetString(reader.GetOrdinal("ModifiedBy")),
-                ModifiedDate = reader.IsDBNull(reader.GetOrdinal("ModifiedDate")) ? null : reader.GetDateTime(reader.GetOrdinal("ModifiedDate")),
-
-                // OutgoingDocument specific properties
                 InstitutionId = reader.GetInt32(reader.GetOrdinal("InstitutionId")),
                 RecipientName = reader.GetString(reader.GetOrdinal("RecipientName")),
-                RecipientEmail = reader.IsDBNull(reader.GetOrdinal("RecipientEmail")) ? null : reader.GetString(reader.GetOrdinal("RecipientEmail")),
-                DeliveryMethod = (DeliveryMethod)reader.GetInt32(reader.GetOrdinal("DeliveryMethod")),
-
-                // ✅ BOOLEAN FIELDS - CHECK FOR NULL FIRST!
                 IsResponse = !reader.IsDBNull(reader.GetOrdinal("IsResponse"))
                     && reader.GetBoolean(reader.GetOrdinal("IsResponse")),
-
                 OriginalIncomingDocumentId = reader.IsDBNull(reader.GetOrdinal("OriginalIncomingDocumentId")) ? null : reader.GetInt32(reader.GetOrdinal("OriginalIncomingDocumentId")),
-
-                // ✅ BOOLEAN FIELDS - CHECK FOR NULL FIRST!
-                HasArchiveCopy = !reader.IsDBNull(reader.GetOrdinal("HasArchiveCopy"))
-                    && reader.GetBoolean(reader.GetOrdinal("HasArchiveCopy")),
-
                 ArchiveLocation = reader.IsDBNull(reader.GetOrdinal("ArchiveLocation")) ? null : reader.GetString(reader.GetOrdinal("ArchiveLocation"))
             };
         }
@@ -165,28 +104,12 @@ namespace eProtokoll.Services.Mappers
                 ClassificationId = reader.GetInt32(reader.GetOrdinal("ClassificationId")),
                 Status = (DocumentStatus)reader.GetInt32(reader.GetOrdinal("Status")),
                 Priority = (Priority)reader.GetInt32(reader.GetOrdinal("Priority")),
-                RequiresResponse = reader.IsDBNull(reader.GetOrdinal("RequiresResponse")) ? false : reader.GetBoolean(reader.GetOrdinal("RequiresResponse")),
-                HasDeadline = reader.IsDBNull(reader.GetOrdinal("HasDeadline")) ? false : reader.GetBoolean(reader.GetOrdinal("HasDeadline")),
-                DeadlineDate = reader.IsDBNull(reader.GetOrdinal("DeadlineDate")) ? null : reader.GetDateTime(reader.GetOrdinal("DeadlineDate")),
                 Notes = reader.IsDBNull(reader.GetOrdinal("Notes")) ? null : reader.GetString(reader.GetOrdinal("Notes")),
                 HasAttachments = reader.IsDBNull(reader.GetOrdinal("HasAttachments")) ? false : reader.GetBoolean(reader.GetOrdinal("HasAttachments")),
-                IsArchived = reader.IsDBNull(reader.GetOrdinal("IsArchived")) ? false : reader.GetBoolean(reader.GetOrdinal("IsArchived")),
-                ArchivedDate = reader.IsDBNull(reader.GetOrdinal("ArchivedDate")) ? null : reader.GetDateTime(reader.GetOrdinal("ArchivedDate")),
-                ArchivedBy = reader.IsDBNull(reader.GetOrdinal("ArchivedBy")) ? null : reader.GetString(reader.GetOrdinal("ArchivedBy")),
-                CreatedBy = reader.GetString(reader.GetOrdinal("CreatedBy")),
+                CreatedBy = reader.GetInt32(reader.GetOrdinal("CreatedBy")),
                 CreatedDate = reader.GetDateTime(reader.GetOrdinal("CreatedDate")),
-                ModifiedBy = reader.IsDBNull(reader.GetOrdinal("ModifiedBy")) ? null : reader.GetString(reader.GetOrdinal("ModifiedBy")),
-                ModifiedDate = reader.IsDBNull(reader.GetOrdinal("ModifiedDate")) ? null : reader.GetDateTime(reader.GetOrdinal("ModifiedDate")),
-
-                // InternalDocument specific properties
                 FromDepartment = reader.IsDBNull(reader.GetOrdinal("FromDepartment")) ? null : reader.GetString(reader.GetOrdinal("FromDepartment")),
                 ToDepartment = reader.IsDBNull(reader.GetOrdinal("ToDepartment")) ? null : reader.GetString(reader.GetOrdinal("ToDepartment")),
-                FromUserId = reader.IsDBNull(reader.GetOrdinal("FromUserId")) ? null : reader.GetString(reader.GetOrdinal("FromUserId")),
-                ToUserId = reader.IsDBNull(reader.GetOrdinal("ToUserId")) ? null : reader.GetString(reader.GetOrdinal("ToUserId")),
-                ResponseDeadline = reader.IsDBNull(reader.GetOrdinal("ResponseDeadline")) ? null : reader.GetDateTime(reader.GetOrdinal("ResponseDeadline")),
-                IsResponded = reader.IsDBNull(reader.GetOrdinal("IsResponded")) ? false : reader.GetBoolean(reader.GetOrdinal("IsResponded")),
-                ResponseDate = reader.IsDBNull(reader.GetOrdinal("ResponseDate")) ? null : reader.GetDateTime(reader.GetOrdinal("ResponseDate")),
-                ResponseDocumentId = reader.IsDBNull(reader.GetOrdinal("ResponseDocumentId")) ? null : reader.GetInt32(reader.GetOrdinal("ResponseDocumentId"))
             };
         }
     }
@@ -208,7 +131,7 @@ namespace eProtokoll.Services.Mappers
                 FileExtension = reader.IsDBNull(reader.GetOrdinal("FileExtension")) ? null : reader.GetString(reader.GetOrdinal("FileExtension")),
                 ContentType = reader.IsDBNull(reader.GetOrdinal("ContentType")) ? null : reader.GetString(reader.GetOrdinal("ContentType")),
                 UploadedDate = reader.GetDateTime(reader.GetOrdinal("UploadedDate")),
-                UploadedBy = reader.GetString(reader.GetOrdinal("UploadedBy")),
+                UploadedBy = reader.GetInt32(reader.GetOrdinal("UploadedBy")),
                 Category = (FileCategory)reader.GetInt32(reader.GetOrdinal("Category")),
                 Description = reader.IsDBNull(reader.GetOrdinal("Description")) ? null : reader.GetString(reader.GetOrdinal("Description")),
                 DisplayOrder = reader.GetInt32(reader.GetOrdinal("DisplayOrder")),
@@ -216,8 +139,6 @@ namespace eProtokoll.Services.Mappers
             };
         }
     }
-
-    // ==================== TRACKING MAPPER ====================
 
     public static class TrackingMapper
     {
@@ -227,8 +148,8 @@ namespace eProtokoll.Services.Mappers
             {
                 TrackingId = reader.GetInt32(reader.GetOrdinal("TrackingId")),
                 DocumentId = reader.GetInt32(reader.GetOrdinal("DocumentId")),
-                AssignedToUserId = reader.GetString(reader.GetOrdinal("AssignedToUserId")),
-                AssignedByUserId = reader.GetString(reader.GetOrdinal("AssignedByUserId")),
+                AssignedToUserId = reader.GetInt32(reader.GetOrdinal("AssignedToUserId")),
+                AssignedByUserId = reader.GetInt32(reader.GetOrdinal("AssignedByUserId")),
                 AssignedDate = reader.GetDateTime(reader.GetOrdinal("AssignedDate")),
                 Priority = (Priority)reader.GetInt32(reader.GetOrdinal("Priority")),
                 DueDate = reader.IsDBNull(reader.GetOrdinal("DueDate")) ? null : reader.GetDateTime(reader.GetOrdinal("DueDate")),
@@ -264,30 +185,27 @@ namespace eProtokoll.Services.Mappers
             };
         }
     }
-
     // ==================== USER MAPPER ====================
-
     public static class UserMapper
     {
-        public static ApplicationUser MapToApplicationUser(SqlDataReader reader)
+        public static Users MapToApplicationUser(SqlDataReader reader)
         {
-            return new ApplicationUser
+            return new Users
             {
-                Id = reader.GetString(reader.GetOrdinal("Id")),
+                Id = reader.GetInt32(reader.GetOrdinal("Id")),
                 UserName = reader.GetString(reader.GetOrdinal("UserName")),
                 Email = reader.IsDBNull(reader.GetOrdinal("Email")) ? null : reader.GetString(reader.GetOrdinal("Email")),
                 FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
                 LastName = reader.GetString(reader.GetOrdinal("LastName")),
                 Position = reader.IsDBNull(reader.GetOrdinal("Position")) ? null : reader.GetString(reader.GetOrdinal("Position")),
                 Department = reader.IsDBNull(reader.GetOrdinal("Department")) ? null : reader.GetString(reader.GetOrdinal("Department")),
-                PhoneNumber = reader.IsDBNull(reader.GetOrdinal("PhoneNumber")) ? null : reader.GetString(reader.GetOrdinal("PhoneNumber")),
+                PhoneNumber = reader.IsDBNull(reader.GetOrdinal("PhoneNumber")) ? null : reader.GetInt32(reader.GetOrdinal("PhoneNumber")),
                 IsActive = reader.GetBoolean(reader.GetOrdinal("IsActive")),
                 CreatedDate = reader.GetDateTime(reader.GetOrdinal("CreatedDate")),
                 ModifiedDate = reader.IsDBNull(reader.GetOrdinal("ModifiedDate")) ? null : reader.GetDateTime(reader.GetOrdinal("ModifiedDate"))
             };
         }
     }
-
     // ==================== PROTOCOL SETTINGS MAPPER ====================
 
     public static class ProtocolSettingsMapper
@@ -341,7 +259,6 @@ namespace eProtokoll.Services.Mappers
     }
 
     // ==================== INSTITUTION MAPPER ====================
-
     public static class InstitutionMapper
     {
         public static Institution MapToInstitution(SqlDataReader reader)
@@ -386,37 +303,15 @@ namespace eProtokoll.Services.Mappers
                 DeadlineId = reader.GetInt32(reader.GetOrdinal("DeadlineId")),
                 DocumentId = reader.GetInt32(reader.GetOrdinal("DocumentId")),
                 Title = reader.GetString(reader.GetOrdinal("Title")),
-                Description = reader.IsDBNull(reader.GetOrdinal("Description")) ? null : reader.GetString(reader.GetOrdinal("Description")),
                 DueDate = reader.GetDateTime(reader.GetOrdinal("DueDate")),
-                DueTime = reader.IsDBNull(reader.GetOrdinal("DueTime")) ? null : reader.GetTimeSpan(reader.GetOrdinal("DueTime")),
-                Type = (DeadlineType)reader.GetInt32(reader.GetOrdinal("Type")),
                 Priority = (Priority)reader.GetInt32(reader.GetOrdinal("Priority")),
-                ResponsibleUserId = reader.IsDBNull(reader.GetOrdinal("ResponsibleUserId")) ? null : reader.GetString(reader.GetOrdinal("ResponsibleUserId")),
-                ResponsibleDepartment = reader.IsDBNull(reader.GetOrdinal("ResponsibleDepartment")) ? null : reader.GetString(reader.GetOrdinal("ResponsibleDepartment")),
-                StartDate = reader.IsDBNull(reader.GetOrdinal("StartDate")) ? null : reader.GetDateTime(reader.GetOrdinal("StartDate")),
+                ResponsibleUserId = reader.GetInt32(reader.GetOrdinal("ResponsibleUserId")),
                 IsCompleted = reader.GetBoolean(reader.GetOrdinal("IsCompleted")),
                 CompletedDate = reader.IsDBNull(reader.GetOrdinal("CompletedDate")) ? null : reader.GetDateTime(reader.GetOrdinal("CompletedDate")),
-                CompletedBy = reader.IsDBNull(reader.GetOrdinal("CompletedBy")) ? null : reader.GetString(reader.GetOrdinal("CompletedBy")),
-                CompletionNotes = reader.IsDBNull(reader.GetOrdinal("CompletionNotes")) ? null : reader.GetString(reader.GetOrdinal("CompletionNotes")),
-                IsExtended = reader.GetBoolean(reader.GetOrdinal("IsExtended")),
-                OriginalDueDate = reader.IsDBNull(reader.GetOrdinal("OriginalDueDate")) ? null : reader.GetDateTime(reader.GetOrdinal("OriginalDueDate")),
-                ExtensionReason = reader.IsDBNull(reader.GetOrdinal("ExtensionReason")) ? null : reader.GetString(reader.GetOrdinal("ExtensionReason")),
-                ExtendedBy = reader.IsDBNull(reader.GetOrdinal("ExtendedBy")) ? null : reader.GetString(reader.GetOrdinal("ExtendedBy")),
-                ExtensionDate = reader.IsDBNull(reader.GetOrdinal("ExtensionDate")) ? null : reader.GetDateTime(reader.GetOrdinal("ExtensionDate")),
-                SendNotification = reader.GetBoolean(reader.GetOrdinal("SendNotification")),
-                NotificationDaysBefore = reader.GetInt32(reader.GetOrdinal("NotificationDaysBefore")),
-                NotificationSent = reader.GetBoolean(reader.GetOrdinal("NotificationSent")),
-                NotificationSentDate = reader.IsDBNull(reader.GetOrdinal("NotificationSentDate")) ? null : reader.GetDateTime(reader.GetOrdinal("NotificationSentDate")),
-                LastReminderDate = reader.IsDBNull(reader.GetOrdinal("LastReminderDate")) ? null : reader.GetDateTime(reader.GetOrdinal("LastReminderDate")),
-                EscalateToUserId = reader.IsDBNull(reader.GetOrdinal("EscalateToUserId")) ? null : reader.GetString(reader.GetOrdinal("EscalateToUserId")),
-                IsEscalated = reader.GetBoolean(reader.GetOrdinal("IsEscalated")),
-                EscalatedDate = reader.IsDBNull(reader.GetOrdinal("EscalatedDate")) ? null : reader.GetDateTime(reader.GetOrdinal("EscalatedDate")),
-                IsActive = reader.GetBoolean(reader.GetOrdinal("IsActive")),
+                CompletedBy = reader.IsDBNull(reader.GetOrdinal("CompletedBy")) ? null : (int?)reader.GetInt32(reader.GetOrdinal("CompletedBy")),
                 Notes = reader.IsDBNull(reader.GetOrdinal("Notes")) ? null : reader.GetString(reader.GetOrdinal("Notes")),
                 CreatedDate = reader.GetDateTime(reader.GetOrdinal("CreatedDate")),
-                ModifiedDate = reader.IsDBNull(reader.GetOrdinal("ModifiedDate")) ? null : reader.GetDateTime(reader.GetOrdinal("ModifiedDate")),
-                CreatedBy = reader.GetString(reader.GetOrdinal("CreatedBy")),
-                ModifiedBy = reader.IsDBNull(reader.GetOrdinal("ModifiedBy")) ? null : reader.GetString(reader.GetOrdinal("ModifiedBy"))
+                CreatedBy = reader.GetInt32(reader.GetOrdinal("CreatedBy"))
             };
         }
     }

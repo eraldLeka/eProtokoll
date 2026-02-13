@@ -1,4 +1,4 @@
-﻿@model eProtokoll.Models.ApplicationUser
+﻿@model eProtokoll.Models.Users
 
 @{
     ViewData["Title"] = "Shto Përdorues të Ri";
@@ -182,7 +182,7 @@
                                 <i class="bi bi-person-badge text-warning"></i>
                                 Roli në Sistem <span class="text-danger">*</span>
                             </label>
-                            <select asp-for="Role" class="form-select" id="roleSelect" asp-items="Html.GetEnumSelectList<eProtokoll.Models.ApplicationUser.UserRole>()">
+                            <select asp-for="Role" class="form-select" id="roleSelect" asp-items="Html.GetEnumSelectList<eProtokoll.Models.Users.UserRole>()">
                                 <option value="">-- Zgjidh Rolin --</option>
                             </select>
                             <span asp-validation-for="Role" class="text-danger"></span>

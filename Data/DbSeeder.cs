@@ -1,62 +1,31 @@
-﻿using eProtokoll.Models;
-using Microsoft.AspNetCore.Identity;
+﻿using eProtokoll.Helpers;
+using eProtokoll.Models;
+using eProtokoll.Repositories;
 
 namespace eProtokoll.Data
 {
     public static class DbSeeder
     {
-        // ===================== SEED ROLES =====================
-
-        public static async Task SeedRoles(RoleManager<IdentityRole> roleManager)
+        public static async Task SeedAdminUser(IUserRepository userRepository)
         {
-            string[] roles = { "Administrator", "Manager", "Employee" };
+            // Kontrollo nëse admin ekziston
+            var existing = await userRepository.GetByUsernameAsync("admin");
+            if (existing != null) return;
 
-            foreach (var role in roles)
+            // Krijo admin të ri
+            var admin = new Users
             {
-                if (!await roleManager.RoleExistsAsync(role))
-                {
-                    await roleManager.CreateAsync(new IdentityRole(role));
-                }
-            }
-        }
+                UserName = "admin",
+                PasswordHash = PasswordHelper.Hash("Admin@2025"),
+                Email = "admin@eprotokoll.al",
+                FirstName = "Super",
+                LastName = "Admin",
+                Role = Users.UserRole.Administrator,
+                IsActive = true,
+                CreatedDate = DateTime.UtcNow
+            };
 
-        // ===================== SEED ADMIN USER =====================
-
-        public static async Task SeedAdminUser(UserManager<ApplicationUser> userManager)
-        {
-            var admin = await userManager.FindByNameAsync("admin");
-
-            if (admin == null)
-            {
-                admin = new ApplicationUser
-                {
-                    UserName = "admin",
-                    Email = "admin@eprotokoll.al",
-                    FirstName = "Super",
-                    LastName = "Admin",
-                    Role = ApplicationUser.UserRole.Administrator, // business role
-                    IsActive = true,
-                    EmailConfirmed = true,
-                    CreatedDate = DateTime.UtcNow
-                };
-
-                var result = await userManager.CreateAsync(admin, "Admin@2025");
-
-                if (!result.Succeeded)
-                {
-                    throw new Exception(
-                        "Admin user could not be created: " +
-                        string.Join(", ", result.Errors.Select(e => e.Description))
-                    );
-                }
-            }
-
-            // ===================== IDENTITY ROLE LINK (KRITIKE) =====================
-
-            if (!await userManager.IsInRoleAsync(admin, "Administrator"))
-            {
-                await userManager.AddToRoleAsync(admin, "Administrator");
-            }
+            await userRepository.CreateAsync(admin);
         }
     }
 }

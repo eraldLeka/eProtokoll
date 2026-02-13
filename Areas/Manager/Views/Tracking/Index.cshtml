@@ -2,13 +2,7 @@
 
 @{
     ViewData["Title"] = "Gjurmimi i Dokumenteve";
-
-    string GetFullName(eProtokoll.Models.ApplicationUser? u)
-    {
-        if (u == null) return "-";
-        var n = ((u.FirstName ?? "") + " " + (u.LastName ?? "")).Trim();
-        return string.IsNullOrWhiteSpace(n) ? (u.UserName ?? "-") : n;
-    }
+    string GetFullName(Users? u) => u?.FullName ?? u?.UserName ?? "N/A";
 
     Func<eProtokoll.Models.DocumentTracking, bool> IsCompleted = t => t.CompletedDate.HasValue;
     Func<eProtokoll.Models.DocumentTracking, bool> IsOverdue = t => t.DueDate.HasValue && t.DueDate.Value.Date < DateTime.Now.Date && !t.CompletedDate.HasValue;
@@ -315,41 +309,12 @@
                                             @if (!completed && tracking.IsActive)
                                             {
                                                 <button type="button"
-                                                        class="btn btn-outline-success accept-tracking"
-                                                        data-id="@tracking.TrackingId"
-                                                        title="Prano">
-                                                    <i class="bi bi-check-circle"></i>
-                                                </button>
-                                            }
-
-                                            @if (!completed && tracking.IsActive)
-                                            {
-                                                <button type="button"
-                                                        class="btn btn-outline-primary start-tracking"
-                                                        data-id="@tracking.TrackingId"
-                                                        title="Fillo">
-                                                    <i class="bi bi-play-circle"></i>
-                                                </button>
-                                            }
-
-                                            @if (!completed && tracking.IsActive)
-                                            {
-                                                <button type="button"
                                                         class="btn btn-outline-success complete-tracking"
                                                         data-id="@tracking.TrackingId"
                                                         title="Përfundo">
                                                     <i class="bi bi-check-all"></i>
                                                 </button>
                                             }
-
-                                            @if (!completed && tracking.IsActive)
-                                            {
-                                                <a asp-area="Manager" asp-controller="Tracking" asp-action="Delegate" asp-route-id="@tracking.TrackingId"
-                                                   class="btn btn-outline-purple" title="Delego">
-                                                    <i class="bi bi-arrow-right-circle"></i>
-                                                </a>
-                                            }
-
                                             <button type="button" class="btn btn-outline-danger delete-tracking" data-id="@tracking.TrackingId" title="Fshij">
                                                 <i class="bi bi-trash-fill"></i>
                                             </button>

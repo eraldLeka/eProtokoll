@@ -1,12 +1,15 @@
 ﻿using eProtokoll.Models;
 using eProtokoll.Services.Mappers;
+using eProtokoll.Services.ProtocolNumber;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Data.SqlClient;
 using System.Data;
-using System.Text;
+using System.Net.Sockets;
 using System.Security.Claims;
+using System.Text;
+using DocumentType = eProtokoll.Models.DocumentType;
 
 namespace eProtokoll.Areas.Manager.Controllers
 {
@@ -16,11 +19,17 @@ namespace eProtokoll.Areas.Manager.Controllers
     {
         private readonly string _connectionString;
         private readonly IWebHostEnvironment _environment;
+        private readonly IProtocolNumberService _protocolNumberService;
 
-        public InternalDocumentController(IConfiguration configuration, IWebHostEnvironment environment)
+
+        public InternalDocumentController(
+                    IConfiguration configuration,
+                    IWebHostEnvironment environment,
+                    IProtocolNumberService protocolNumberService)
         {
             _connectionString = configuration.GetConnectionString("DefaultConnection");
             _environment = environment;
+            _protocolNumberService = protocolNumberService;
         }
 
         // GET: Manager/InternalDocument
@@ -178,76 +187,52 @@ namespace eProtokoll.Areas.Manager.Controllers
                             }
 
                             // Populate Creator
+                            // Populate Creator
                             if (!reader.IsDBNull(reader.GetOrdinal("CreatorUserName")))
                             {
-                                document.Creator = new ApplicationUser
+                                document.Creator = new Users
                                 {
-                                    Id = document.CreatedBy,
+                                    Id = reader.GetInt32(reader.GetOrdinal("CreatorId")),
                                     UserName = reader.GetString(reader.GetOrdinal("CreatorUserName")),
                                     FirstName = reader.GetString(reader.GetOrdinal("CreatorFirstName")),
                                     LastName = reader.GetString(reader.GetOrdinal("CreatorLastName"))
                                 };
                             }
-
-                            // Populate FromUser
-                            if (!reader.IsDBNull(reader.GetOrdinal("FromUserUserName")))
-                            {
-                                document.FromUser = new ApplicationUser
-                                {
-                                    Id = document.FromUserId,
-                                    UserName = reader.GetString(reader.GetOrdinal("FromUserUserName")),
-                                    FirstName = reader.GetString(reader.GetOrdinal("FromUserFirstName")),
-                                    LastName = reader.GetString(reader.GetOrdinal("FromUserLastName"))
-                                };
-                            }
-
-                            // Populate ToUser
-                            if (!reader.IsDBNull(reader.GetOrdinal("ToUserUserName")))
-                            {
-                                document.ToUser = new ApplicationUser
-                                {
-                                    Id = document.ToUserId,
-                                    UserName = reader.GetString(reader.GetOrdinal("ToUserUserName")),
-                                    FirstName = reader.GetString(reader.GetOrdinal("ToUserFirstName")),
-                                    LastName = reader.GetString(reader.GetOrdinal("ToUserLastName"))
-                                };
-                            }
-
                             documents.Add(document);
                         }
                     }
+
+                    // ViewBag for filters
+                    ViewBag.SearchTerm = searchTerm;
+                    ViewBag.SelectedStatus = status;
+                    ViewBag.SelectedPriority = priority;
+                    ViewBag.SelectedDepartment = department;
+                    ViewBag.DateFrom = dateFrom?.ToString("yyyy-MM-dd");
+                    ViewBag.DateTo = dateTo?.ToString("yyyy-MM-dd");
+                    ViewBag.CurrentPage = page;
+                    ViewBag.TotalPages = totalPages;
+                    ViewBag.TotalItems = totalItems;
+
+                    // Statistics
+                    ViewBag.TotalInternal = await ExecuteCountQuery(connection, "SELECT COUNT(*) FROM Documents WHERE DocumentType = 3");
+
+                    var queryToday = "SELECT COUNT(*) FROM Documents WHERE DocumentType = 3 AND CAST(CreatedDate AS DATE) = @Today";
+                    using (var cmdToday = new SqlCommand(queryToday, connection))
+                    {
+                        cmdToday.Parameters.AddWithValue("@Today", DateTime.Now.Date);
+                        ViewBag.TodayInternal = (int)await cmdToday.ExecuteScalarAsync();
+                    }
+
                 }
 
-                // ViewBag for filters
-                ViewBag.SearchTerm = searchTerm;
-                ViewBag.SelectedStatus = status;
-                ViewBag.SelectedPriority = priority;
-                ViewBag.SelectedDepartment = department;
-                ViewBag.DateFrom = dateFrom?.ToString("yyyy-MM-dd");
-                ViewBag.DateTo = dateTo?.ToString("yyyy-MM-dd");
-                ViewBag.CurrentPage = page;
-                ViewBag.TotalPages = totalPages;
-                ViewBag.TotalItems = totalItems;
-
-                // Statistics
-                ViewBag.TotalInternal = await ExecuteCountQuery(connection, "SELECT COUNT(*) FROM Documents WHERE DocumentType = 3");
-
-                var queryToday = "SELECT COUNT(*) FROM Documents WHERE DocumentType = 3 AND CAST(CreatedDate AS DATE) = @Today";
-                using (var command = new SqlCommand(queryToday, connection))
-                {
-                    command.Parameters.AddWithValue("@Today", DateTime.Now.Date);
-                    ViewBag.TodayInternal = (int)await command.ExecuteScalarAsync();
-                }
-
+                return View(documents);
             }
-
-            return View(documents);
         }
 
         // GET: Manager/InternalDocument/Create
         public async Task<IActionResult> Create()
         {
-            var protocolNumber = await GenerateProtocolNumber();
+            var protocolNumber = await _protocolNumberService.GenerateNextProtocolNumberAsync((Services.ProtocolNumber.DocumentType)DocumentType.Incoming);
             var now = DateTime.Now;
             var currentTime = new TimeSpan(now.Hour, now.Minute, now.Second);
 
@@ -280,23 +265,18 @@ namespace eProtokoll.Areas.Manager.Controllers
                         {
                             // Set metadata
                             model.CreatedDate = DateTime.Now;
-                            model.CreatedBy = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                            model.CreatedBy = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
                             model.DocumentType = DocumentType.Internal;
-                            model.RequiresResponse = model.ResponseDeadline.HasValue;
 
                             // Insert InternalDocument
                             var query = @"INSERT INTO Documents (
                                 ProtocolNumber, ProtocolDate, ProtocolTime, DocumentType, Subject, Content,
-                                ClassificationId, Status, Priority,
-                                HasDeadline, DeadlineDate, Notes, HasAttachments, IsArchived, ArchivedDate, ArchivedBy, CreatedDate, CreatedBy,
-                                ModifiedDate, ModifiedBy, FromUserId, FromDepartment, ToUserId, ToDepartment,
-                                RequiresResponse, ResponseDeadline,Discriminator
+                                ClassificationId, Status, Priority,Notes, HasAttachments,CreatedDate, CreatedBy,
+                                FromDepartment, ToDepartment, Discriminator
                             ) OUTPUT INSERTED.DocumentId VALUES (
                                 @ProtocolNumber, @ProtocolDate, @ProtocolTime, @DocumentType, @Subject, @Content,
-                                @ClassificationId, @Status, @Priority, @HasDeadline, @DeadlineDate, @Notes, @HasAttachments, @IsArchived,
-                                @ArchivedDate, @ArchivedBy, @CreatedDate, @CreatedBy,
-                                @ModifiedDate, @ModifiedBy, @FromUserId, @FromDepartment, @ToUserId, @ToDepartment,
-                                @RequiresResponse, @ResponseDeadline, @Discriminator
+                                @ClassificationId, @Status, @Priority,@Notes, @HasAttachments,
+                                @CreatedDate, @CreatedBy,@FromDepartment,@ToDepartment,@Discriminator
                             )";
 
                             int documentId;
@@ -342,7 +322,7 @@ namespace eProtokoll.Areas.Manager.Controllers
                                     attachCommand.Parameters.AddWithValue("@ContentType", attachmentFile.ContentType);
                                     attachCommand.Parameters.AddWithValue("@UploadedDate", DateTime.Now);
                                     attachCommand.Parameters.AddWithValue("@UploadedBy", User.FindFirstValue(ClaimTypes.NameIdentifier));
-                                    attachCommand.Parameters.AddWithValue("@Category", (int)FileCategory.Document);
+                                    attachCommand.Parameters.AddWithValue("@Category", (int)FileCategory.PDF);
                                     attachCommand.Parameters.AddWithValue("@DisplayOrder", 1);
                                     attachCommand.Parameters.AddWithValue("@IsPrimaryDocument", true);
                                     await attachCommand.ExecuteNonQueryAsync();
@@ -418,8 +398,6 @@ namespace eProtokoll.Areas.Manager.Controllers
             }
 
             if (document == null) return NotFound();
-
-            await LoadDropdowns(document.ClassificationId, document.FromUserId, document.ToUserId);
             return View(document);
         }
 
@@ -460,20 +438,14 @@ namespace eProtokoll.Areas.Manager.Controllers
                             using (var command = new SqlCommand(query, connection, transaction))
                             {
                                 command.Parameters.AddWithValue("@DocumentId", id);
-                                command.Parameters.AddWithValue("@FromUserId", (object)model.FromUserId ?? DBNull.Value);
                                 command.Parameters.AddWithValue("@FromDepartment", (object)model.FromDepartment ?? DBNull.Value);
-                                command.Parameters.AddWithValue("@ToUserId", (object)model.ToUserId ?? DBNull.Value);
                                 command.Parameters.AddWithValue("@ToDepartment", (object)model.ToDepartment ?? DBNull.Value);
                                 command.Parameters.AddWithValue("@Subject", model.Subject);
                                 command.Parameters.AddWithValue("@Content", (object)model.Content ?? DBNull.Value);
                                 command.Parameters.AddWithValue("@ClassificationId", model.ClassificationId);
                                 command.Parameters.AddWithValue("@Status", (int)model.Status);
                                 command.Parameters.AddWithValue("@Priority", (int)model.Priority);
-                                command.Parameters.AddWithValue("@RequiresResponse", model.RequiresResponse);
-                                command.Parameters.AddWithValue("@ResponseDeadline", (object)model.ResponseDeadline ?? DBNull.Value);
                                 command.Parameters.AddWithValue("@Notes", (object)model.Notes ?? DBNull.Value);
-                                command.Parameters.AddWithValue("@ModifiedDate", DateTime.Now);
-                                command.Parameters.AddWithValue("@ModifiedBy", User.FindFirstValue(ClaimTypes.NameIdentifier));
 
                                 await command.ExecuteNonQueryAsync();
                             }
@@ -559,7 +531,7 @@ namespace eProtokoll.Areas.Manager.Controllers
                                     attachCommand.Parameters.AddWithValue("@ContentType", attachmentFile.ContentType);
                                     attachCommand.Parameters.AddWithValue("@UploadedDate", DateTime.Now);
                                     attachCommand.Parameters.AddWithValue("@UploadedBy", User.FindFirstValue(ClaimTypes.NameIdentifier));
-                                    attachCommand.Parameters.AddWithValue("@Category", (int)FileCategory.Document);
+                                    attachCommand.Parameters.AddWithValue("@Category", (int)FileCategory.PDF);
                                     attachCommand.Parameters.AddWithValue("@DisplayOrder", 1);
                                     await attachCommand.ExecuteNonQueryAsync();
                                 }
@@ -585,8 +557,6 @@ namespace eProtokoll.Areas.Manager.Controllers
                     }
                 }
             }
-
-            await LoadDropdowns(model.ClassificationId, model.FromUserId, model.ToUserId);
             return View(model);
         }
 
@@ -853,7 +823,7 @@ namespace eProtokoll.Areas.Manager.Controllers
                 ViewBag.Classifications = new SelectList(classifications, "ClassificationId", "Name", selectedClassificationId);
 
                 // Load Users
-                var users = new List<ApplicationUser>();
+                var users = new List<Users>();
                 var queryUsers = "SELECT Id, UserName, FirstName, LastName FROM AspNetUsers ORDER BY FirstName, LastName";
                 using (var command = new SqlCommand(queryUsers, connection))
                 {
@@ -861,9 +831,9 @@ namespace eProtokoll.Areas.Manager.Controllers
                     {
                         while (await reader.ReadAsync())
                         {
-                            users.Add(new ApplicationUser
+                            users.Add(new Users
                             {
-                                Id = reader.GetString(reader.GetOrdinal("Id")),
+                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
                                 UserName = reader.GetString(reader.GetOrdinal("UserName")),
                                 FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
                                 LastName = reader.GetString(reader.GetOrdinal("LastName"))
@@ -898,23 +868,12 @@ namespace eProtokoll.Areas.Manager.Controllers
             command.Parameters.AddWithValue("@ClassificationId", model.ClassificationId);
             command.Parameters.AddWithValue("@Status", (int)model.Status);
             command.Parameters.AddWithValue("@Priority", (int)model.Priority);
-            command.Parameters.AddWithValue("@HasDeadline", model.HasDeadline);
-            command.Parameters.AddWithValue("@DeadlineDate", (object)model.DeadlineDate ?? DBNull.Value);
             command.Parameters.AddWithValue("@Notes", (object)model.Notes ?? DBNull.Value);
             command.Parameters.AddWithValue("@HasAttachments", false);
-            command.Parameters.AddWithValue("@IsArchived", model.IsArchived);
-            command.Parameters.AddWithValue("@ArchivedDate", (object)model.ArchivedDate ?? DBNull.Value);
-            command.Parameters.AddWithValue("@ArchivedBy", (object)model.ArchivedBy ?? DBNull.Value);
             command.Parameters.AddWithValue("@CreatedDate", model.CreatedDate);
             command.Parameters.AddWithValue("@CreatedBy", model.CreatedBy);
-            command.Parameters.AddWithValue("@ModifiedDate", (object)model.ModifiedDate ?? DBNull.Value);
-            command.Parameters.AddWithValue("@ModifiedBy", (object)model.ModifiedBy ?? DBNull.Value);
-            command.Parameters.AddWithValue("@FromUserId", (object)model.FromUserId ?? DBNull.Value);
             command.Parameters.AddWithValue("@FromDepartment", (object)model.FromDepartment ?? DBNull.Value);
-            command.Parameters.AddWithValue("@ToUserId", (object)model.ToUserId ?? DBNull.Value);
             command.Parameters.AddWithValue("@ToDepartment", (object)model.ToDepartment ?? DBNull.Value);
-            command.Parameters.AddWithValue("@RequiresResponse", model.RequiresResponse);
-            command.Parameters.AddWithValue("@ResponseDeadline", (object)model.ResponseDeadline ?? DBNull.Value);
             command.Parameters.AddWithValue("@Discriminator", "InternalDocument");
 
         }

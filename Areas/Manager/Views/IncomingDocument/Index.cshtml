@@ -152,16 +152,6 @@
                         Lista e Dokumenteve (@ViewBag.TotalItems)
                     </h5>
                 </div>
-                <div class="col-auto">
-                    <button type="button" class="btn btn-sm btn-outline-success" id="exportExcelBtn">
-                        <i class="bi bi-file-earmark-excel me-1"></i>
-                        Excel
-                    </button>
-                    <button type="button" class="btn btn-sm btn-outline-danger" id="exportPdfBtn">
-                        <i class="bi bi-file-earmark-pdf me-1"></i>
-                        PDF
-                    </button>
-                </div>
             </div>
         </div>
         <div class="card-body p-0">
@@ -171,14 +161,13 @@
                     <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th style="width: 12%;">Nr. Protokolli</th>
-                                <th style="width: 25%;">Subjekti</th>
-                                <th style="width: 15%;">Institucioni Dërgues</th>
-                                <th style="width: 10%;">Data e Marrjes</th>
-                                <th style="width: 10%;">Prioriteti</th>
-                                <th style="width: 10%;">Statusi</th>
-                                <th style="width: 8%;">Shtojca</th>
-                                <th style="width: 10%;" class="text-end">Veprime</th>
+                                <th style="width: 14%;">Nr. Protokolli</th>
+                                <th style="width: 26%;">Subjekti</th>
+                                <th style="width: 16%;">Institucioni Dërgues</th>
+                                <th style="width: 11%;">Data e Marrjes</th>
+                                <th style="width: 11%;">Prioriteti</th>
+                                <th style="width: 11%;">Statusi</th>
+                                <th style="width: 11%;" class="text-end">Veprime</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -215,8 +204,6 @@
                                     <td>
                                         <small>
                                             <i class="bi bi-calendar-event"></i> @doc.ReceivedDate.ToString("dd/MM/yyyy")
-                                            <br />
-                                            <i class="bi bi-clock"></i> @doc.ReceivedTime.ToString(@"hh\:mm")
                                         </small>
                                     </td>
                                     <td>
@@ -261,27 +248,12 @@
                                           break;
                                             }
                                   </td>
-                                    <td class="text-center">
-                                        @if (doc.HasAttachments)
-                                        {
-                                            <i class="bi bi-paperclip text-success fs-5" title="Ka shtojca"></i>
-                                        }
-                                        else
-                                        {
-                                            <i class="bi bi-dash text-muted"></i>
-                                        }
-                                    </td>
                                     <td class="text-end">
                                         <div class="btn-group btn-group-sm" role="group">
                                             <a asp-area="Manager" asp-controller="IncomingDocument" asp-action="Details" asp-route-id="@doc.DocumentId"
                                                class="btn btn-outline-info"
                                                title="Detajet">
                                                 <i class="bi bi-eye-fill"></i>
-                                            </a>
-                                            <a asp-area="Manager" asp-controller="IncomingDocument" asp-action="Edit" asp-route-id="@doc.DocumentId"
-                                               class="btn btn-outline-primary"
-                                               title="Modifiko">
-                                                <i class="bi bi-pencil-fill"></i>
                                             </a>
                                             <button type="button"
                                                     class="btn btn-outline-danger delete-document"
@@ -421,20 +393,9 @@
                 $('#deleteDocumentId').val(id);
                 $('#deleteModal').modal('show');
             });
-
-            // Export to Excel (placeholder)
-            $('#exportExcelBtn').on('click', function() {
-                alert('Eksportimi në Excel do të implementohet së shpejti!');
-            });
-
-            // Export to PDF (placeholder)
-            $('#exportPdfBtn').on('click', function() {
-                alert('Eksportimi në PDF do të implementohet së shpejti!');
-            });
         });
     </script>
 }
-
 @section Styles {
     <style>
         .stat-card {

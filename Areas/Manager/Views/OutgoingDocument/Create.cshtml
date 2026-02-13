@@ -48,23 +48,22 @@
                             <div class="col-md-4">
                                 <div class="mb-3">
                                     <label asp-for="ProtocolNumber" class="form-label">
-                                        <i class="bi bi-file-text text-success"></i>
+                                        <i class="bi bi-file-text text-info"></i>
                                         Numri i Protokollit <span class="text-danger">*</span>
                                     </label>
-                                    <input asp-for="ProtocolNumber"
-                                           class="form-control form-control-lg fw-bold text-success"
-                                           readonly />
+                                    <input asp-for="ProtocolNumber" class="form-control form-control-lg fw-bold text-info" readonly />
                                     <input type="hidden" asp-for="ProtocolNumber" />
-                                    <span asp-validation-for="ProtocolNumber" class="text-danger"></span>
                                     <small class="text-muted">Gjenerohet automatikisht</small>
                                 </div>
                             </div>
+
+
                             <div class="col-md-4">
                                 <div class="mb-3">
                                     <label asp-for="ProtocolDate" class="form-label">
-                                        Data e Protokollimit <span class="text-danger">*</span>
+                                        Data e Protokollimit 
                                     </label>
-                                    <input asp-for="ProtocolDate" class="form-control" type="date" />
+                                    <input asp-for="ProtocolDate" class="form-control" type="date" readonly />
                                     <span asp-validation-for="ProtocolDate" class="text-danger"></span>
                                 </div>
                             </div>
@@ -73,7 +72,7 @@
                                     <label asp-for="ProtocolTime" class="form-label">
                                         Ora e Protokollimit <span class="text-danger">*</span>
                                     </label>
-                                    <input asp-for="ProtocolTime" class="form-control" type="time" />
+                                    <input asp-for="ProtocolTime" class="form-control" type="time"  readonly />
                                     <span asp-validation-for="ProtocolTime" class="text-danger"></span>
                                 </div>
                             </div>
@@ -114,21 +113,8 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label asp-for="RecipientEmail" class="form-label">
-                                        <i class="bi bi-envelope text-info"></i>
-                                        Email i Marrësit
-                                    </label>
-                                    <input asp-for="RecipientEmail" class="form-control" type="email" placeholder="email@example.com" />
-                                    <span asp-validation-for="RecipientEmail" class="text-danger"></span>
-                                </div>
-                            </div>
-                        </div>
                     </div>
-                </div>
-
+                </div> 
                 <!-- Document Content -->
                 <div class="card shadow-sm mb-4">
                     <div class="card-header bg-primary text-white">
@@ -214,39 +200,6 @@
                                     <span asp-validation-for="ClassificationId" class="text-danger"></span>
                                 </div>
                             </div>
-                            <div class="col-md-3">
-                                <div class="mb-3">
-                                    <label asp-for="Status" class="form-label">
-                                        Statusi <span class="text-danger">*</span>
-                                    </label>
-                                    <select asp-for="Status" class="form-select" asp-items="Html.GetEnumSelectList<DocumentStatus>()">
-                                    </select>
-                                    <span asp-validation-for="Status" class="text-danger"></span>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="mb-3">
-                                    <label asp-for="Priority" class="form-label">
-                                        Prioriteti <span class="text-danger">*</span>
-                                    </label>
-                                    <select asp-for="Priority" class="form-select" asp-items="Html.GetEnumSelectList<Priority>()">
-                                    </select>
-                                    <span asp-validation-for="Priority" class="text-danger"></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label asp-for="DeliveryMethod" class="form-label">
-                                        <i class="bi bi-send text-warning"></i>
-                                        Mënyra e Dërgesës <span class="text-danger">*</span>
-                                    </label>
-                                    <select asp-for="DeliveryMethod" class="form-select" asp-items="Html.GetEnumSelectList<DeliveryMethod>()">
-                                    </select>
-                                    <span asp-validation-for="DeliveryMethod" class="text-danger"></span>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -264,12 +217,10 @@
                                 <i class="bi bi-file-earmark-arrow-up text-dark"></i>
                                 Ngarko Skedarin
                             </label>
-                            <input type="file" class="form-control" id="attachmentFile" name="attachmentFile" accept=".pdf,.doc,.docx,.xlsx,.xls,.jpg,.jpeg,.png" />
-                            <small class="text-muted">Formatet e lejuara: PDF, Word, Excel, Imazhe (max 10MB)</small>
+                            <input type="file" class="form-control" id="attachmentFile" name="attachmentFile" accept=".pdf" />
                         </div>
                         <div class="alert alert-info mb-0">
                             <i class="bi bi-info-circle me-2"></i>
-                            <strong>Këshillë:</strong> Ngarkoni versionin final të dokumentit që do të dërgohet.
                         </div>
                     </div>
                 </div>
@@ -285,15 +236,6 @@
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-6">
-                                <div class="form-check form-switch mb-3">
-                                    <input asp-for="HasArchiveCopy" class="form-check-input" type="checkbox" checked />
-                                    <label asp-for="HasArchiveCopy" class="form-check-label">
-                                        <i class="bi bi-box-seam text-muted"></i>
-                                        Ka Kopje për Arkiv
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
                                 <div class="mb-3">
                                     <label asp-for="ArchiveLocation" class="form-label">
                                         <i class="bi bi-geo-alt text-muted"></i>
@@ -306,7 +248,6 @@
                         </div>
                     </div>
                 </div>
-
                 <!-- Notes -->
                 <div class="card shadow-sm mb-4">
                     <div class="card-header bg-light">
@@ -344,146 +285,28 @@
                 </div>
             </form>
         </div>
-
-        <!-- Sidebar Help -->
-        <div class="col-lg-3">
-            <div class="card shadow-sm border-success sticky-top" style="top: 20px;">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0">
-                        <i class="bi bi-info-circle me-2"></i>
-                        Udhëzime
-                    </h5>
-                </div>
-                <div class="card-body small">
-                    <h6 class="text-success">
-                        <i class="bi bi-lightbulb-fill"></i> Hapat për Regjistrim
-                    </h6>
-                    <ol class="ps-3">
-                        <li class="mb-2">Kontrollo numrin e protokollit (auto)</li>
-                        <li class="mb-2">Zgjidh institucionin marrës</li>
-                        <li class="mb-2">Plotëso të dhënat e marrësit</li>
-                        <li class="mb-2">Shkruaj subjektin dhe përmbajtjen</li>
-                        <li class="mb-2">Vendos firmëtarin (opsionale)</li>
-                        <li class="mb-2">Vendos klasifikimin e duhur</li>
-                        <li class="mb-2">Zgjidh mënyrën e dërgesës</li>
-                        <li class="mb-2">Ngarko skedarin (opsionale)</li>
-                        <li class="mb-2">Ruaj dokumentin</li>
-                    </ol>
-                    <hr />
-                    <h6 class="text-success">
-                        <i class="bi bi-exclamation-triangle-fill"></i> Fusha të Detyrueshme
-                    </h6>
-                    <ul class="ps-3">
-                        <li>Numri i Protokollit</li>
-                        <li>Institucioni Marrës</li>
-                        <li>Emri i Marrësit</li>
-                        <li>Subjekti</li>
-                        <li>Klasifikimi</li>
-                        <li>Mënyra e Dërgesës</li>
-                    </ul>
-                    <hr />
-                    <h6 class="text-success">
-                        <i class="bi bi-shield-check"></i> Mënyrat e Dërgesës
-                    </h6>
-                    <p class="mb-0 text-muted small">
-                        Zgjidhni mënyrën e duhur të dërgesës: Email, Dorazi, Postë, Kurier, Faks, Portal Elektronik, etj.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 @section Scripts {
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
 
     <script>
-        $(document).ready(function () {
-            console.log("✅ Page loaded - form ready");
+                      $(document).ready(function () {
+                    console.log("Page loaded - form ready");
 
-            // Show/hide original document field based on IsResponse checkbox
-            function toggleOriginalDocument() {
-                if ($('#isResponseSwitch').is(':checked')) {
-                    $('#originalDocumentField').slideDown();
-                } else {
-                    $('#originalDocumentField').slideUp();
-                    $('#OriginalIncomingDocumentId').val('');
-                }
-            }
-
-            $('#isResponseSwitch').on('change', toggleOriginalDocument);
-            toggleOriginalDocument(); // Initialize on load
-
-            // File upload validation
-            $('#attachmentFile').on('change', function () {
-                const file = this.files[0];
-                if (file) {
-                    const fileSize = file.size / 1024 / 1024; // in MB
-                    const allowedTypes = ['.pdf', '.doc', '.docx', '.xlsx', '.xls', '.jpg', '.jpeg', '.png'];
-                    const fileExt = '.' + file.name.split('.').pop().toLowerCase();
-
-                    if (fileSize > 10) {
-                        alert('Skedari është shumë i madh! Madhësia maksimale është 10MB.');
-                        $(this).val('');
-                        return false;
+                    function toggleOriginalDocument() {
+                        if ($('#isResponseSwitch').is(':checked')) {
+                            $('#originalDocumentField').slideDown();
+                        } else {
+                            $('#originalDocumentField').slideUp();
+                            $('#OriginalIncomingDocumentId').val('');
+                        }
                     }
 
-                    if (!allowedTypes.includes(fileExt)) {
-                        alert('Format i pasaktë! Formatet e lejuara janë: PDF, Word, Excel, Imazhe');
-                        $(this).val('');
-                        return false;
-                    }
-                }
-            });
+                    $('#isResponseSwitch').on('change', toggleOriginalDocument);
+                    toggleOriginalDocument(); 
+                });
 
-            // Form validation before submit
-            $('#createForm').on('submit', function (e) {
-                let isValid = true;
-                let errorMessage = '';
-
-                // Required field validation
-                if (!$('#InstitutionId').val()) {
-                    isValid = false;
-                    errorMessage += '- Institucioni marrës është i detyrueshëm\n';
-                }
-
-                if (!$('#RecipientName').val().trim()) {
-                    isValid = false;
-                    errorMessage += '- Emri i marrësit është i detyrueshëm\n';
-                }
-
-                if (!$('#Subject').val().trim()) {
-                    isValid = false;
-                    errorMessage += '- Subjekti është i detyrueshëm\n';
-                }
-
-                if (!$('#ClassificationId').val()) {
-                    isValid = false;
-                    errorMessage += '- Klasifikimi është i detyrueshëm\n';
-                }
-
-                if (!isValid) {
-                    e.preventDefault();
-                    alert('Ju lutem plotësoni fushat e detyrueshme:\n\n' + errorMessage);
-                    return false;
-                }
-
-                // Show loading state
-                $('#submitBtn').prop('disabled', true);
-                $('#submitBtn').html('<i class="bi bi-hourglass-split me-1"></i> Duke ruajtur...');
-            });
-
-            // Form submit handler
-            $('#submitBtn').on('click', function () {
-                console.log("🚀 Submit button clicked!");
-                console.log("Institution:", $('#InstitutionId').val());
-                console.log("RecipientName:", $('#RecipientName').val());
-                console.log("Subject:", $('#Subject').val());
-                console.log("Classification:", $('#ClassificationId').val());
-            });
-        });
     </script>
 }
 
