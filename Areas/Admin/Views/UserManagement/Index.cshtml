@@ -95,24 +95,24 @@
         </div>
     </div>
 
-    <!-- Search and Filter Section -->
+    <!-- Search and Filter -->
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-body">
-            <form method="get" id="filterForm">
+            <form method="get">
                 <div class="row g-3">
                     <div class="col-md-4">
-                        <label for="searchTerm" class="form-label">Kërko</label>
+                        <label class="form-label">Kërko</label>
                         <div class="input-group">
                             <span class="input-group-text bg-white">
                                 <i class="bi bi-search"></i>
                             </span>
-                            <input type="text" class="form-control" id="searchTerm" name="searchTerm"
+                            <input type="text" class="form-control" name="searchTerm"
                                    value="@ViewBag.SearchTerm" placeholder="Emri, email, username...">
                         </div>
                     </div>
                     <div class="col-md-3">
-                        <label for="role" class="form-label">Roli</label>
-                        <select class="form-select" id="role" name="role">
+                        <label class="form-label">Roli</label>
+                        <select class="form-select" name="role">
                             <option value="">Të gjithë</option>
                             <option value="Administrator" selected="@(ViewBag.SelectedRole == "Administrator")">Administrator</option>
                             <option value="Manager" selected="@(ViewBag.SelectedRole == "Manager")">Menaxher</option>
@@ -120,8 +120,8 @@
                         </select>
                     </div>
                     <div class="col-md-3">
-                        <label for="status" class="form-label">Statusi</label>
-                        <select class="form-select" id="status" name="status">
+                        <label class="form-label">Statusi</label>
+                        <select class="form-select" name="status">
                             <option value="">Të gjithë</option>
                             <option value="active" selected="@(ViewBag.SelectedStatus == "active")">Aktiv</option>
                             <option value="inactive" selected="@(ViewBag.SelectedStatus == "inactive")">Joaktiv</option>
@@ -130,8 +130,7 @@
                     <div class="col-md-2">
                         <label class="form-label d-block">&nbsp;</label>
                         <button type="submit" class="btn btn-primary w-100">
-                            <i class="bi bi-funnel me-1"></i>
-                            Filtro
+                            <i class="bi bi-funnel me-1"></i> Filtro
                         </button>
                     </div>
                 </div>
@@ -142,36 +141,23 @@
     <!-- Users Table -->
     <div class="card border-0 shadow-sm">
         <div class="card-header bg-white py-3">
-            <div class="row align-items-center">
-                <div class="col">
-                    <h5 class="mb-0">Lista e Përdoruesve</h5>
-                </div>
-                <div class="col-auto">
-                    <button type="button" class="btn btn-sm btn-outline-secondary" id="exportBtn">
-                        <i class="bi bi-download me-1"></i>
-                        Eksporto
-                    </button>
-                </div>
-            </div>
+            <h5 class="mb-0">Lista e Përdoruesve</h5>
         </div>
         <div class="card-body p-0">
             @if (Model != null && Model.Any())
             {
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0" id="usersTable">
+                    <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th style="width: 5%;">
-                                    <input type="checkbox" class="form-check-input" id="selectAll">
-                                </th>
-                                <th style="width: 20%;">Përdoruesi</th>
-                                <th style="width: 15%;">Email</th>
-                                <th style="width: 15%;">Departmenti</th>
-                                <th style="width: 10%;">Roli</th>
-                                <th style="width: 10%;">Telefoni</th>
-                                <th style="width: 10%;">Statusi</th>
-                                <th style="width: 10%;">Data Krijimit</th>
-                                <th style="width: 5%;" class="text-end">Veprime</th>
+                                <th>Përdoruesi</th>
+                                <th>Email</th>
+                                <th>Departmenti</th>
+                                <th>Roli</th>
+                                <th>Telefoni</th>
+                                <th>Statusi</th>
+                                <th>Data Krijimit</th>
+                                <th class="text-end">Veprime</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -179,23 +165,17 @@
                             {
                                 <tr>
                                     <td>
-                                        <input type="checkbox" class="form-check-input row-checkbox" value="@user.Id">
-                                    </td>
-                                    <td>
                                         <div class="d-flex align-items-center">
                                             <div class="avatar-circle bg-primary text-white me-2">
                                                 @user.FirstName.Substring(0, 1)@user.LastName.Substring(0, 1)
                                             </div>
                                             <div>
-                                                <strong>@user.FullName</strong>
-                                                <br />
+                                                <strong>@user.FullName</strong><br />
                                                 <small class="text-muted">@@@user.UserName</small>
                                                 @if (!string.IsNullOrEmpty(user.Position))
                                                 {
                                                     <br />
-                                                    <small class="text-muted">
-                                                        <i class="bi bi-briefcase"></i> @user.Position
-                                                    </small>
+                                                    <small class="text-muted"><i class="bi bi-briefcase"></i> @user.Position</small>
                                                 }
                                             </div>
                                         </div>
@@ -221,28 +201,20 @@
                                         @switch (user.Role)
                                         {
                                             case eProtokoll.Models.Users.UserRole.Administrator:
-                                                <span class="badge bg-danger">
-                                                    <i class="bi bi-shield-fill-check"></i> Admin
-                                                </span>
+                                                <span class="badge bg-danger"><i class="bi bi-shield-fill-check"></i> Admin</span>
                                                 break;
                                             case eProtokoll.Models.Users.UserRole.Manager:
-                                                <span class="badge bg-warning text-dark">
-                                                    <i class="bi bi-person-badge"></i> Menaxher
-                                                </span>
+                                                <span class="badge bg-warning text-dark"><i class="bi bi-person-badge"></i> Menaxher</span>
                                                 break;
                                             case eProtokoll.Models.Users.UserRole.Employee:
-                                                <span class="badge bg-success">
-                                                    <i class="bi bi-person"></i> Punonjës
-                                                </span>
+                                                <span class="badge bg-success"><i class="bi bi-person"></i> Punonjës</span>
                                                 break;
                                         }
                                     </td>
                                     <td>
-                                        @if (user.PhoneNumber.HasValue)
+                                        @if (!string.IsNullOrEmpty(user.PhoneNumber))
                                         {
-                                            <small>.
-                                                <i class="bi bi-telephone"></i> @user.PhoneNumber.Value
-                                            </small>
+                                            <small><i class="bi bi-telephone"></i> @user.PhoneNumber</small>
                                         }
                                         else
                                         {
@@ -252,15 +224,11 @@
                                     <td>
                                         @if (user.IsActive)
                                         {
-                                            <span class="badge bg-success">
-                                                <i class="bi bi-check-circle-fill"></i> Aktiv
-                                            </span>
+                                            <span class="badge bg-success"><i class="bi bi-check-circle-fill"></i> Aktiv</span>
                                         }
                                         else
                                         {
-                                            <span class="badge bg-secondary">
-                                                <i class="bi bi-x-circle-fill"></i> Joaktiv
-                                            </span>
+                                            <span class="badge bg-secondary"><i class="bi bi-x-circle-fill"></i> Joaktiv</span>
                                         }
                                     </td>
                                     <td>
@@ -270,28 +238,26 @@
                                     </td>
                                     <td class="text-end">
                                         <div class="btn-group btn-group-sm" role="group">
-                                            <a asp-area="Admin" asp-controller="UserManagement" asp-action="Details" asp-route-id="@user.Id"
-                                               class="btn btn-outline-info"
-                                               title="Detajet">
+                                            <a asp-area="Admin" asp-controller="UserManagement" asp-action="Details"
+                                               asp-route-id="@user.Id"
+                                               class="btn btn-outline-info" title="Detajet">
                                                 <i class="bi bi-eye-fill"></i>
                                             </a>
-                                            <a asp-area="Admin" asp-controller="UserManagement" asp-action="Edit" asp-route-id="@user.Id"
-                                               class="btn btn-outline-primary"
-                                               title="Modifiko">
+                                            <a asp-area="Admin" asp-controller="UserManagement" asp-action="Edit"
+                                               asp-route-id="@user.Id"
+                                               class="btn btn-outline-primary" title="Modifiko">
                                                 <i class="bi bi-pencil-fill"></i>
                                             </a>
-                                            <a asp-area="Admin" asp-controller="UserManagement" asp-action="ChangePassword" asp-route-id="@user.Id"
-                                               class="btn btn-outline-warning"
-                                               title="Ndrysho Fjalëkalimin">
-                                                <i class="bi bi-key-fill"></i>
-                                            </a>
-                                            <button type="button"
-                                                    class="btn btn-outline-danger delete-user"
-                                                    data-id="@user.Id"
-                                                    data-name="@user.FullName"
-                                                    title="Fshij">
-                                                <i class="bi bi-trash-fill"></i>
-                                            </button>
+                                            <form asp-area="Admin" asp-controller="UserManagement" asp-action="ToggleStatus"
+                                                  method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@user.Id" />
+                                                <button type="submit"
+                                                        class="btn btn-sm @(user.IsActive ? "btn-outline-warning" : "btn-outline-success")"
+                                                        title="@(user.IsActive ? "Çaktivizo" : "Aktivizo")">
+                                                    <i class="bi @(user.IsActive ? "bi-person-slash" : "bi-person-check")"></i>
+                                                </button>
+                                            </form>
                                         </div>
                                     </td>
                                 </tr>
@@ -307,8 +273,7 @@
                     <h4 class="mt-3 text-muted">Nuk ka përdorues të regjistruar</h4>
                     <p class="text-muted">Kliko butonin "Shto Përdorues të Ri" për të filluar</p>
                     <a asp-area="Admin" asp-controller="UserManagement" asp-action="Create" class="btn btn-primary mt-3">
-                        <i class="bi bi-plus-circle me-1"></i>
-                        Shto Përdorues të Ri
+                        <i class="bi bi-plus-circle me-1"></i> Shto Përdorues të Ri
                     </a>
                 </div>
             }
@@ -316,159 +281,13 @@
         @if (Model != null && Model.Any())
         {
             <div class="card-footer bg-white">
-                <div class="row align-items-center">
-                    <div class="col-md-6">
-                        <span class="text-muted">
-                            Duke shfaqur <strong>@Model.Count()</strong> përdorues
-                        </span>
-                    </div>
-                </div>
+                <span class="text-muted">
+                    Duke shfaqur <strong>@Model.Count()</strong> përdorues
+                </span>
             </div>
         }
     </div>
-
-    <!-- Bulk Actions -->
-    <div id="bulkActions" class="card border-0 shadow-sm mt-3" style="display: none;">
-        <div class="card-body">
-            <div class="row align-items-center">
-                <div class="col-md-6">
-                    <span id="selectedCount" class="text-muted">0 përdorues të zgjedhur</span>
-                </div>
-                <div class="col-md-6 text-end">
-                    <div class="btn-group" role="group">
-                        <button type="button" class="btn btn-sm btn-success" id="activateSelected">
-                            <i class="bi bi-check-circle me-1"></i>
-                            Aktivizo
-                        </button>
-                        <button type="button" class="btn btn-sm btn-secondary" id="deactivateSelected">
-                            <i class="bi bi-x-circle me-1"></i>
-                            Çaktivizo
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
-
-<!-- Delete Confirmation Modal -->
-<div class="modal fade" id="deleteModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                    Konfirmo Fshirjen
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p>A jeni të sigurt që dëshironi të fshini përdoruesin:</p>
-                <p class="fw-bold text-center" id="deleteItemName"></p>
-                <div class="alert alert-warning">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                    <strong>Kujdes:</strong> Kjo veprim nuk mund të zhbëhet!
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="bi bi-x-circle me-1"></i>
-                    Anulo
-                </button>
-                <form method="post" asp-area="Admin" asp-controller="UserManagement" asp-action="Delete" id="deleteForm" class="d-inline">
-                    <input type="hidden" name="id" id="deleteItemId">
-                    <button type="submit" class="btn btn-danger">
-                        <i class="bi bi-trash-fill me-1"></i>
-                        Fshij Përdoruesin
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-@section Scripts {
-    <script>
-        $(document).ready(function() {
-            // Delete user
-            $('.delete-user').on('click', function() {
-                const id = $(this).data('id');
-                const name = $(this).data('name');
-                $('#deleteItemName').text(name);
-                $('#deleteItemId').val(id);
-                $('#deleteModal').modal('show');
-            });
-
-            // Select all checkboxes
-            $('#selectAll').on('change', function() {
-                $('.row-checkbox').prop('checked', $(this).prop('checked'));
-                updateBulkActions();
-            });
-
-            $('.row-checkbox').on('change', function() {
-                updateBulkActions();
-            });
-
-            function updateBulkActions() {
-                const selectedCount = $('.row-checkbox:checked').length;
-                if (selectedCount > 0) {
-                    $('#bulkActions').show();
-                    $('#selectedCount').text(selectedCount + ' përdorues të zgjedhur');
-                } else {
-                    $('#bulkActions').hide();
-                }
-            }
-
-            // Bulk activate
-            $('#activateSelected').on('click', function() {
-                const selectedIds = $('.row-checkbox:checked').map(function() {
-                    return $(this).val();
-                }).get();
-
-                if (confirm('A dëshironi të aktivizoni ' + selectedIds.length + ' përdorues?')) {
-                    $.ajax({
-                        url: '@Url.Action("BulkActivate", "UserManagement", new { area = "Admin" })',
-                        type: 'POST',
-                        contentType: 'application/json',
-                        data: JSON.stringify(selectedIds),
-                        success: function(response) {
-                            if (response.success) {
-                                alert(response.message);
-                                location.reload();
-                            } else {
-                                alert('Gabim: ' + response.message);
-                            }
-                        }
-                    });
-                }
-            });
-
-            // Bulk deactivate
-            $('#deactivateSelected').on('click', function() {
-                const selectedIds = $('.row-checkbox:checked').map(function() {
-                    return $(this).val();
-                }).get();
-
-                if (confirm('A dëshironi të çaktivizoni ' + selectedIds.length + ' përdorues?')) {
-                    $.ajax({
-                        url: '@Url.Action("BulkDeactivate", "UserManagement", new { area = "Admin" })',
-                        type: 'POST',
-                        contentType: 'application/json',
-                        data: JSON.stringify(selectedIds),
-                        success: function(response) {
-                            if (response.success) {
-                                alert(response.message);
-                                location.reload();
-                            } else {
-                                alert('Gabim: ' + response.message);
-                            }
-                        }
-                    });
-                }
-            });
-        });
-    </script>
-}
 
 @section Styles {
     <style>
@@ -481,19 +300,7 @@
             justify-content: center;
             font-weight: bold;
             font-size: 14px;
-        }
-
-        .table-hover tbody tr:hover {
-            background-color: rgba(0, 123, 255, 0.05);
-        }
-
-        #bulkActions {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
-            min-width: 600px;
+            flex-shrink: 0;
         }
     </style>
 }

@@ -1,5 +1,7 @@
 ﻿using eProtokoll.Data;
 using eProtokoll.Repositories;
+using eProtokoll.Repositories.Document;
+using eProtokoll.Repositories.User;
 using eProtokoll.Services;
 using eProtokoll.Services.ProtocolNumber;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -31,6 +33,9 @@ builder.Services.AddSingleton(connectionString);
 
 // Repositories
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
+builder.Services.AddScoped<ITrackingRepository, TrackingRepository>();
+builder.Services.AddScoped<IReportRepository, ReportRepository>();
 
 // Services
 builder.Services.AddScoped<IProtocolNumberService, ProtocolNumberService>();

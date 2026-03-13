@@ -50,23 +50,6 @@
         </div>
     </div>
 
-    <!-- Filters -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-body">
-            <form method="get">
-                <div class="row g-3">
-                    <div class="col-md-8">
-                        <input type="text" class="form-control" name="searchTerm" value="@ViewBag.SearchTerm" placeholder="Kërko...">
-                    </div>
-                    <div class="col-md-4 d-flex">
-                        <button type="submit" class="btn btn-primary me-2"> <i class="bi bi-search"></i> Kërko</button>
-                        <a href="@Url.Action("Index", "ProtocolBook", new { area = "Manager" })" class="btn btn-outline-secondary">Pastro</a>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <!-- Protocol Book Table -->
     <div class="card shadow-sm">
         <div class="card-header bg-white">
@@ -121,14 +104,19 @@
                                         <div class="text-truncate" style="max-width:400px" title="@doc.Subject">@doc.Subject</div>
                                     </td>
                                     <td><small>@doc.ProtocolDate.ToString("dd/MM/yyyy")<br/>@doc.ProtocolTime.ToString(@"hh\:mm")</small></td>
-                                    <td><small>@doc.Classification?.Name</small></td>
+                                    <td><small>@Html.DisplayFor(_ => doc.Classification)</small></td>                                    
                                     <td>
                                         @switch (doc.Status)
                                         {
-                                            case DocumentStatus.Registered: <span class="badge bg-info">Protokolluar</span>; break;
-                                            case DocumentStatus.InProgress: <span class="badge bg-primary">Në Proces</span>; break;
-                                            case DocumentStatus.Completed: <span class="badge bg-success">Përfunduar</span>; break;
-                                            default: <span class="badge bg-secondary">@doc.Status</span>; break;
+                                            case DocumentStatus.Registered:
+                                               <span class="badge bg-info">Protokolluar</span> 
+                                                    break;
+                                            case DocumentStatus.InProgress: 
+                                                <span class="badge bg-primary">Në Proces</span>
+                                                    break;
+                                            default: 
+                                                <span class="badge bg-secondary">@doc.Status</span>
+                                                    break;
                                         }
                                     </td>
                                     <td><small>@doc.Creator?.FullName</small></td>

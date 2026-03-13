@@ -1,6 +1,6 @@
 ﻿using eProtokoll.Helpers;
 using eProtokoll.Models;
-using eProtokoll.Repositories;
+using eProtokoll.Repositories.User;
 
 namespace eProtokoll.Data
 {
@@ -8,11 +8,9 @@ namespace eProtokoll.Data
     {
         public static async Task SeedAdminUser(IUserRepository userRepository)
         {
-            // Kontrollo nëse admin ekziston
             var existing = await userRepository.GetByUsernameAsync("admin");
             if (existing != null) return;
 
-            // Krijo admin të ri
             var admin = new Users
             {
                 UserName = "admin",

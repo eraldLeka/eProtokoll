@@ -22,168 +22,6 @@ namespace eProtokoll.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("eProtokoll.Models.Classification", b =>
-                {
-                    b.Property<int>("ClassificationId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ClassificationId"));
-
-                    b.Property<string>("ColorCode")
-                        .HasMaxLength(7)
-                        .HasColumnType("nvarchar(7)");
-
-                    b.Property<string>("CreatedBy")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsDefault")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("Level")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ModifiedBy")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime?>("ModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<int>("RetentionYears")
-                        .HasColumnType("int");
-
-                    b.Property<int>("SortOrder")
-                        .HasColumnType("int");
-
-                    b.HasKey("ClassificationId");
-
-                    b.HasIndex("Level");
-
-                    b.HasIndex("Name")
-                        .IsUnique();
-
-                    b.ToTable("Classifications");
-
-                    b.HasData(
-                        new
-                        {
-                            ClassificationId = 1,
-                            ColorCode = "#28a745",
-                            CreatedDate = new DateTime(2026, 2, 13, 11, 5, 50, 264, DateTimeKind.Local).AddTicks(6861),
-                            Description = "Dokumente publike që mund të shihen nga të gjithë",
-                            IsActive = true,
-                            IsDefault = true,
-                            Level = 0,
-                            Name = "Publik",
-                            RetentionYears = 5,
-                            SortOrder = 1
-                        },
-                        new
-                        {
-                            ClassificationId = 2,
-                            ColorCode = "#ffc107",
-                            CreatedDate = new DateTime(2026, 2, 13, 11, 5, 50, 264, DateTimeKind.Local).AddTicks(6866),
-                            Description = "Vetëm për punonjësit e përzgjedhur (assigned)",
-                            IsActive = true,
-                            IsDefault = false,
-                            Level = 1,
-                            Name = "I Kufizuar",
-                            RetentionYears = 10,
-                            SortOrder = 2
-                        },
-                        new
-                        {
-                            ClassificationId = 3,
-                            ColorCode = "#dc3545",
-                            CreatedDate = new DateTime(2026, 2, 13, 11, 5, 50, 264, DateTimeKind.Local).AddTicks(6870),
-                            Description = "Vetëm menaxherët dhe administratorët",
-                            IsActive = true,
-                            IsDefault = false,
-                            Level = 2,
-                            Name = "Sekret",
-                            RetentionYears = 20,
-                            SortOrder = 3
-                        });
-                });
-
-            modelBuilder.Entity("eProtokoll.Models.Deadline", b =>
-                {
-                    b.Property<int>("DeadlineId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DeadlineId"));
-
-                    b.Property<int?>("CompletedBy")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("CompletedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("CreatedBy")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("DocumentId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("DueDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsCompleted")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<int>("Priority")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ResponsibleUserId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.HasKey("DeadlineId");
-
-                    b.HasIndex("CompletedBy");
-
-                    b.HasIndex("CreatedBy");
-
-                    b.HasIndex("DocumentId");
-
-                    b.HasIndex("DueDate");
-
-                    b.HasIndex("IsCompleted");
-
-                    b.HasIndex("ResponsibleUserId");
-
-                    b.ToTable("Deadlines");
-                });
-
             modelBuilder.Entity("eProtokoll.Models.Document", b =>
                 {
                     b.Property<int>("DocumentId")
@@ -192,7 +30,7 @@ namespace eProtokoll.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DocumentId"));
 
-                    b.Property<int>("ClassificationId")
+                    b.Property<int>("Classification")
                         .HasColumnType("int");
 
                     b.Property<string>("Content")
@@ -243,8 +81,6 @@ namespace eProtokoll.Migrations
 
                     b.HasKey("DocumentId");
 
-                    b.HasIndex("ClassificationId");
-
                     b.HasIndex("CreatedBy");
 
                     b.HasIndex("DocumentType");
@@ -253,8 +89,6 @@ namespace eProtokoll.Migrations
 
                     b.HasIndex("ProtocolNumber")
                         .IsUnique();
-
-                    b.HasIndex("Status");
 
                     b.ToTable("Documents");
 
@@ -335,6 +169,29 @@ namespace eProtokoll.Migrations
                     b.ToTable("DocumentAttachments");
                 });
 
+            modelBuilder.Entity("eProtokoll.Models.DocumentPermission", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("DocumentId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DocumentId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("DocumentPermissions");
+                });
+
             modelBuilder.Entity("eProtokoll.Models.DocumentTracking", b =>
                 {
                     b.Property<int>("TrackingId")
@@ -361,6 +218,9 @@ namespace eProtokoll.Migrations
                     b.Property<int>("DocumentId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("DocumentId1")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("DueDate")
                         .HasColumnType("datetime2");
 
@@ -368,8 +228,7 @@ namespace eProtokoll.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("Notes")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Priority")
                         .HasColumnType("int");
@@ -381,6 +240,8 @@ namespace eProtokoll.Migrations
                     b.HasIndex("AssignedToUserId");
 
                     b.HasIndex("DocumentId");
+
+                    b.HasIndex("DocumentId1");
 
                     b.HasIndex("DueDate");
 
@@ -647,7 +508,7 @@ namespace eProtokoll.Migrations
                             ProtocolSettingsId = 1,
                             AllowManualEdit = false,
                             AutoResetYearly = true,
-                            CreatedDate = new DateTime(2026, 2, 13, 11, 5, 50, 264, DateTimeKind.Local).AddTicks(7196),
+                            CreatedDate = new DateTime(2026, 3, 12, 15, 18, 50, 71, DateTimeKind.Local).AddTicks(6491),
                             IncomingCurrentNumber = 1,
                             IncomingPrefix = "H",
                             IncomingStartNumber = 1,
@@ -710,8 +571,8 @@ namespace eProtokoll.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("PhoneNumber")
-                        .HasColumnType("int");
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Position")
                         .HasMaxLength(100)
@@ -848,54 +709,12 @@ namespace eProtokoll.Migrations
                     b.HasDiscriminator().HasValue("OutgoingDocument");
                 });
 
-            modelBuilder.Entity("eProtokoll.Models.Deadline", b =>
-                {
-                    b.HasOne("eProtokoll.Models.Users", "CompletedByUser")
-                        .WithMany()
-                        .HasForeignKey("CompletedBy")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("eProtokoll.Models.Users", "Creator")
-                        .WithMany()
-                        .HasForeignKey("CreatedBy")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("eProtokoll.Models.Document", "Document")
-                        .WithMany("Deadlines")
-                        .HasForeignKey("DocumentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("eProtokoll.Models.Users", "ResponsibleUser")
-                        .WithMany("Deadlines")
-                        .HasForeignKey("ResponsibleUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("CompletedByUser");
-
-                    b.Navigation("Creator");
-
-                    b.Navigation("Document");
-
-                    b.Navigation("ResponsibleUser");
-                });
-
             modelBuilder.Entity("eProtokoll.Models.Document", b =>
                 {
-                    b.HasOne("eProtokoll.Models.Classification", "Classification")
-                        .WithMany("Documents")
-                        .HasForeignKey("ClassificationId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("eProtokoll.Models.Users", "Creator")
                         .WithMany("CreatedDocuments")
                         .HasForeignKey("CreatedBy")
                         .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("Classification");
 
                     b.Navigation("Creator");
                 });
@@ -919,31 +738,48 @@ namespace eProtokoll.Migrations
                     b.Navigation("Uploader");
                 });
 
+            modelBuilder.Entity("eProtokoll.Models.DocumentPermission", b =>
+                {
+                    b.HasOne("eProtokoll.Models.Document", "Document")
+                        .WithMany()
+                        .HasForeignKey("DocumentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("eProtokoll.Models.Users", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Document");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("eProtokoll.Models.DocumentTracking", b =>
                 {
-                    b.HasOne("eProtokoll.Models.Users", "AssignedByUser")
+                    b.HasOne("eProtokoll.Models.Users", null)
                         .WithMany()
                         .HasForeignKey("AssignedByUserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("eProtokoll.Models.Users", "AssignedToUser")
+                    b.HasOne("eProtokoll.Models.Users", null)
                         .WithMany("AssignedDocuments")
                         .HasForeignKey("AssignedToUserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("eProtokoll.Models.Document", "Document")
-                        .WithMany("Trackings")
+                    b.HasOne("eProtokoll.Models.Document", null)
+                        .WithMany()
                         .HasForeignKey("DocumentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("AssignedByUser");
-
-                    b.Navigation("AssignedToUser");
-
-                    b.Navigation("Document");
+                    b.HasOne("eProtokoll.Models.Document", null)
+                        .WithMany("Trackings")
+                        .HasForeignKey("DocumentId1");
                 });
 
             modelBuilder.Entity("eProtokoll.Models.IncomingDocument", b =>
@@ -990,16 +826,9 @@ namespace eProtokoll.Migrations
                     b.Navigation("Institution");
                 });
 
-            modelBuilder.Entity("eProtokoll.Models.Classification", b =>
-                {
-                    b.Navigation("Documents");
-                });
-
             modelBuilder.Entity("eProtokoll.Models.Document", b =>
                 {
                     b.Navigation("Attachments");
-
-                    b.Navigation("Deadlines");
 
                     b.Navigation("Trackings");
                 });
@@ -1016,8 +845,6 @@ namespace eProtokoll.Migrations
                     b.Navigation("AssignedDocuments");
 
                     b.Navigation("CreatedDocuments");
-
-                    b.Navigation("Deadlines");
                 });
 
             modelBuilder.Entity("eProtokoll.Models.OutgoingDocument", b =>

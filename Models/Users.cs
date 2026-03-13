@@ -8,7 +8,7 @@ namespace eProtokoll.Models
 
         //login fields
         [Required]
-        public string UserName { get; set; }
+        public string UserName { get; set; } = null!;
        
         [Required]
         public string PasswordHash { get; set; } = null!;
@@ -25,9 +25,9 @@ namespace eProtokoll.Models
         public string FullName => $"{FirstName} {LastName}";
         [Required]
         [EmailAddress]
-        public string Email { get; set; }
+        public string Email { get; set; } = null!;
 
-        public int? PhoneNumber { get; set; }
+        public string? PhoneNumber { get; set; }
 
         [StringLength(100)]
         [Display(Name = "Pozicioni")]
@@ -59,8 +59,6 @@ namespace eProtokoll.Models
 
         public virtual ICollection<Document> CreatedDocuments { get; set; } = new List<Document>();
         public virtual ICollection<DocumentTracking> AssignedDocuments { get; set; } = new List<DocumentTracking>();
-        public virtual ICollection<Deadline> Deadlines { get; set; } = new List<Deadline>();
-
 
         public enum UserRole
         {

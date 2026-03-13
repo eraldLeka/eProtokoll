@@ -1,10 +1,10 @@
-﻿using eProtokoll.Models;
+﻿using eProtokoll.Helpers;
+using eProtokoll.Models;
+using eProtokoll.Repositories.User;
 using eProtokoll.Services.Mappers;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
-using System.Data;
 
 namespace eProtokoll.Areas.Admin.Controllers
 {
@@ -13,17 +13,14 @@ namespace eProtokoll.Areas.Admin.Controllers
     public class UserManagementController : Controller
     {
         private readonly string _connectionString;
-        private readonly UserManager<Users> _userManager;
-        private readonly SignInManager<Users> _signInManager;
+        private readonly IUserRepository _userRepository;
 
         public UserManagementController(
             IConfiguration configuration,
-            UserManager<Users> userManager,
-            SignInManager<Users> signInManager)
+            IUserRepository userRepository)
         {
             _connectionString = configuration.GetConnectionString("DefaultConnection");
-            _userManager = userManager;
-            _signInManager = signInManager;
+            _userRepository = userRepository;
         }
 
         // GET: Admin/UserManagement
@@ -33,10 +30,9 @@ namespace eProtokoll.Areas.Admin.Controllers
 
             using (var connection = new SqlConnection(_connectionString))
             {
-                var query = "SELECT * FROM AspNetUsers WHERE 1=1";
+                var query = "SELECT * FROM Users WHERE 1=1";
                 var parameters = new List<SqlParameter>();
 
-                // Search filter
                 if (!string.IsNullOrEmpty(searchTerm))
                 {
                     query += @" AND (FirstName LIKE @SearchTerm 
@@ -46,14 +42,12 @@ namespace eProtokoll.Areas.Admin.Controllers
                     parameters.Add(new SqlParameter("@SearchTerm", $"%{searchTerm}%"));
                 }
 
-                // Role filter
                 if (!string.IsNullOrEmpty(role) && Enum.TryParse<Users.UserRole>(role, out var userRole))
                 {
                     query += " AND Role = @Role";
                     parameters.Add(new SqlParameter("@Role", (int)userRole));
                 }
 
-                // Status filter
                 if (!string.IsNullOrEmpty(status))
                 {
                     bool isActive = status.ToLower() == "active";
@@ -66,14 +60,11 @@ namespace eProtokoll.Areas.Admin.Controllers
                 using (var command = new SqlCommand(query, connection))
                 {
                     command.Parameters.AddRange(parameters.ToArray());
-
                     await connection.OpenAsync();
                     using (var reader = await command.ExecuteReaderAsync())
                     {
                         while (await reader.ReadAsync())
-                        {
                             users.Add(UserMapper.MapToApplicationUser(reader));
-                        }
                     }
                 }
             }
@@ -81,19 +72,13 @@ namespace eProtokoll.Areas.Admin.Controllers
             ViewBag.SearchTerm = searchTerm;
             ViewBag.SelectedRole = role;
             ViewBag.SelectedStatus = status;
-
             return View(users);
         }
 
         // GET: Admin/UserManagement/Create
         public IActionResult Create()
         {
-            var user = new Users
-            {
-                IsActive = true
-            };
-
-            return View(user);
+            return View(new Users { IsActive = true });
         }
 
         // POST: Admin/UserManagement/Create
@@ -101,9 +86,12 @@ namespace eProtokoll.Areas.Admin.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Users model, string Password, string ConfirmPassword)
         {
+            ModelState.Remove("PasswordHash");
+            ModelState.Remove("CreatedDate");
+            ModelState.Remove("ModifedDate");
+            ModelState.Remove("FullName");
             bool hasErrors = false;
 
-            // ===================== VALIDIM =====================
             if (string.IsNullOrEmpty(Password))
             {
                 TempData["PasswordError"] = "Fjalëkalimi është i detyrueshëm!";
@@ -170,7 +158,6 @@ namespace eProtokoll.Areas.Admin.Controllers
                 return View(model);
             }
 
-            // ===================== KRIJIMI I PËRDORUESIT =====================
             var user = new Users
             {
                 UserName = model.UserName,
@@ -179,70 +166,39 @@ namespace eProtokoll.Areas.Admin.Controllers
                 LastName = model.LastName,
                 Position = model.Position,
                 Department = model.Department,
-                Role = model.Role,       
+                Role = model.Role,
                 PhoneNumber = model.PhoneNumber,
                 IsActive = model.IsActive,
                 CreatedDate = DateTime.Now,
+                PasswordHash = PasswordHelper.Hash(Password)
             };
 
-            var result = await _userManager.CreateAsync(user, Password);
+            await _userRepository.CreateAsync(user);
 
-            if (result.Succeeded)
-            {
-                // ===================== SHTO PËRDORUESIN NË IDENTITY ROLE =====================
-                await _userManager.AddToRoleAsync(user, model.Role.ToString());
-
-                TempData["SuccessMessage"] = $"Përdoruesi '{user.FullName}' u krijua me sukses!";
-                return RedirectToAction(nameof(Index));
-            }
-
-            foreach (var error in result.Errors)
-            {
-                ModelState.AddModelError("", error.Description);
-            }
-
-            ViewBag.Password = Password;
-            ViewBag.ConfirmPassword = ConfirmPassword;
-            return View(model);
+            TempData["SuccessMessage"] = $"Përdoruesi '{user.FullName}' u krijua me sukses!";
+            return RedirectToAction(nameof(Index));
         }
 
-
         // GET: Admin/UserManagement/Edit/5
-        public async Task<IActionResult> Edit(string id)
+        public async Task<IActionResult> Edit(int id)
         {
-            if (string.IsNullOrEmpty(id))
-            {
-                return NotFound();
-            }
-
-            var user = await _userManager.FindByIdAsync(id);
-            if (user == null)
-            {
-                return NotFound();
-            }
-
+            var user = await _userRepository.GetByIdAsync(id);
+            if (user == null) return NotFound();
             return View(user);
         }
 
         // POST: Admin/UserManagement/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(string id, Users model, string Password, string ConfirmPassword)
+        public async Task<IActionResult> Edit(int id, Users model, string Password, string ConfirmPassword)
         {
-            if (int.Parse(id) != model.Id)
-            {
-                return NotFound();
-            }
+            if (id != model.Id) return NotFound();
 
-            var user = await _userManager.FindByIdAsync(id);
-            if (user == null)
-            {
-                return NotFound();
-            }
+            var user = await _userRepository.GetByIdAsync(id);
+            if (user == null) return NotFound();
 
             bool hasErrors = false;
 
-            // ===================== VALIDIMI I FJALËKALIMIT =====================
             if (!string.IsNullOrEmpty(Password))
             {
                 if (Password.Length < 6)
@@ -258,7 +214,6 @@ namespace eProtokoll.Areas.Admin.Controllers
                 }
             }
 
-            // ===================== VALIDIMI I EMAIL =====================
             if (user.Email != model.Email)
             {
                 var existingEmail = await FindByEmailAsync(model.Email);
@@ -269,7 +224,6 @@ namespace eProtokoll.Areas.Admin.Controllers
                 }
             }
 
-            // ===================== VALIDIMI I USERNAME =====================
             if (user.UserName != model.UserName)
             {
                 var existingUsername = await FindByUsernameAsync(model.UserName);
@@ -287,7 +241,6 @@ namespace eProtokoll.Areas.Admin.Controllers
                 return View(model);
             }
 
-            // ===================== PËRDITËSIMI I TË DHËNAVE =====================
             user.UserName = model.UserName;
             user.Email = model.Email;
             user.FirstName = model.FirstName;
@@ -296,248 +249,75 @@ namespace eProtokoll.Areas.Admin.Controllers
             user.Department = model.Department;
             user.PhoneNumber = model.PhoneNumber;
             user.IsActive = model.IsActive;
+            user.Role = model.Role;
             user.ModifiedDate = DateTime.Now;
             user.ModifiedBy = User.Identity?.Name;
 
-            // ===================== PËRDITËSIMI I ROLE-S NË IDENTITY =====================
-            if (user.Role != model.Role)
-            {
-                // Merr rolet aktuale të përdoruesit
-                var currentRoles = await _userManager.GetRolesAsync(user);
-
-                // Hiq të gjitha rolet ekzistuese
-                await _userManager.RemoveFromRolesAsync(user, currentRoles);
-
-                // Shto rolin e ri
-                await _userManager.AddToRoleAsync(user, model.Role.ToString());
-
-                // Përditëso enum-in lokal
-                user.Role = model.Role;
-            }
-
-            // ===================== PËRDITËSIMI I PËRDORUESIT =====================
-            var updateResult = await _userManager.UpdateAsync(user);
-            if (!updateResult.Succeeded)
-            {
-                foreach (var error in updateResult.Errors)
-                {
-                    ModelState.AddModelError("", error.Description);
-                }
-                ViewBag.Password = Password;
-                ViewBag.ConfirmPassword = ConfirmPassword;
-                return View(model);
-            }
-
-            // ===================== NDRYSHIMI I FJALËKALIMIT =====================
             if (!string.IsNullOrEmpty(Password))
-            {
-                await _userManager.RemovePasswordAsync(user);
-                var passwordResult = await _userManager.AddPasswordAsync(user, Password);
+                user.PasswordHash = PasswordHelper.Hash(Password);
 
-                if (!passwordResult.Succeeded)
-                {
-                    foreach (var error in passwordResult.Errors)
-                    {
-                        ModelState.AddModelError("", error.Description);
-                    }
-                    ViewBag.Password = Password;
-                    ViewBag.ConfirmPassword = ConfirmPassword;
-                    return View(model);
-                }
-            }
+            await _userRepository.UpdateAsync(user);
 
             TempData["SuccessMessage"] = $"Përdoruesi '{user.FullName}' u përditësua me sukses!";
             return RedirectToAction(nameof(Index));
         }
 
-
-        // POST: Admin/UserManagement/Delete/5
+        // POST: Admin/UserManagement/ToggleStatus
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Delete(string id)
+        public async Task<IActionResult> ToggleStatus(int id)
         {
-            var user = await _userManager.FindByIdAsync(id);
+            var user = await _userRepository.GetByIdAsync(id);
             if (user == null)
             {
                 TempData["ErrorMessage"] = "Përdoruesi nuk u gjet!";
                 return RedirectToAction(nameof(Index));
             }
 
-            var hasDocuments = await CheckUserHasDocuments(id);
-            if (hasDocuments)
-            {
-                TempData["ErrorMessage"] = $"Nuk mund të fshihet! Përdoruesi '{user.FullName}' ka dokumente të lidhura.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            var result = await _userManager.DeleteAsync(user);
-            if (result.Succeeded)
-            {
-                TempData["SuccessMessage"] = $"Përdoruesi '{user.FullName}' u fshi me sukses!";
-            }
-            else
-            {
-                TempData["ErrorMessage"] = "Gabim gjatë fshirjes së përdoruesit!";
-            }
-
-            return RedirectToAction(nameof(Index));
-        }
-
-        // POST: Admin/UserManagement/ToggleStatus
-        [HttpPost]
-        public async Task<IActionResult> ToggleStatus(string id)
-        {
-            var user = await _userManager.FindByIdAsync(id);
-            if (user == null)
-            {
-                return Json(new { success = false, message = "Përdoruesi nuk u gjet!" });
-            }
-
             user.IsActive = !user.IsActive;
             user.ModifiedDate = DateTime.Now;
             user.ModifiedBy = User.Identity?.Name;
 
-            var result = await _userManager.UpdateAsync(user);
+            await _userRepository.UpdateAsync(user);
 
-            if (result.Succeeded)
-            {
-                return Json(new
-                {
-                    success = true,
-                    message = "Statusi u ndryshua me sukses!",
-                    isActive = user.IsActive
-                });
-            }
-
-            return Json(new { success = false, message = "Gabim gjatë ndryshimit të statusit!" });
+            var statusText = user.IsActive ? "aktivizuar" : "çaktivizuar";
+            TempData["SuccessMessage"] = $"Përdoruesi '{user.FullName}' u {statusText} me sukses!";
+            return RedirectToAction(nameof(Index));
         }
 
-        // POST: Admin/UserManagement/BulkActivate
-        [HttpPost]
-        public async Task<IActionResult> BulkActivate([FromBody] List<string> ids)
+        // Helpers
+        private async Task<Users?> FindByUsernameAsync(string username)
         {
-            try
-            {
-                int count = 0;
-                foreach (var id in ids)
-                {
-                    var user = await _userManager.FindByIdAsync(id);
-                    if (user != null)
-                    {
-                        user.IsActive = true;
-                        user.ModifiedDate = DateTime.Now;
-                        user.ModifiedBy = User.Identity?.Name;
-                        await _userManager.UpdateAsync(user);
-                        count++;
-                    }
-                }
-
-                return Json(new
-                {
-                    success = true,
-                    message = $"{count} përdorues u aktivizuan me sukses!"
-                });
-            }
-            catch (Exception ex)
-            {
-                return Json(new { success = false, message = $"Gabim: {ex.Message}" });
-            }
-        }
-
-        // POST: Admin/UserManagement/BulkDeactivate
-        [HttpPost]
-        public async Task<IActionResult> BulkDeactivate([FromBody] List<string> ids)
-        {
-            try
-            {
-                int count = 0;
-                foreach (var id in ids)
-                {
-                    var user = await _userManager.FindByIdAsync(id);
-                    if (user != null)
-                    {
-                        user.IsActive = false;
-                        user.ModifiedDate = DateTime.Now;
-                        user.ModifiedBy = User.Identity?.Name;
-                        await _userManager.UpdateAsync(user);
-                        count++;
-                    }
-                }
-
-                return Json(new
-                {
-                    success = true,
-                    message = $"{count} përdorues u çaktivizuan me sukses!"
-                });
-            }
-            catch (Exception ex)
-            {
-                return Json(new { success = false, message = $"Gabim: {ex.Message}" });
-            }
-        }
-
-        // Helper method - Find user by username (ADO.NET)
-        private async Task<Users> FindByUsernameAsync(string username)
-        {
-            using (var connection = new SqlConnection(_connectionString))
-            {
-                var query = "SELECT * FROM AspNetUsers WHERE UserName = @UserName";
-                using (var command = new SqlCommand(query, connection))
-                {
-                    command.Parameters.AddWithValue("@UserName", username);
-
-                    await connection.OpenAsync();
-                    using (var reader = await command.ExecuteReaderAsync())
-                    {
-                        if (await reader.ReadAsync())
-                        {
-                            return UserMapper.MapToApplicationUser(reader);
-                        }
-                    }
-                }
-            }
+            using var connection = new SqlConnection(_connectionString);
+            using var command = new SqlCommand("SELECT * FROM Users WHERE UserName = @UserName", connection);
+            command.Parameters.AddWithValue("@UserName", username);
+            await connection.OpenAsync();
+            using var reader = await command.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+                return UserMapper.MapToApplicationUser(reader);
             return null;
         }
 
-        // Helper method - Find user by email (ADO.NET)
-        private async Task<Users> FindByEmailAsync(string email)
+        private async Task<Users?> FindByEmailAsync(string email)
         {
-            using (var connection = new SqlConnection(_connectionString))
-            {
-                var query = "SELECT * FROM AspNetUsers WHERE Email = @Email";
-                using (var command = new SqlCommand(query, connection))
-                {
-                    command.Parameters.AddWithValue("@Email", email);
-
-                    await connection.OpenAsync();
-                    using (var reader = await command.ExecuteReaderAsync())
-                    {
-                        if (await reader.ReadAsync())
-                        {
-                            return UserMapper.MapToApplicationUser(reader);
-                        }
-                    }
-                }
-            }
+            using var connection = new SqlConnection(_connectionString);
+            using var command = new SqlCommand("SELECT * FROM Users WHERE Email = @Email", connection);
+            command.Parameters.AddWithValue("@Email", email);
+            await connection.OpenAsync();
+            using var reader = await command.ExecuteReaderAsync();
+            if (await reader.ReadAsync())
+                return UserMapper.MapToApplicationUser(reader);
             return null;
         }
 
-        // Helper method - Check if user has documents (ADO.NET)
-        private async Task<bool> CheckUserHasDocuments(string userId)
+        private async Task<bool> CheckUserHasDocuments(int userId)
         {
-            using (var connection = new SqlConnection(_connectionString))
-            {
-                var query = "SELECT COUNT(*) FROM Documents WHERE CreatedBy = @UserId";
-                using (var command = new SqlCommand(query, connection))
-                {
-                    command.Parameters.AddWithValue("@UserId", userId);
-
-                    await connection.OpenAsync();
-                    var result = await command.ExecuteScalarAsync();
-                    int count = result != null ? Convert.ToInt32(result) : 0;
-                    return count > 0;
-                }
-            }
+            using var connection = new SqlConnection(_connectionString);
+            using var command = new SqlCommand("SELECT COUNT(*) FROM Documents WHERE CreatedBy = @UserId", connection);
+            command.Parameters.AddWithValue("@UserId", userId);
+            await connection.OpenAsync();
+            var result = await command.ExecuteScalarAsync();
+            return Convert.ToInt32(result) > 0;
         }
     }
 }

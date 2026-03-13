@@ -22,35 +22,33 @@ namespace eProtokoll.Services.Files
         }
 
         public DocumentAttachment SaveFile(
-             byte[] fileBytes,
-             string originalFileName,
-             int documentId,
-             string contentType,
-              int uploadedBy)
+            byte[] fileBytes,
+            string originalFileName,
+            int documentId,
+            string contentType,
+            int uploadedBy)
         {
             var hash = ComputeHash(fileBytes);
-
             var extension = Path.GetExtension(originalFileName);
             var storedFileName = $"{hash}{extension}";
+            var fullPath = Path.Combine(_uploadsFolder, storedFileName);
 
-            var filePath = Path.Combine(_uploadsFolder, storedFileName);
-
-            if (!File.Exists(filePath))
-                File.WriteAllBytes(filePath, fileBytes);
+            if (!File.Exists(fullPath))
+                File.WriteAllBytes(fullPath, fileBytes);
 
             return new DocumentAttachment
             {
                 DocumentId = documentId,
                 OriginalFileName = originalFileName,
                 FileName = storedFileName,
-                FilePath = filePath,
+                FilePath = storedFileName,  
                 FileSize = fileBytes.Length,
                 FileExtension = extension,
                 ContentType = contentType,
+                FileHash = hash,            
                 UploadedBy = uploadedBy,
                 UploadedDate = DateTime.Now
             };
         }
-
     }
 }

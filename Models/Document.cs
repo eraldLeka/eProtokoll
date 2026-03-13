@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc.ModelBinding;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-
 namespace eProtokoll.Models
 {
     public class Document
@@ -12,7 +11,7 @@ namespace eProtokoll.Models
         [Required]
         [StringLength(50)]
         [Display(Name = "Numri i Protokollit")]
-        public string ProtocolNumber { get; set; }
+        public string ProtocolNumber { get; set; } = null!;
 
         [BindNever]
         [Display(Name = "Data e Protokollimit")]
@@ -35,7 +34,7 @@ namespace eProtokoll.Models
         [Required(ErrorMessage = "Subjekti është i detyrueshëm")]
         [StringLength(500, ErrorMessage = "Subjekti nuk mund të jetë më shumë se 500 karaktere")]
         [Display(Name = "Subjekti")]
-        public string Subject { get; set; }
+        public string Subject { get; set; } = null!;
 
         [Display(Name = "Përmbajtja")]
         [DataType(DataType.MultilineText)]
@@ -43,10 +42,7 @@ namespace eProtokoll.Models
 
         [Required]
         [Display(Name = "Klasifikimi")]
-        public int ClassificationId { get; set; }
-
-        [ForeignKey("ClassificationId")]
-        public virtual Classification? Classification { get; set; }
+        public Classification Classification { get; set; }
 
         [Display(Name = "Statusi")]
         public DocumentStatus Status { get; set; } = DocumentStatus.Registered;
@@ -74,6 +70,7 @@ namespace eProtokoll.Models
 
         public virtual ICollection<DocumentAttachment>? Attachments { get; set; }
         public virtual ICollection<DocumentTracking>? Trackings { get; set; }
-        public virtual ICollection<Deadline>? Deadlines { get; set; }
+        [NotMapped]
+        public string? Discriminator { get; set; }
     }
 }

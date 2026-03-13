@@ -1,11 +1,11 @@
 ﻿using eProtokoll.Models;
-using eProtokoll.Repositories;
 using eProtokoll.Helpers;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using eProtokoll.Repositories.User;
 
 namespace eProtokoll.Controllers
 {
@@ -17,7 +17,6 @@ namespace eProtokoll.Controllers
         {
             _userRepository = userRepository;
         }
-
         // GET: Login
         [AllowAnonymous]
         public IActionResult Login(string? returnUrl = null)
@@ -33,7 +32,6 @@ namespace eProtokoll.Controllers
         public async Task<IActionResult> Login(
             string username,
             string password,
-            bool rememberMe,
             string? returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
@@ -44,7 +42,7 @@ namespace eProtokoll.Controllers
                 return View();
             }
 
-            // Merr userin nga DB
+            // Merr përdoruesin nga databaza
             var user = await _userRepository.GetByUsernameAsync(username);
 
             if (user == null || !PasswordHelper.Verify(password, user.PasswordHash))
@@ -59,7 +57,7 @@ namespace eProtokoll.Controllers
                 return View();
             }
 
-            // Krijo claims
+            // Claims
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
@@ -69,14 +67,20 @@ namespace eProtokoll.Controllers
             };
 
             var identity = new ClaimsIdentity(
-                claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                claims,
+                CookieAuthenticationDefaults.AuthenticationScheme);
+
             var principal = new ClaimsPrincipal(identity);
+
+            var authProperties = new AuthenticationProperties
+            {
+                IsPersistent = false
+            };
 
             await HttpContext.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme,
                 principal,
-                new AuthenticationProperties { IsPersistent = rememberMe }
-            );
+                authProperties);
 
             // ReturnUrl
             if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
@@ -85,15 +89,17 @@ namespace eProtokoll.Controllers
             // Redirect sipas rolit
             return user.Role switch
             {
-                Models.Users.UserRole.Administrator =>
-                    base.RedirectToAction("Index", "Dashboard", new { area = "Admin" }),
-                Models.Users.UserRole.Manager =>
-                    base.RedirectToAction("Index", "Dashboard", new { area = "Manager" }),
+                Users.UserRole.Administrator =>
+                    RedirectToAction("Index", "Dashboard", new { area = "Admin" }),
+
+                Users.UserRole.Manager =>
+                    RedirectToAction("Index", "Dashboard", new { area = "Manager" }),
+
                 _ =>
-                    base.RedirectToAction("Index", "Dashboard", new { area = "Employee" })
+                    RedirectToAction("Index", "Dashboard", new { area = "Employee" })
             };
         }
-
+        
         // POST: Logout
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -101,9 +107,11 @@ namespace eProtokoll.Controllers
         {
             await HttpContext.SignOutAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme);
-            return RedirectToAction(nameof(Login));
-        }
 
+            HttpContext.Session.Clear();
+
+            return RedirectToAction("Login", "Account");
+        }
         // Access Denied
         [AllowAnonymous]
         public IActionResult AccessDenied()

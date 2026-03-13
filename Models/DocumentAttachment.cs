@@ -60,9 +60,4 @@ namespace eProtokoll.Models
         public virtual Users? Uploader { get; set; }
     }
 
-    public enum FileCategory
-    {
-        [Display(Name = "PDF")]
-        PDF = 1
-    }
 }

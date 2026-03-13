@@ -16,7 +16,7 @@ namespace eProtokoll.Services.Mappers
                 DocumentType = (DocumentType)reader.GetInt32(reader.GetOrdinal("DocumentType")),
                 Subject = reader.GetString(reader.GetOrdinal("Subject")),
                 Content = reader.IsDBNull(reader.GetOrdinal("Content")) ? null : reader.GetString(reader.GetOrdinal("Content")),
-                ClassificationId = reader.GetInt32(reader.GetOrdinal("ClassificationId")),
+                Classification = (Classification)reader.GetInt32(reader.GetOrdinal("Classification")),
                 Status = (DocumentStatus)reader.GetInt32(reader.GetOrdinal("Status")),
                 Priority = (Priority)reader.GetInt32(reader.GetOrdinal("Priority")),
                 Notes = reader.IsDBNull(reader.GetOrdinal("Notes")) ? null : reader.GetString(reader.GetOrdinal("Notes")),
@@ -37,7 +37,7 @@ namespace eProtokoll.Services.Mappers
                 DocumentType = (DocumentType)reader.GetInt32(reader.GetOrdinal("DocumentType")),
                 Subject = reader.GetString(reader.GetOrdinal("Subject")),
                 Content = reader.IsDBNull(reader.GetOrdinal("Content")) ? null : reader.GetString(reader.GetOrdinal("Content")),
-                ClassificationId = reader.GetInt32(reader.GetOrdinal("ClassificationId")),
+                Classification = (Classification)reader.GetInt32(reader.GetOrdinal("Classification")),
                 Status = (DocumentStatus)reader.GetInt32(reader.GetOrdinal("Status")),
                 Priority = (Priority)reader.GetInt32(reader.GetOrdinal("Priority")),
                 Notes = reader.IsDBNull(reader.GetOrdinal("Notes")) ? null : reader.GetString(reader.GetOrdinal("Notes")),
@@ -72,7 +72,7 @@ namespace eProtokoll.Services.Mappers
                 DocumentType = (DocumentType)reader.GetInt32(reader.GetOrdinal("DocumentType")),
                 Subject = reader.GetString(reader.GetOrdinal("Subject")),
                 Content = reader.IsDBNull(reader.GetOrdinal("Content")) ? null : reader.GetString(reader.GetOrdinal("Content")),
-                ClassificationId = reader.GetInt32(reader.GetOrdinal("ClassificationId")),
+                Classification = (Classification)reader.GetInt32(reader.GetOrdinal("Classification")),
                 Status = (DocumentStatus)reader.GetInt32(reader.GetOrdinal("Status")),
                 Priority = (Priority)reader.GetInt32(reader.GetOrdinal("Priority")),
                 Notes = reader.IsDBNull(reader.GetOrdinal("Notes")) ? null : reader.GetString(reader.GetOrdinal("Notes")),
@@ -101,7 +101,7 @@ namespace eProtokoll.Services.Mappers
                 DocumentType = (DocumentType)reader.GetInt32(reader.GetOrdinal("DocumentType")),
                 Subject = reader.GetString(reader.GetOrdinal("Subject")),
                 Content = reader.IsDBNull(reader.GetOrdinal("Content")) ? null : reader.GetString(reader.GetOrdinal("Content")),
-                ClassificationId = reader.GetInt32(reader.GetOrdinal("ClassificationId")),
+                Classification = (Classification)reader.GetInt32(reader.GetOrdinal("Classification")),
                 Status = (DocumentStatus)reader.GetInt32(reader.GetOrdinal("Status")),
                 Priority = (Priority)reader.GetInt32(reader.GetOrdinal("Priority")),
                 Notes = reader.IsDBNull(reader.GetOrdinal("Notes")) ? null : reader.GetString(reader.GetOrdinal("Notes")),
@@ -161,30 +161,6 @@ namespace eProtokoll.Services.Mappers
         }
     }
 
-    // ==================== CLASSIFICATION MAPPER ====================
-
-    public static class ClassificationMapper
-    {
-        public static Classification MapToClassification(SqlDataReader reader)
-        {
-            return new Classification
-            {
-                ClassificationId = reader.GetInt32(reader.GetOrdinal("ClassificationId")),
-                Name = reader.GetString(reader.GetOrdinal("Name")),
-                Level = (AccessLevel)reader.GetInt32(reader.GetOrdinal("Level")),
-                Description = reader.IsDBNull(reader.GetOrdinal("Description")) ? null : reader.GetString(reader.GetOrdinal("Description")),
-                RetentionYears = reader.GetInt32(reader.GetOrdinal("RetentionYears")),
-                ColorCode = reader.IsDBNull(reader.GetOrdinal("ColorCode")) ? null : reader.GetString(reader.GetOrdinal("ColorCode")),
-                SortOrder = reader.GetInt32(reader.GetOrdinal("SortOrder")),
-                IsActive = reader.GetBoolean(reader.GetOrdinal("IsActive")),
-                IsDefault = reader.GetBoolean(reader.GetOrdinal("IsDefault")),
-                CreatedDate = reader.GetDateTime(reader.GetOrdinal("CreatedDate")),
-                ModifiedDate = reader.IsDBNull(reader.GetOrdinal("ModifiedDate")) ? null : reader.GetDateTime(reader.GetOrdinal("ModifiedDate")),
-                CreatedBy = reader.IsDBNull(reader.GetOrdinal("CreatedBy")) ? null : reader.GetString(reader.GetOrdinal("CreatedBy")),
-                ModifiedBy = reader.IsDBNull(reader.GetOrdinal("ModifiedBy")) ? null : reader.GetString(reader.GetOrdinal("ModifiedBy"))
-            };
-        }
-    }
     // ==================== USER MAPPER ====================
     public static class UserMapper
     {
@@ -199,7 +175,7 @@ namespace eProtokoll.Services.Mappers
                 LastName = reader.GetString(reader.GetOrdinal("LastName")),
                 Position = reader.IsDBNull(reader.GetOrdinal("Position")) ? null : reader.GetString(reader.GetOrdinal("Position")),
                 Department = reader.IsDBNull(reader.GetOrdinal("Department")) ? null : reader.GetString(reader.GetOrdinal("Department")),
-                PhoneNumber = reader.IsDBNull(reader.GetOrdinal("PhoneNumber")) ? null : reader.GetInt32(reader.GetOrdinal("PhoneNumber")),
+                PhoneNumber = reader.IsDBNull(reader.GetOrdinal("PhoneNumber")) ? null : reader.GetString(reader.GetOrdinal("PhoneNumber")),
                 IsActive = reader.GetBoolean(reader.GetOrdinal("IsActive")),
                 CreatedDate = reader.GetDateTime(reader.GetOrdinal("CreatedDate")),
                 ModifiedDate = reader.IsDBNull(reader.GetOrdinal("ModifiedDate")) ? null : reader.GetDateTime(reader.GetOrdinal("ModifiedDate"))
@@ -292,27 +268,4 @@ namespace eProtokoll.Services.Mappers
         }
     }
 
-    // ==================== DEADLINE MAPPER ====================
-
-    public static class DeadlineMapper
-    {
-        public static Deadline MapToDeadline(SqlDataReader reader)
-        {
-            return new Deadline
-            {
-                DeadlineId = reader.GetInt32(reader.GetOrdinal("DeadlineId")),
-                DocumentId = reader.GetInt32(reader.GetOrdinal("DocumentId")),
-                Title = reader.GetString(reader.GetOrdinal("Title")),
-                DueDate = reader.GetDateTime(reader.GetOrdinal("DueDate")),
-                Priority = (Priority)reader.GetInt32(reader.GetOrdinal("Priority")),
-                ResponsibleUserId = reader.GetInt32(reader.GetOrdinal("ResponsibleUserId")),
-                IsCompleted = reader.GetBoolean(reader.GetOrdinal("IsCompleted")),
-                CompletedDate = reader.IsDBNull(reader.GetOrdinal("CompletedDate")) ? null : reader.GetDateTime(reader.GetOrdinal("CompletedDate")),
-                CompletedBy = reader.IsDBNull(reader.GetOrdinal("CompletedBy")) ? null : (int?)reader.GetInt32(reader.GetOrdinal("CompletedBy")),
-                Notes = reader.IsDBNull(reader.GetOrdinal("Notes")) ? null : reader.GetString(reader.GetOrdinal("Notes")),
-                CreatedDate = reader.GetDateTime(reader.GetOrdinal("CreatedDate")),
-                CreatedBy = reader.GetInt32(reader.GetOrdinal("CreatedBy"))
-            };
-        }
-    }
 }

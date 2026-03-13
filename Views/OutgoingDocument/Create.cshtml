@@ -1,0 +1,277 @@
+@model eProtokoll.Models.OutgoingDocument
+@using eProtokoll.Models
+
+@{
+    var area = ViewData["area"]?.ToString() ?? "Manager";
+    var showDelete = (bool)(ViewData["showDelete"] ?? true);
+    Layout = area == "Employee" ? "~/Views/Shared/_EmployeeLayout.cshtml" : "~/Views/Shared/_ManagerLayout.cshtml";
+    ViewData["Title"] = "Regjistro Dokument Dalës";
+
+    var accessUsers = ViewBag.AccessUsers as IEnumerable<eProtokoll.Models.Users> ?? Enumerable.Empty<eProtokoll.Models.Users>();
+    var selectedIds = ViewBag.SelectedAccessUserIds as List<int> ?? new List<int>();
+    bool isConfidential = Model.Classification == Classification.Confidential;
+    int confidentialValue = (int)Classification.Confidential;
+}
+
+<div class="container-fluid">
+
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a asp-area="@area" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
+            </li>
+            <li class="breadcrumb-item">
+                <a asp-area="@area" asp-controller="OutgoingDocument" asp-action="Index">Dokumente Dalëse</a>
+            </li>
+            <li class="breadcrumb-item active">Regjistro të Ri</li>
+        </ol>
+    </nav>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="mb-0">
+                <i class="bi bi-file-earmark-arrow-up me-2 text-success"></i>
+                Regjistro Dokument Dalës të Ri
+            </h2>
+            <p class="text-muted mt-2">
+                Plotëso të dhënat e dokumentit që dërgohet tek institucioni i jashtëm
+            </p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-9">
+
+            <form asp-area="@area"
+                  asp-controller="OutgoingDocument"
+                  asp-action="Create"
+                  method="post"
+                  enctype="multipart/form-data">
+
+                @Html.AntiForgeryToken()
+
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div asp-validation-summary="All" class="alert alert-danger"></div>
+                }
+
+                <!-- Recipient -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">Informacioni i Marrësit</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="InstitutionId" class="form-label"></label>
+                                    <select asp-for="InstitutionId"
+                                            asp-items="ViewBag.Institutions"
+                                            class="form-select">
+                                        <option value="">-- Zgjidh institucionin --</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="RecipientName" class="form-label"></label>
+                                    <input asp-for="RecipientName"
+                                           class="form-control"
+                                           placeholder="Emri i marrësit" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Përmbajtja e Dokumentit</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label asp-for="Subject" class="form-label"></label>
+                            <input asp-for="Subject"
+                                   class="form-control"
+                                   placeholder="Subjekti i dokumentit" />
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Content" class="form-label"></label>
+                            <textarea asp-for="Content"
+                                      rows="5"
+                                      class="form-control"
+                                      placeholder="Përshkrimi i dokumentit"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Response -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0">Lidhja me Dokument Hyrës</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-check form-switch mb-3">
+                                    <input asp-for="IsResponse"
+                                           type="checkbox"
+                                           class="form-check-input" />
+                                    <label asp-for="IsResponse" class="form-check-label">
+                                        Është përgjigje për dokument hyrës
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="OriginalIncomingDocumentId" class="form-label"></label>
+                                <select asp-for="OriginalIncomingDocumentId"
+                                        asp-items="ViewBag.IncomingDocuments"
+                                        class="form-select">
+                                    <option value="">-- Zgjidh dokumentin hyrës --</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Classification -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">Klasifikimi</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label asp-for="Classification" class="form-label"></label>
+                            <select asp-for="Classification"
+                                    id="classificationSelect"
+                                    class="form-select"
+                                    asp-items="ViewBag.Classifications as List<SelectListItem>"
+                                    onchange="toggleAccessUsers(this.value)">
+                                <option value="">-- Zgjidh klasifikimin --</option>
+                            </select>
+                            <span asp-validation-for="Classification" class="text-danger"></span>
+                        </div>
+
+                        <!-- Seksioni i Access Users -->
+                        <div id="accessUsersSection" style="display: @(isConfidential ? "block" : "none")">
+                            <hr />
+                            <div class="alert alert-warning d-flex align-items-center gap-2 mb-3">
+                                <i class="bi bi-lock-fill fs-5"></i>
+                                <span>
+                                    Dokumenti është <strong>I Kufizuar</strong>.
+                                    Zgjidh përdoruesit që do kenë qasje.
+                                </span>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(ViewData.ModelState["accessUserIds"]?.Errors.FirstOrDefault()?.ErrorMessage))
+                            {
+                                <div class="text-danger mb-2">
+                                    @ViewData.ModelState["accessUserIds"]!.Errors.First().ErrorMessage
+                                </div>
+                            }
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-people-fill me-1"></i>
+                                    Përdoruesit me Qasje
+                                </label>
+
+                                @if (!accessUsers.Any())
+                                {
+                                    <p class="text-muted fst-italic">Nuk ka përdorues aktiv.</p>
+                                }
+                                else
+                                {
+                                    <div class="border rounded p-3" style="max-height: 220px; overflow-y: auto;">
+                                        @foreach (var user in accessUsers)
+                                        {
+                                            var isChecked = selectedIds.Contains(user.Id);
+                                            <div class="form-check mb-2">
+                                                <input class="form-check-input"
+                                                       type="checkbox"
+                                                       name="accessUserIds"
+                                                       value="@user.Id"
+                                                       id="user_@user.Id"
+                                                       @(isChecked ? "checked" : "") />
+                                                <label class="form-check-label" for="user_@user.Id">
+                                                    @user.FirstName @user.LastName
+                                                    <span class="text-muted small">(@user.UserName)</span>
+                                                </label>
+                                            </div>
+                                        }
+                                    </div>
+                                    <div class="form-text">Zgjidh një ose më shumë përdorues.</div>
+                                }
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- File -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-dark text-white">
+                        <h5 class="mb-0">Bashkëngjit Dokument</h5>
+                    </div>
+                    <div class="card-body">
+                        <input type="file"
+                               name="attachmentFile"
+                               class="form-control"
+                               accept=".pdf" />
+                    </div>
+                </div>
+
+                <!-- Archive -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Kopja për Arkiv</h5>
+                    </div>
+                    <div class="card-body">
+                        <label asp-for="ArchiveLocation" class="form-label"></label>
+                        <input asp-for="ArchiveLocation"
+                               class="form-control"
+                               placeholder="Vendndodhja në arkiv" />
+                    </div>
+                </div>
+
+                <!-- Notes -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Shënime</h5>
+                    </div>
+                    <div class="card-body">
+                        <textarea asp-for="Notes"
+                                  rows="3"
+                                  class="form-control"
+                                  placeholder="Shënime shtesë"></textarea>
+                    </div>
+                </div>
+
+                <!-- Buttons -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body d-flex justify-content-between">
+                        <a asp-area="@area"
+                           asp-controller="OutgoingDocument"
+                           asp-action="Index"
+                           class="btn btn-outline-secondary">
+                            Kthehu
+                        </a>
+                        <button type="submit" class="btn btn-success px-5">
+                            Ruaj Dokumentin
+                        </button>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+    var confidentialValue = '@confidentialValue';
+
+    function toggleAccessUsers(val) {
+        var section = document.getElementById('accessUsersSection');
+        section.style.display = (val === confidentialValue) ? 'block' : 'none';
+    }
+</script>

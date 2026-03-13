@@ -29,6 +29,7 @@
             <form asp-action="Create" method="post">
                 <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
+                <!-- Informacioni i Llogarisë -->
                 <div class="card shadow-sm mb-4">
                     <div class="card-header bg-primary text-white">
                         <h5 class="mb-0">
@@ -69,17 +70,12 @@
                                         <i class="bi bi-key text-primary"></i>
                                         Fjalëkalimi <span class="text-danger">*</span>
                                     </label>
-                                    <div class="input-group">
-                                        <input type="password" name="Password" id="Password" class="form-control" value="@ViewBag.Password" />
-                                        <button class="btn btn-outline-secondary" type="button" id="togglePassword">
-                                            <i class="bi bi-eye" id="eyeIcon"></i>
-                                        </button>
-                                    </div>
+                                    <input type="password" name="Password" id="Password" class="form-control" />
                                     @if (TempData["PasswordError"] != null)
                                     {
                                         <span class="text-danger d-block mt-1">@TempData["PasswordError"]</span>
                                     }
-                                    <small class="text-muted d-block mt-1">Të paktën 6 karaktere</small>
+                                    <small class="text-muted">Të paktën 6 karaktere</small>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -88,7 +84,7 @@
                                         <i class="bi bi-key-fill text-primary"></i>
                                         Konfirmo Fjalëkalimin <span class="text-danger">*</span>
                                     </label>
-                                    <input type="password" name="ConfirmPassword" id="ConfirmPassword" class="form-control" value="@ViewBag.ConfirmPassword" />
+                                    <input type="password" name="ConfirmPassword" id="ConfirmPassword" class="form-control" />
                                     @if (TempData["ConfirmPasswordError"] != null)
                                     {
                                         <span class="text-danger d-block mt-1">@TempData["ConfirmPasswordError"]</span>
@@ -104,6 +100,7 @@
                     </div>
                 </div>
 
+                <!-- Informacioni Personal -->
                 <div class="card shadow-sm mb-4">
                     <div class="card-header bg-success text-white">
                         <h5 class="mb-0">
@@ -169,6 +166,7 @@
                     </div>
                 </div>
 
+                <!-- Roli dhe Lejet -->
                 <div class="card shadow-sm mb-4">
                     <div class="card-header bg-warning text-dark">
                         <h5 class="mb-0">
@@ -182,15 +180,11 @@
                                 <i class="bi bi-person-badge text-warning"></i>
                                 Roli në Sistem <span class="text-danger">*</span>
                             </label>
-                            <select asp-for="Role" class="form-select" id="roleSelect" asp-items="Html.GetEnumSelectList<eProtokoll.Models.Users.UserRole>()">
+                            <select asp-for="Role" class="form-select"
+                                    asp-items="Html.GetEnumSelectList<eProtokoll.Models.Users.UserRole>()">
                                 <option value="">-- Zgjidh Rolin --</option>
                             </select>
                             <span asp-validation-for="Role" class="text-danger"></span>
-                        </div>
-
-                        <div id="roleDescription" class="alert alert-light" style="display: none;">
-                            <strong id="roleTitle"></strong>
-                            <p id="roleDetails" class="mb-0 mt-2"></p>
                         </div>
 
                         <div class="form-check form-switch mt-3">
@@ -203,16 +197,15 @@
                     </div>
                 </div>
 
+                <!-- Butonat -->
                 <div class="card shadow-sm mb-4">
                     <div class="card-body">
                         <div class="d-flex justify-content-between">
                             <a asp-action="Index" class="btn btn-outline-secondary">
-                                <i class="bi bi-x-circle me-1"></i>
-                                Anulo
+                                <i class="bi bi-x-circle me-1"></i> Anulo
                             </a>
                             <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-check-circle me-1"></i>
-                                Ruaj Përdoruesin
+                                <i class="bi bi-check-circle me-1"></i> Ruaj Përdoruesin
                             </button>
                         </div>
                     </div>
@@ -220,6 +213,7 @@
             </form>
         </div>
 
+        <!-- Udhëzime -->
         <div class="col-lg-4">
             <div class="card shadow-sm mb-4 border-primary sticky-top" style="top: 20px;">
                 <div class="card-header bg-primary text-white">
@@ -261,125 +255,8 @@
     </div>
 </div>
 
-@section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
-
-    <script>
-        $(document).ready(function() {
-            // Toggle password visibility
-            $('#togglePassword').on('click', function() {
-                const passwordField = $('#Password');
-                const eyeIcon = $('#eyeIcon');
-
-                if (passwordField.attr('type') === 'password') {
-                    passwordField.attr('type', 'text');
-                    eyeIcon.removeClass('bi-eye').addClass('bi-eye-slash');
-                } else {
-                    passwordField.attr('type', 'password');
-                    eyeIcon.removeClass('bi-eye-slash').addClass('bi-eye');
-                }
-            });
-
-            // Role selection description
-            $('#roleSelect').on('change', function() {
-                const role = $(this).val();
-                const roleDescription = $('#roleDescription');
-                const roleTitle = $('#roleTitle');
-                const roleDetails = $('#roleDetails');
-
-                if (role) {
-                    roleDescription.show();
-
-                    if (role === '1') { // Administrator
-                        roleTitle.text('👑 Administrator');
-                        roleDescription.attr('class', 'alert alert-danger');
-                        roleDetails.html('<strong>Lejet:</strong><br>✓ Menaxhim i plotë i përdoruesve<br>✓ Konfigurimi i sistemit<br>✓ Të gjitha dokumentet');
-                    } else if (role === '2') { // Manager
-                        roleTitle.text('📋 Menaxher');
-                        roleDescription.attr('class', 'alert alert-warning');
-                        roleDetails.html('<strong>Lejet:</strong><br>✓ Menaxhim dokumentesh (CRUD)<br>✓ Delegim detyrash<br>✓ Miratim dhe firmosje');
-                    } else if (role === '3') { // Employee
-                        roleTitle.text('👤 Punonjës');
-                        roleDescription.attr('class', 'alert alert-success');
-                        roleDetails.html('<strong>Lejet:</strong><br>✓ Shikimi i dokumenteve të caktuara<br>✓ Përfundimi i detyrave');
-                    }
-                } else {
-                    roleDescription.hide();
-                }
-            });
-
-            // Generate username from name
-            $('#FirstName, #LastName').on('blur', function() {
-                const firstName = $('#FirstName').val().toLowerCase().trim();
-                const lastName = $('#LastName').val().toLowerCase().trim();
-                const userNameField = $('#UserName');
-
-                if (!userNameField.val() && firstName && lastName) {
-                    userNameField.val(firstName + '.' + lastName);
-                }
-            });
-
-            // Password strength indicator
-            $('#Password').on('input', function() {
-                const password = $(this).val();
-                let strength = 0;
-
-                if (password.length >= 6) strength++;
-                if (password.length >= 10) strength++;
-                if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
-                if (/\d/.test(password)) strength++;
-                if (/[^a-zA-Z\d]/.test(password)) strength++;
-
-                let strengthText = '';
-                let strengthClass = '';
-
-                if (strength < 2) {
-                    strengthText = 'I dobët';
-                    strengthClass = 'text-danger';
-                } else if (strength < 4) {
-                    strengthText = 'Mesatar';
-                    strengthClass = 'text-warning';
-                } else {
-                    strengthText = 'I fortë';
-                    strengthClass = 'text-success';
-                }
-
-                $('.password-strength').remove();
-                if (password) {
-                    $(this).closest('.mb-3').append('<small class="password-strength ' + strengthClass + '">Fuqia: ' + strengthText + '</small>');
-                }
-            });
-
-            // Form validation before submit
-            $('form').on('submit', function(e) {
-                const password = $('#Password').val();
-                const confirmPassword = $('#ConfirmPassword').val();
-
-                if (!password) {
-                    e.preventDefault();
-                    alert('Ju lutem shkruani fjalëkalimin!');
-                    return false;
-                }
-
-                if (password !== confirmPassword) {
-                    e.preventDefault();
-                    alert('Fjalëkalimet nuk përputhen!');
-                    return false;
-                }
-            });
-        });
-    </script>
-}
-
 @section Styles {
     <style>
-        .form-control:focus {
-            border-color: #0d6efd;
-            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
-        }
-
         .alert {
             border-left: 4px solid;
         }
@@ -396,10 +273,8 @@
             border-left-color: #198754;
         }
 
-        .password-strength {
-            display: block;
-            margin-top: 0.25rem;
-            font-weight: 600;
+        .alert-info {
+            border-left-color: #0dcaf0;
         }
     </style>
 }

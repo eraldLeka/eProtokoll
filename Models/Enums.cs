@@ -22,8 +22,6 @@ namespace eProtokoll.Models
         [Display(Name = "Në Proces")]
         InProgress = 2,
 
-        [Display(Name = "I Përfunduar")]
-        Completed = 3
     }
 
     public enum Priority
@@ -37,7 +35,21 @@ namespace eProtokoll.Models
         [Display(Name = "I Lartë")]
         High = 3,
 
-        [Display(Name = "Urgjent")]
-        Urgent = 4
+    }
+    public enum Classification
+    {
+        [Display(Name = "Publik")]
+        Public = 1,
+        [Display(Name = "I kufizuar")]
+        Confidential = 2,
+        [Display(Name = "Sekret")]
+        Secret = 3  
+    }
+
+
+    public enum FileCategory
+    {
+        [Display(Name = "PDF")]
+        PDF = 1
     }
 }
