@@ -15,10 +15,10 @@ namespace eProtokoll.Models
         [Required(ErrorMessage = "Emri i marrësit është i detyrueshëm")]
         [StringLength(200)]
         [Display(Name = "Emri i Marrësit")]
-        public string RecipientName { get; set; }
+        public string RecipientName { get; set; } = string.Empty;
 
-        [Display(Name = "Është Përgjigje")]
-        public bool IsResponse { get; set; } = false;
+        [NotMapped]
+        public bool IsResponse { get; set; }
 
         [Display(Name = "Dokumeni Origjinal (Hyrës)")]
         public int? OriginalIncomingDocumentId { get; set; }

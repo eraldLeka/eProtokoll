@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc.ModelBinding;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+
 namespace eProtokoll.Models
 {
     public class Document
@@ -8,24 +9,16 @@ namespace eProtokoll.Models
         public int DocumentId { get; set; }
 
         [BindNever]
-        [Required]
-        [StringLength(50)]
+        [Display(Name = "Numri i Dokumentit")]
+        public int DocumentNumber { get; set; }
+
+        [BindNever]
+        [Display(Name = "Viti")]
+        public int Year { get; set; } = DateTime.Now.Year;
+
+        [NotMapped]
         [Display(Name = "Numri i Protokollit")]
-        public string ProtocolNumber { get; set; } = null!;
-
-        [BindNever]
-        [Display(Name = "Data e Protokollimit")]
-        [DataType(DataType.Date)]
-        public DateTime ProtocolDate { get; set; } = DateTime.Now.Date;
-
-        [BindNever]
-        [Display(Name = "Ora e Protokollimit")]
-        [DataType(DataType.Time)]
-        public TimeSpan ProtocolTime { get; set; } = new TimeSpan(
-            DateTime.Now.Hour,
-            DateTime.Now.Minute,
-            DateTime.Now.Second
-        );
+        public string ProtocolNumber => $"{DocumentNumber}/{Year}";
 
         [Required]
         [Display(Name = "Lloji i Dokumentit")]
@@ -55,22 +48,22 @@ namespace eProtokoll.Models
         [DataType(DataType.MultilineText)]
         public string? Notes { get; set; }
 
+
         [Display(Name = "Ka Attachment")]
         public bool HasAttachments { get; set; } = false;
 
         [Display(Name = "Data e Krijimit")]
-        public DateTime CreatedDate { get; set; } = DateTime.Now;
+        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
 
         [BindNever]
         [Display(Name = "Krijuar nga")]
-        public int? CreatedBy { get; set; }
+        public int CreatedBy { get; set; }
 
         [ForeignKey("CreatedBy")]
         public virtual Users? Creator { get; set; }
 
-        public virtual ICollection<DocumentAttachment>? Attachments { get; set; }
-        public virtual ICollection<DocumentTracking>? Trackings { get; set; }
-        [NotMapped]
-        public string? Discriminator { get; set; }
+        public virtual ICollection<DocumentAttachment> Attachments { get; set; } = new List<DocumentAttachment>();
+
+        public virtual ICollection<DocumentTracking> Trackings { get; set; } = new List<DocumentTracking>();
     }
 }

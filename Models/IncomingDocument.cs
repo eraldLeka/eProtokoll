@@ -15,12 +15,12 @@ namespace eProtokoll.Models
         [Required(ErrorMessage = "Emri i dërguesit është i detyrueshëm")]
         [StringLength(200)]
         [Display(Name = "Emri i Dërguesit")]
-        public string SenderName { get; set; }
+        public string SenderName { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Data e marrjes është e detyrueshme")]
         [Display(Name = "Data e Marrjes")]
         [DataType(DataType.Date)]
-        public DateTime ReceivedDate { get; set; } = DateTime.Now.Date;
+        public DateTime ReceivedDate { get; set; } = DateTime.UtcNow.Date;
 
         [Display(Name = "Marrë nga")]
         public int? ReceivedBy { get; set; }
@@ -39,9 +39,6 @@ namespace eProtokoll.Models
         [Display(Name = "Data e Afatit për Përgjigje")]
         [DataType(DataType.Date)]
         public DateTime? ResponseDeadline { get; set; }
-
-        [Display(Name = "Është Përgjigjur")]
-        public bool IsResponded { get; set; } = false;
 
         [Display(Name = "Data e Përgjigjes")]
         [DataType(DataType.Date)]

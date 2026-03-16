@@ -22,6 +22,8 @@ namespace eProtokoll.Models
         [Display(Name = "Në Proces")]
         InProgress = 2,
 
+        [Display(Name = "I Mbyllur")]
+        Closed = 3
     }
 
     public enum Priority

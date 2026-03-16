@@ -24,57 +24,11 @@ namespace eProtokoll.Areas.Admin.Controllers
         }
 
         // GET: Admin/UserManagement
-        public async Task<IActionResult> Index(string searchTerm = "", string role = "", string status = "")
+        public async Task<IActionResult> Index()
         {
-            var users = new List<Users>();
-
-            using (var connection = new SqlConnection(_connectionString))
-            {
-                var query = "SELECT * FROM Users WHERE 1=1";
-                var parameters = new List<SqlParameter>();
-
-                if (!string.IsNullOrEmpty(searchTerm))
-                {
-                    query += @" AND (FirstName LIKE @SearchTerm 
-                        OR LastName LIKE @SearchTerm 
-                        OR Email LIKE @SearchTerm 
-                        OR UserName LIKE @SearchTerm)";
-                    parameters.Add(new SqlParameter("@SearchTerm", $"%{searchTerm}%"));
-                }
-
-                if (!string.IsNullOrEmpty(role) && Enum.TryParse<Users.UserRole>(role, out var userRole))
-                {
-                    query += " AND Role = @Role";
-                    parameters.Add(new SqlParameter("@Role", (int)userRole));
-                }
-
-                if (!string.IsNullOrEmpty(status))
-                {
-                    bool isActive = status.ToLower() == "active";
-                    query += " AND IsActive = @IsActive";
-                    parameters.Add(new SqlParameter("@IsActive", isActive));
-                }
-
-                query += " ORDER BY CreatedDate DESC";
-
-                using (var command = new SqlCommand(query, connection))
-                {
-                    command.Parameters.AddRange(parameters.ToArray());
-                    await connection.OpenAsync();
-                    using (var reader = await command.ExecuteReaderAsync())
-                    {
-                        while (await reader.ReadAsync())
-                            users.Add(UserMapper.MapToApplicationUser(reader));
-                    }
-                }
-            }
-
-            ViewBag.SearchTerm = searchTerm;
-            ViewBag.SelectedRole = role;
-            ViewBag.SelectedStatus = status;
+            var users = await _userRepository.GetAllAsync();
             return View(users);
         }
-
         // GET: Admin/UserManagement/Create
         public IActionResult Create()
         {
@@ -294,7 +248,7 @@ namespace eProtokoll.Areas.Admin.Controllers
             await connection.OpenAsync();
             using var reader = await command.ExecuteReaderAsync();
             if (await reader.ReadAsync())
-                return UserMapper.MapToApplicationUser(reader);
+                return UserMapper.Map(reader);
             return null;
         }
 
@@ -306,7 +260,7 @@ namespace eProtokoll.Areas.Admin.Controllers
             await connection.OpenAsync();
             using var reader = await command.ExecuteReaderAsync();
             if (await reader.ReadAsync())
-                return UserMapper.MapToApplicationUser(reader);
+                return UserMapper.Map(reader);
             return null;
         }
 

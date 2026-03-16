@@ -47,11 +47,7 @@ namespace eProtokoll.Models
         [StringLength(500)]
         public string? Description { get; set; }
 
-        public int DisplayOrder { get; set; } = 0;
-
-        public bool IsPrimaryDocument { get; set; } = false;
-
-        public DateTime UploadedDate { get; set; } = DateTime.Now;
+        public DateTime UploadedDate { get; set; } = DateTime.UtcNow;
 
         [Required]
         public int UploadedBy { get; set; }
@@ -59,5 +55,4 @@ namespace eProtokoll.Models
         [ForeignKey("UploadedBy")]
         public virtual Users? Uploader { get; set; }
     }
-
 }

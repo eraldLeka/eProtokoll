@@ -18,6 +18,8 @@ namespace eProtokoll.Models
         [ForeignKey("ResponseDocumentId")]
         public virtual InternalDocument? ResponseDocument { get; set; }
 
+        public DateTime? ResponseDate { get; set; }
+
         public InternalDocument()
         {
             DocumentType = DocumentType.Internal;

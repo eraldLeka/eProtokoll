@@ -95,49 +95,6 @@
         </div>
     </div>
 
-    <!-- Search and Filter -->
-    <div class="card border-0 shadow-sm mb-4">
-        <div class="card-body">
-            <form method="get">
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <label class="form-label">Kërko</label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-white">
-                                <i class="bi bi-search"></i>
-                            </span>
-                            <input type="text" class="form-control" name="searchTerm"
-                                   value="@ViewBag.SearchTerm" placeholder="Emri, email, username...">
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Roli</label>
-                        <select class="form-select" name="role">
-                            <option value="">Të gjithë</option>
-                            <option value="Administrator" selected="@(ViewBag.SelectedRole == "Administrator")">Administrator</option>
-                            <option value="Manager" selected="@(ViewBag.SelectedRole == "Manager")">Menaxher</option>
-                            <option value="Employee" selected="@(ViewBag.SelectedRole == "Employee")">Punonjës</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Statusi</label>
-                        <select class="form-select" name="status">
-                            <option value="">Të gjithë</option>
-                            <option value="active" selected="@(ViewBag.SelectedStatus == "active")">Aktiv</option>
-                            <option value="inactive" selected="@(ViewBag.SelectedStatus == "inactive")">Joaktiv</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label d-block">&nbsp;</label>
-                        <button type="submit" class="btn btn-primary w-100">
-                            <i class="bi bi-funnel me-1"></i> Filtro
-                        </button>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <!-- Users Table -->
     <div class="card border-0 shadow-sm">
         <div class="card-header bg-white py-3">
@@ -152,7 +109,6 @@
                             <tr>
                                 <th>Përdoruesi</th>
                                 <th>Email</th>
-                                <th>Departmenti</th>
                                 <th>Roli</th>
                                 <th>Telefoni</th>
                                 <th>Statusi</th>
@@ -184,18 +140,6 @@
                                         <a href="mailto:@user.Email" class="text-decoration-none">
                                             <i class="bi bi-envelope"></i> @user.Email
                                         </a>
-                                    </td>
-                                    <td>
-                                        @if (!string.IsNullOrEmpty(user.Department))
-                                        {
-                                            <span class="badge bg-light text-dark">
-                                                <i class="bi bi-building"></i> @user.Department
-                                            </span>
-                                        }
-                                        else
-                                        {
-                                            <span class="text-muted">-</span>
-                                        }
                                     </td>
                                     <td>
                                         @switch (user.Role)

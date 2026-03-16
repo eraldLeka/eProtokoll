@@ -27,10 +27,6 @@ namespace eProtokoll.Models
         [Display(Name = "Adresa")]
         public string? Adress { get; set; }
 
-        [StringLength(50)]
-        [Display(Name = "Qyteti")]
-        public string? City { get; set; }
-
         [StringLength(20)]
         [Display(Name = "Kodi Postar")]
         public string? PostalCode { get; set; }
@@ -43,10 +39,6 @@ namespace eProtokoll.Models
         [Phone(ErrorMessage = "Numri i telefonit nuk është valid")]
         [Display(Name = "Telefoni")]
         public string? Phone { get; set; }
-
-        [StringLength(20)]
-        [Display(Name = "Faksi")]
-        public string? Fax { get; set; }
 
         [StringLength(100)]
         [EmailAddress(ErrorMessage = "Email-i nuk është valid")]
@@ -66,26 +58,12 @@ namespace eProtokoll.Models
         [Display(Name = "Pozicioni i Kontaktit")]
         public string? ContactPosition { get; set; }
 
-        [StringLength(20)]
-        [Display(Name = "Telefoni i Kontaktit")]
-        public string? ContactPhone { get; set; }
-
+    
         [StringLength(100)]
         [EmailAddress]
         [Display(Name = "Email i Kontaktit")]
         public string? ContactEmail { get; set; }
 
-        [StringLength(20)]
-        [Display(Name = "NIPT/Kodi Fiskal")]
-        public string? TaxCode { get; set; }
-
-        [Display(Name = "Aktiv")]
-        public bool IsActive { get; set; } = true;
-
-        [StringLength(500)]
-        [Display(Name = "Shënime")]
-        [DataType(DataType.MultilineText)]
-        public string? Notes { get; set; }
 
         [Display(Name = "Data e Krijimit")]
         public DateTime CreatedDate { get; set; } = DateTime.Now;
@@ -93,11 +71,11 @@ namespace eProtokoll.Models
         [Display(Name = "Data e Modifikimit")]
         public DateTime? ModifiedDate { get; set; }
 
-        [StringLength(450)]  // ✅ KORRIGJUAR
+        [StringLength(450)] 
         [Display(Name = "Krijuar nga")]
         public string? CreatedBy { get; set; }
 
-        [StringLength(450)]  // ✅ KORRIGJUAR
+        [StringLength(450)] 
         [Display(Name = "Modifikuar nga")]
         public string? ModifiedBy { get; set; }
 
@@ -109,9 +87,6 @@ namespace eProtokoll.Models
         public virtual ICollection<OutgoingDocument>? OutgoingDocuments { get; set; }
     }
 
-    /// <summary>
-    /// Llojet e institucioneve
-    /// </summary>
     public enum InstitutionType
     {
         [Display(Name = "Institucion Shtetëror")]

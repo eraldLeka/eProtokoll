@@ -31,7 +31,13 @@ namespace eProtokoll.Areas.Manager.Controllers
             var where = new StringBuilder("WHERE 1=1");
 
             if (!string.IsNullOrEmpty(searchTerm))
-                where.Append(" AND (d.ProtocolNumber LIKE @Search OR d.Subject LIKE @Search)");
+            {
+                where.Append(@"
+                    AND (
+                        CAST(d.DocumentNumber AS VARCHAR) + '/' + CAST(d.Year AS VARCHAR) LIKE @Search
+                        OR d.Subject LIKE @Search
+                    )");
+            }
 
             // Total count
             var countSql = $"SELECT COUNT(*) FROM Documents d {where}";
@@ -56,7 +62,7 @@ namespace eProtokoll.Areas.Manager.Controllers
                 FROM Documents d
                 LEFT JOIN Users u ON d.CreatedBy = u.Id
                 {where}
-                ORDER BY d.ProtocolDate DESC, d.ProtocolTime DESC
+                ORDER BY d.Year DESC, d.DocumentNumber DESC
                 OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY";
 
             using (var cmd = new SqlCommand(mainSql, connection))
@@ -73,11 +79,9 @@ namespace eProtokoll.Areas.Manager.Controllers
                 {
                     var document = DocumentMapper.MapToDocument(reader);
 
-                    // Classification enum
                     document.Classification =
                         (Classification)reader.GetInt32(reader.GetOrdinal("Classification"));
 
-                    // Creator
                     if (!reader.IsDBNull(reader.GetOrdinal("CreatorUserName")))
                     {
                         document.Creator = new Users
@@ -93,7 +97,8 @@ namespace eProtokoll.Areas.Manager.Controllers
             }
 
             // Statistics
-            ViewBag.TotalDocuments = await ExecuteCountQuery(connection, "SELECT COUNT(*) FROM Documents");
+            ViewBag.TotalDocuments = await ExecuteCountQuery(connection,
+                "SELECT COUNT(*) FROM Documents");
 
             ViewBag.IncomingCount = await ExecuteCountQuery(connection,
                 "SELECT COUNT(*) FROM Documents WHERE DocumentType = 1");
@@ -104,8 +109,9 @@ namespace eProtokoll.Areas.Manager.Controllers
             ViewBag.InternalCount = await ExecuteCountQuery(connection,
                 "SELECT COUNT(*) FROM Documents WHERE DocumentType = 3");
 
+            // Documents created today
             using (var cmd = new SqlCommand(
-                "SELECT COUNT(*) FROM Documents WHERE CAST(ProtocolDate AS DATE) = @Today",
+                "SELECT COUNT(*) FROM Documents WHERE CAST(CreatedDate AS DATE) = @Today",
                 connection))
             {
                 cmd.Parameters.AddWithValue("@Today", today);

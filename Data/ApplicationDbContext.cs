@@ -10,9 +10,8 @@ namespace eProtokoll.Data
         {
         }
 
-        // DbSet për të gjitha modelet
         public DbSet<Institution> Institutions { get; set; }
-        public DbSet<ProtocolSettings> ProtocolSettings { get; set; }
+        public DbSet<Users> Users { get; set; }
         public DbSet<Document> Documents { get; set; }
         public DbSet<IncomingDocument> IncomingDocuments { get; set; }
         public DbSet<OutgoingDocument> OutgoingDocuments { get; set; }
@@ -20,6 +19,7 @@ namespace eProtokoll.Data
         public DbSet<DocumentTracking> DocumentTrackings { get; set; }
         public DbSet<DocumentAttachment> DocumentAttachments { get; set; }
         public DbSet<DocumentPermission> DocumentPermissions { get; set; }
+        public DbSet<AuditLog> AuditLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -46,34 +46,23 @@ namespace eProtokoll.Data
             modelBuilder.Entity<Institution>(entity =>
             {
                 entity.HasIndex(e => e.Name);
-                entity.HasIndex(e => e.TaxCode).IsUnique();
 
                 entity.Property(e => e.Name).IsRequired();
                 entity.Property(e => e.Type).IsRequired();
             });
 
-            // ==================== PROTOCOL SETTINGS ====================
-            modelBuilder.Entity<ProtocolSettings>(entity =>
-            {
-                entity.HasIndex(e => e.Year).IsUnique();
-
-                entity.Property(e => e.Year).IsRequired();
-                entity.Property(e => e.IncomingCurrentNumber).IsRequired();
-                entity.Property(e => e.OutgoingCurrentNumber).IsRequired();
-                entity.Property(e => e.InternalCurrentNumber).IsRequired();
-            });
-
             // ==================== DOCUMENT (Base Class) ====================
             modelBuilder.Entity<Document>(entity =>
             {
-                entity.HasIndex(e => e.ProtocolNumber).IsUnique();
-                entity.HasIndex(e => e.ProtocolDate);
+                entity.HasIndex(e => new { e.DocumentNumber, e.Year }).IsUnique();
                 entity.HasIndex(e => e.DocumentType);
+                entity.HasIndex(e => e.Year);
 
-                entity.Property(e => e.ProtocolNumber).IsRequired();
+                entity.Property(e => e.DocumentNumber).IsRequired();
+                entity.Property(e => e.Year).IsRequired();
                 entity.Property(e => e.Subject).IsRequired().HasMaxLength(500);
 
-                entity.Ignore(e => e.Discriminator);
+                entity.Ignore(e => e.ProtocolNumber);
 
                 entity.HasMany(d => d.Attachments)
                     .WithOne(a => a.Document)
@@ -137,7 +126,7 @@ namespace eProtokoll.Data
                 entity.Ignore(t => t.AssignedByUser);
                 entity.Ignore(t => t.DocumentProtocolNumber);
                 entity.Ignore(t => t.DocumentSubject);
-                entity.Ignore(t => t.DocumentDiscriminator);
+                entity.Ignore(t => t.DocumentType);
             });
 
             // ==================== DOCUMENT ATTACHMENT ====================
@@ -177,33 +166,6 @@ namespace eProtokoll.Data
                 .HasValue<IncomingDocument>("IncomingDocument")
                 .HasValue<OutgoingDocument>("OutgoingDocument")
                 .HasValue<InternalDocument>("InternalDocument");
-
-            // ==================== SEED DATA ====================
-            modelBuilder.Entity<ProtocolSettings>().HasData(
-                new ProtocolSettings
-                {
-                    ProtocolSettingsId = 1,
-                    Year = DateTime.Now.Year,
-                    IncomingStartNumber = 1,
-                    IncomingCurrentNumber = 1,
-                    IncomingPrefix = "H",
-                    OutgoingStartNumber = 1,
-                    OutgoingCurrentNumber = 1,
-                    OutgoingPrefix = "D",
-                    InternalStartNumber = 1,
-                    InternalCurrentNumber = 1,
-                    InternalPrefix = "B",
-                    ProtocolNumberFormat = "{PREFIX}-{NUMBER}/{YEAR}",
-                    NumberPadding = 4,
-                    AutoResetYearly = true,
-                    AllowManualEdit = false,
-                    ShowYearInNumber = true,
-                    UseSeparatorSlash = true,
-                    IsActive = true,
-                    IsClosed = false,
-                    CreatedDate = DateTime.Now
-                }
-            );
         }
     }
 }

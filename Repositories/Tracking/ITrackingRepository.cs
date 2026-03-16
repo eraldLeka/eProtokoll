@@ -1,5 +1,4 @@
 ﻿using eProtokoll.Models;
-using DocModel = eProtokoll.Models.Document;
 
 namespace eProtokoll.Repositories
 {
@@ -23,7 +22,7 @@ namespace eProtokoll.Repositories
         Task CancelAsync(int trackingId, string reason);
 
         // ===== DROPDOWNS =====
-        Task<List<DocModel>> GetDocumentsForDropdownAsync();
+        Task<List<Document>> GetDocumentsForDropdownAsync();
         Task<List<Users>> GetEmployeesAsync();
     }
 }

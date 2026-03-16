@@ -93,11 +93,10 @@
                         <thead class="table-light">
                             <tr>
                                 <th style="width: 12%;">Nr. Protokolli</th>
-                                <th style="width: 25%;">Subjekti</th>
-                                <th style="width: 15%;">Institucioni Marrës</th>
-                                <th style="width: 10%;">Data e Protokollimit</th>
-                                <th style="width: 10%;">Prioriteti</th>
-                                <th style="width: 10%;">Statusi</th>
+                                <th style="width: 30%;">Subjekti</th>
+                                <th style="width: 20%;">Institucioni Marrës</th>
+                                <th style="width: 15%;">Data</th>
+                                <th style="width: 13%;">Prioriteti</th>
                                 <th style="width: 10%;" class="text-end">Veprime</th>
                             </tr>
                         </thead>
@@ -107,10 +106,6 @@
                                 <tr>
                                     <td>
                                         <strong class="text-success">@doc.ProtocolNumber</strong>
-                                        <br />
-                                        <small class="text-muted">
-                                            <i class="bi bi-calendar"></i> @doc.ProtocolDate.ToString("dd/MM/yyyy")
-                                        </small>
                                     </td>
                                     <td>
                                         <div class="text-truncate" style="max-width: 350px;" title="@doc.Subject">
@@ -134,9 +129,7 @@
                                     </td>
                                     <td>
                                         <small>
-                                            <i class="bi bi-calendar"></i> @doc.ProtocolDate.ToString("dd/MM/yyyy")
-                                            <br />
-                                            <i class="bi bi-clock"></i> @doc.ProtocolTime.ToString(@"hh\:mm")
+                                            <i class="bi bi-calendar-event"></i> @doc.CreatedDate.ToString("dd/MM/yyyy HH:mm")
                                         </small>
                                     </td>
                                     <td>
@@ -155,21 +148,6 @@
                                             case Priority.Low:
                                                 <span class="badge bg-secondary">
                                                     <i class="bi bi-arrow-down"></i> I Ulët
-                                                </span>
-                                                break;
-                                        }
-                                    </td>
-                                    <td>
-                                        @switch (doc.Status)
-                                        {
-                                            case DocumentStatus.Registered:
-                                                <span class="badge bg-info">
-                                                    <i class="bi bi-file-earmark-check"></i> I Protokolluar
-                                                </span>
-                                                break;
-                                            case DocumentStatus.InProgress:
-                                                <span class="badge bg-warning text-dark">
-                                                    <i class="bi bi-hourglass-split"></i> Në Proces
                                                 </span>
                                                 break;
                                         }
@@ -203,19 +181,15 @@
                                         <i class="bi bi-chevron-left"></i> Mbrapa
                                     </a>
                                 </li>
-
                                 @for (int i = 1; i <= ViewBag.TotalPages; i++)
                                 {
                                     <li class="page-item @(ViewBag.CurrentPage == i ? "active" : "")">
                                         <a class="page-link" href="@Url.Action("Index", new {
                                             searchTerm = ViewBag.SearchTerm,
                                             page = i
-                                        })">
-                                            @i
-                                        </a>
+                                        })">@i</a>
                                     </li>
                                 }
-
                                 <li class="page-item @(ViewBag.CurrentPage == ViewBag.TotalPages ? "disabled" : "")">
                                     <a class="page-link" href="@Url.Action("Index", new {
                                         searchTerm = ViewBag.SearchTerm,
@@ -253,49 +227,33 @@
 @section Styles {
     <style>
         .stat-card {
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: transform 0.2s, box-shadow 0.2s; 
         }
-
         .stat-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
         }
-
         .stat-icon {
-            width: 60px;
-            height: 60px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
+            width: 60px; height: 60px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
         }
-
         .bg-success-subtle {
             background-color: rgba(25, 135, 84, 0.1) !important;
         }
-
         .bg-primary-subtle {
-            background-color: rgba(13, 110, 253, 0.1) !important;
-        }
-
+            background-color: rgba(13, 110, 253, 0.1) !important; }
         .table-hover tbody tr:hover {
-            background-color: rgba(25, 135, 84, 0.05);
+            background-color: rgba(25, 135, 84, 0.05); 
         }
-
         .card {
             border-radius: 12px;
         }
-
         .card-header {
             border-radius: 12px 12px 0 0 !important;
         }
-
         .pagination .page-link {
-            border-radius: 6px;
-            margin: 0 2px;
+            border-radius: 6px; margin: 0 2px; 
         }
-
         .pagination .page-item.active .page-link {
             background-color: #198754;
             border-color: #198754;

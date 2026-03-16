@@ -2,17 +2,16 @@
 using eProtokoll.Services.Mappers;
 using Microsoft.Data.SqlClient;
 
-namespace eProtokoll.Repositories.Document
+namespace eProtokoll.Repositories.Documents
 {
     public class DocumentRepository : IDocumentRepository
     {
         private readonly string _connectionString;
 
-        public DocumentRepository(string connectionString)
+        public DocumentRepository(IConfiguration configuration)
         {
-            _connectionString = connectionString;
+            _connectionString = configuration.GetConnectionString("DefaultConnection")!;
         }
-
         // ==================== INCOMING ====================
 
         public async Task<(List<IncomingDocument> Documents, int TotalCount)> GetIncomingAsync(
@@ -172,27 +171,25 @@ namespace eProtokoll.Repositories.Document
             try
             {
                 var query = @"
-                    INSERT INTO Documents (
-                        ProtocolNumber, ProtocolDate, ProtocolTime, DocumentType, Subject, Content,
-                        Classification, Status, Priority, Notes, HasAttachments, CreatedDate, CreatedBy,
-                        InstitutionId, SenderName, ReceivedDate, OriginalDocumentNumber, OriginalDocumentDate,
-                        Discriminator
-                    ) OUTPUT INSERTED.DocumentId VALUES (
-                        @ProtocolNumber, @ProtocolDate, @ProtocolTime, @DocumentType, @Subject, @Content,
-                        @Classification, @Status, @Priority, @Notes, @HasAttachments, @CreatedDate, @CreatedBy,
-                        @InstitutionId, @SenderName, @ReceivedDate, @OriginalDocumentNumber, @OriginalDocumentDate,
-                        'IncomingDocument'
-                    )";
+            INSERT INTO Documents (
+                DocumentNumber, Year, DocumentType, Subject, Content,
+                Classification, Priority, Notes, HasAttachments, CreatedDate, CreatedBy,
+                InstitutionId, SenderName, ReceivedDate, OriginalDocumentNumber, OriginalDocumentDate,
+                Discriminator
+            ) OUTPUT INSERTED.DocumentId VALUES (
+                @DocumentNumber, @Year, @DocumentType, @Subject, @Content,
+                @Classification, @Priority, @Notes, @HasAttachments, @CreatedDate, @CreatedBy,
+                @InstitutionId, @SenderName, @ReceivedDate, @OriginalDocumentNumber, @OriginalDocumentDate,
+                'IncomingDocument'
+            )";
 
                 using var cmd = new SqlCommand(query, connection, transaction);
-                cmd.Parameters.AddWithValue("@ProtocolNumber", model.ProtocolNumber);
-                cmd.Parameters.AddWithValue("@ProtocolDate", model.ProtocolDate);
-                cmd.Parameters.AddWithValue("@ProtocolTime", model.ProtocolTime);
+                cmd.Parameters.AddWithValue("@DocumentNumber", model.DocumentNumber);
+                cmd.Parameters.AddWithValue("@Year", model.Year);
                 cmd.Parameters.AddWithValue("@DocumentType", (int)DocumentType.Incoming);
                 cmd.Parameters.AddWithValue("@Subject", model.Subject);
                 cmd.Parameters.AddWithValue("@Content", (object?)model.Content ?? DBNull.Value);
                 cmd.Parameters.AddWithValue("@Classification", (int)model.Classification);
-                cmd.Parameters.AddWithValue("@Status", (int)model.Status);
                 cmd.Parameters.AddWithValue("@Priority", (int)model.Priority);
                 cmd.Parameters.AddWithValue("@Notes", (object?)model.Notes ?? DBNull.Value);
                 cmd.Parameters.AddWithValue("@HasAttachments", false);
@@ -216,7 +213,6 @@ namespace eProtokoll.Repositories.Document
                 throw;
             }
         }
-
         // ==================== OUTGOING ====================
 
         public async Task<(List<OutgoingDocument> Documents, int TotalCount)> GetOutgoingAsync(
@@ -376,27 +372,25 @@ namespace eProtokoll.Repositories.Document
             try
             {
                 var query = @"
-                    INSERT INTO Documents (
-                        ProtocolNumber, ProtocolDate, ProtocolTime, DocumentType, Subject, Content,
-                        Classification, Status, Priority, Notes, HasAttachments,
-                        CreatedDate, CreatedBy, InstitutionId, RecipientName, IsResponse,
-                        OriginalIncomingDocumentId, ArchiveLocation, Discriminator
-                    ) OUTPUT INSERTED.DocumentId VALUES (
-                        @ProtocolNumber, @ProtocolDate, @ProtocolTime, @DocumentType, @Subject, @Content,
-                        @Classification, @Status, @Priority, @Notes, @HasAttachments,
-                        @CreatedDate, @CreatedBy, @InstitutionId, @RecipientName, @IsResponse,
-                        @OriginalIncomingDocumentId, @ArchiveLocation, 'OutgoingDocument'
-                    )";
+            INSERT INTO Documents (
+                DocumentNumber, Year, DocumentType, Subject, Content,
+                Classification, Priority, Notes, HasAttachments,
+                CreatedDate, CreatedBy, InstitutionId, RecipientName, IsResponse,
+                OriginalIncomingDocumentId, ArchiveLocation, Discriminator
+            ) OUTPUT INSERTED.DocumentId VALUES (
+                @DocumentNumber, @Year, @DocumentType, @Subject, @Content,
+                @Classification, @Priority, @Notes, @HasAttachments,
+                @CreatedDate, @CreatedBy, @InstitutionId, @RecipientName, @IsResponse,
+                @OriginalIncomingDocumentId, @ArchiveLocation, 'OutgoingDocument'
+            )";
 
                 using var cmd = new SqlCommand(query, connection, transaction);
-                cmd.Parameters.AddWithValue("@ProtocolNumber", model.ProtocolNumber);
-                cmd.Parameters.AddWithValue("@ProtocolDate", model.ProtocolDate);
-                cmd.Parameters.AddWithValue("@ProtocolTime", model.ProtocolTime);
+                cmd.Parameters.AddWithValue("@DocumentNumber", model.DocumentNumber);
+                cmd.Parameters.AddWithValue("@Year", model.Year);
                 cmd.Parameters.AddWithValue("@DocumentType", (int)DocumentType.Outgoing);
                 cmd.Parameters.AddWithValue("@Subject", model.Subject);
                 cmd.Parameters.AddWithValue("@Content", (object?)model.Content ?? DBNull.Value);
                 cmd.Parameters.AddWithValue("@Classification", (int)model.Classification);
-                cmd.Parameters.AddWithValue("@Status", (int)model.Status);
                 cmd.Parameters.AddWithValue("@Priority", (int)model.Priority);
                 cmd.Parameters.AddWithValue("@Notes", (object?)model.Notes ?? DBNull.Value);
                 cmd.Parameters.AddWithValue("@HasAttachments", false);
@@ -420,7 +414,6 @@ namespace eProtokoll.Repositories.Document
                 throw;
             }
         }
-
         // ==================== INTERNAL ====================
 
         public async Task<(List<InternalDocument> Documents, int TotalCount)> GetInternalAsync(
@@ -551,25 +544,23 @@ namespace eProtokoll.Repositories.Document
             try
             {
                 var query = @"
-                    INSERT INTO Documents (
-                        ProtocolNumber, ProtocolDate, ProtocolTime, DocumentType, Subject, Content,
-                        Classification, Status, Priority, Notes, HasAttachments,
-                        CreatedDate, CreatedBy, FromDepartment, ToDepartment, Discriminator
-                    ) OUTPUT INSERTED.DocumentId VALUES (
-                        @ProtocolNumber, @ProtocolDate, @ProtocolTime, @DocumentType, @Subject, @Content,
-                        @Classification, @Status, @Priority, @Notes, @HasAttachments,
-                        @CreatedDate, @CreatedBy, @FromDepartment, @ToDepartment, 'InternalDocument'
-                    )";
+            INSERT INTO Documents (
+                DocumentNumber, Year, DocumentType, Subject, Content,
+                Classification, Priority, Notes, HasAttachments,
+                CreatedDate, CreatedBy, FromDepartment, ToDepartment, Discriminator
+            ) OUTPUT INSERTED.DocumentId VALUES (
+                @DocumentNumber, @Year, @DocumentType, @Subject, @Content,
+                @Classification, @Priority, @Notes, @HasAttachments,
+                @CreatedDate, @CreatedBy, @FromDepartment, @ToDepartment, 'InternalDocument'
+            )";
 
                 using var cmd = new SqlCommand(query, connection, transaction);
-                cmd.Parameters.AddWithValue("@ProtocolNumber", model.ProtocolNumber);
-                cmd.Parameters.AddWithValue("@ProtocolDate", model.ProtocolDate);
-                cmd.Parameters.AddWithValue("@ProtocolTime", model.ProtocolTime);
+                cmd.Parameters.AddWithValue("@DocumentNumber", model.DocumentNumber);
+                cmd.Parameters.AddWithValue("@Year", model.Year);
                 cmd.Parameters.AddWithValue("@DocumentType", (int)DocumentType.Internal);
                 cmd.Parameters.AddWithValue("@Subject", model.Subject);
                 cmd.Parameters.AddWithValue("@Content", (object?)model.Content ?? DBNull.Value);
                 cmd.Parameters.AddWithValue("@Classification", (int)model.Classification);
-                cmd.Parameters.AddWithValue("@Status", (int)model.Status);
                 cmd.Parameters.AddWithValue("@Priority", (int)model.Priority);
                 cmd.Parameters.AddWithValue("@Notes", (object?)model.Notes ?? DBNull.Value);
                 cmd.Parameters.AddWithValue("@HasAttachments", false);
@@ -590,7 +581,6 @@ namespace eProtokoll.Repositories.Document
                 throw;
             }
         }
-
         // ==================== SHARED ====================
 
         public async Task<int> GetCountAsync(DocumentType type)
@@ -647,12 +637,10 @@ namespace eProtokoll.Repositories.Document
                 var query = @"
                     INSERT INTO DocumentAttachments (
                         DocumentId, FileName, OriginalFileName, FilePath, FileSize, FileExtension,
-                        ContentType, UploadedDate, UploadedBy, Category, DisplayOrder,
-                        IsPrimaryDocument, FileHash
+                        ContentType, UploadedDate, UploadedBy, Category, FileHash
                     ) VALUES (
                         @DocumentId, @FileName, @OriginalFileName, @FilePath, @FileSize, @FileExtension,
-                        @ContentType, @UploadedDate, @UploadedBy, @Category, @DisplayOrder,
-                        @IsPrimaryDocument, @FileHash
+                        @ContentType, @UploadedDate, @UploadedBy, @Category, @FileHash
                     )";
 
                 using (var cmd = new SqlCommand(query, connection, transaction))
@@ -667,8 +655,6 @@ namespace eProtokoll.Repositories.Document
                     cmd.Parameters.AddWithValue("@UploadedDate", attachment.UploadedDate);
                     cmd.Parameters.AddWithValue("@UploadedBy", attachment.UploadedBy);
                     cmd.Parameters.AddWithValue("@Category", (int)attachment.Category);
-                    cmd.Parameters.AddWithValue("@DisplayOrder", attachment.DisplayOrder);
-                    cmd.Parameters.AddWithValue("@IsPrimaryDocument", attachment.IsPrimaryDocument);
                     cmd.Parameters.AddWithValue("@FileHash", (object?)attachment.FileHash ?? DBNull.Value);
                     await cmd.ExecuteNonQueryAsync();
                 }
@@ -704,8 +690,7 @@ namespace eProtokoll.Repositories.Document
 
             using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
-                attachments.Add(AttachmentMapper.MapToDocumentAttachment(reader));
-
+                attachments.Add(AttachmentMapper.Map(reader));
             return attachments;
         }
 

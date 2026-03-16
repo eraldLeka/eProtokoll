@@ -1,5 +1,6 @@
 ﻿using eProtokoll.Models;
 using eProtokoll.Repositories;
+using eProtokoll.Repositories.AuditLogs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -12,10 +13,13 @@ namespace eProtokoll.Areas.Manager.Controllers
     public class TrackingController : Controller
     {
         private readonly ITrackingRepository _trackingRepository;
+        private readonly IAuditLogRepository _auditLogRepository;
+       
 
-        public TrackingController(ITrackingRepository trackingRepository)
+        public TrackingController(ITrackingRepository trackingRepository, IAuditLogRepository auditLogRepository)
         {
             _trackingRepository = trackingRepository;
+            _auditLogRepository = auditLogRepository;
         }
 
         // ================= INDEX =================
@@ -40,7 +44,6 @@ namespace eProtokoll.Areas.Manager.Controllers
             {
                 AssignedDate = DateTime.Now,
                 Priority = Priority.Normal,
-                IsActive = true
             };
 
             if (documentId.HasValue)
@@ -66,6 +69,15 @@ namespace eProtokoll.Areas.Manager.Controllers
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
             await _trackingRepository.InsertAsync(model, userId);
+            await _auditLogRepository.LogAsync(new AuditLog
+            {
+                UserId = userId,
+                UserName = User.Identity!.Name!,
+                Action = "Delegate",
+                DocumentId = model.DocumentId,
+                Description = $"Delegoi dokumentin #{model.DocumentId}",
+                Timestamp = DateTime.Now
+            });
 
             TempData["SuccessMessage"] = "Dokumenti u caktua me sukses!";
             return RedirectToAction(nameof(Index));

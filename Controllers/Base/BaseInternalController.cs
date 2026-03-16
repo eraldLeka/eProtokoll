@@ -1,5 +1,5 @@
 ﻿using eProtokoll.Models;
-using eProtokoll.Repositories.Document;
+using eProtokoll.Repositories.Documents;
 using eProtokoll.Services.Files;
 using eProtokoll.Services.ProtocolNumber;
 using Microsoft.AspNetCore.Mvc;
@@ -8,6 +8,7 @@ using System.Security.Claims;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 using DocumentType = eProtokoll.Models.DocumentType;
+using eProtokoll.Repositories.AuditLogs;
 
 namespace eProtokoll.Controllers.Base
 {
@@ -17,17 +18,20 @@ namespace eProtokoll.Controllers.Base
         protected readonly IWebHostEnvironment _environment;
         protected readonly IProtocolNumberService _protocolNumberService;
         protected readonly FileService _fileService;
+        protected readonly IAuditLogRepository _auditLogRepository;
 
         protected virtual string AreaName => "Manager";
 
         protected BaseInternalDocumentController(
             IDocumentRepository documentRepository,
             IWebHostEnvironment environment,
-            IProtocolNumberService protocolNumberService)
+            IProtocolNumberService protocolNumberService,
+            IAuditLogRepository auditLogRepository)
         {
             _documentRepository = documentRepository;
             _environment = environment;
             _protocolNumberService = protocolNumberService;
+            _auditLogRepository = auditLogRepository;
 
             var uploadsFolder = Path.Combine(environment.WebRootPath, "uploads", "internal");
             _fileService = new FileService(uploadsFolder);
@@ -73,28 +77,20 @@ namespace eProtokoll.Controllers.Base
         {
             ViewData["area"] = AreaName;
 
-            var protocolNumber = await _protocolNumberService
-                .GenerateNextProtocolNumberAsync(
-                    eProtokoll.Services.ProtocolNumber.DocumentType.Internal);
-
-            model.ProtocolNumber = protocolNumber;
-
-            var now = DateTime.Now;
-            model.ProtocolDate = now.Date;
-            model.ProtocolTime = new TimeSpan(now.Hour, now.Minute, now.Second);
-            model.Status = DocumentStatus.Registered;
+            var year = DateTime.Now.Year;
+            model.DocumentNumber = await _protocolNumberService
+                .GetNextDocumentNumberAsync(DocumentType.Internal, year);
+            model.Year = year;
             model.Priority = Priority.Normal;
 
-            ModelState.Remove(nameof(model.ProtocolNumber));
-            ModelState.Remove(nameof(model.ProtocolDate));
-            ModelState.Remove(nameof(model.ProtocolTime));
+            ModelState.Remove(nameof(model.DocumentNumber));
+            ModelState.Remove(nameof(model.Year));
 
             if (attachmentFile == null || attachmentFile.Length == 0)
                 ModelState.AddModelError("attachmentFile", "Ngarko pdf per dokumentin intern.");
             else if (Path.GetExtension(attachmentFile.FileName).ToLower() != ".pdf")
                 ModelState.AddModelError("attachmentFile", "Vetëm PDF lejohet.");
 
-            // Validim: nëse Confidential, duhet të paktën 1 user
             if (model.Classification == Classification.Confidential &&
                 (accessUserIds == null || accessUserIds.Count == 0))
             {
@@ -126,13 +122,10 @@ namespace eProtokoll.Controllers.Base
                         userId);
 
                     savedFile.Category = FileCategory.PDF;
-                    savedFile.DisplayOrder = 1;
-                    savedFile.IsPrimaryDocument = true;
 
                     await _documentRepository.InsertAttachmentAsync(savedFile);
                 }
 
-                // Nëse Confidential, ruaj access users
                 if (model.Classification == Classification.Confidential &&
                     accessUserIds != null && accessUserIds.Count > 0)
                 {
@@ -141,6 +134,16 @@ namespace eProtokoll.Controllers.Base
 
                 TempData["SuccessMessage"] =
                     $"Dokumenti intern '{model.ProtocolNumber}' u regjistrua me sukses!";
+
+                await _auditLogRepository.LogAsync(new AuditLog
+                {
+                    UserId = (int)model.CreatedBy,
+                    UserName = User.Identity!.Name!,
+                    Action = "Create",
+                    DocumentId = documentId,
+                    Description = $"Krijoi dokument intern '{model.ProtocolNumber}'",
+                    Timestamp = DateTime.Now
+                });
 
                 return RedirectToAction(nameof(Index));
             }
@@ -168,6 +171,7 @@ namespace eProtokoll.Controllers.Base
 
             return View("~/Views/InternalDocument/Details.cshtml", document);
         }
+
         // Dropdown helper
         protected async Task LoadDropdowns(
             int? selectedClassificationId = null,

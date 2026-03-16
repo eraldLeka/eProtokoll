@@ -7,9 +7,9 @@ namespace eProtokoll.Repositories.User
     {
         private readonly string _connectionString;
 
-        public UserRepository(string connectionString)
+        public UserRepository(IConfiguration configuration)
         {
-            _connectionString = connectionString;
+            _connectionString = configuration.GetConnectionString("DefaultConnection")!;
         }
 
         // Merr userin sipas username

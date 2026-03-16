@@ -80,16 +80,6 @@
                                     <span asp-validation-for="Type" class="text-danger"></span>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label asp-for="TaxCode" class="form-label">
-                                        <i class="bi bi-hash text-primary"></i>
-                                        NIPT/Kodi Fiskal
-                                    </label>
-                                    <input asp-for="TaxCode" class="form-control" placeholder="p.sh. K12345678A" />
-                                    <span asp-validation-for="TaxCode" class="text-danger"></span>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -113,16 +103,6 @@
                         </div>
 
                         <div class="row">
-                            <div class="col-md-5">
-                                <div class="mb-3">
-                                    <label asp-for="City" class="form-label">
-                                        <i class="bi bi-pin-map text-info"></i>
-                                        Qyteti
-                                    </label>
-                                    <input asp-for="City" class="form-control" placeholder="p.sh. Tiranë" />
-                                    <span asp-validation-for="City" class="text-danger"></span>
-                                </div>
-                            </div>
                             <div class="col-md-3">
                                 <div class="mb-3">
                                     <label asp-for="PostalCode" class="form-label">
@@ -165,16 +145,6 @@
                                     </label>
                                     <input asp-for="Phone" class="form-control" placeholder="+355 4 123 4567" />
                                     <span asp-validation-for="Phone" class="text-danger"></span>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label asp-for="Fax" class="form-label">
-                                        <i class="bi bi-printer text-success"></i>
-                                        Faksi
-                                    </label>
-                                    <input asp-for="Fax" class="form-control" placeholder="+355 4 123 4568" />
-                                    <span asp-validation-for="Fax" class="text-danger"></span>
                                 </div>
                             </div>
                             <div class="col-md-4">
@@ -235,16 +205,6 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label asp-for="ContactPhone" class="form-label">
-                                        <i class="bi bi-phone text-warning"></i>
-                                        Telefoni i Kontaktit
-                                    </label>
-                                    <input asp-for="ContactPhone" class="form-control" placeholder="+355 69 123 4567" />
-                                    <span asp-validation-for="ContactPhone" class="text-danger"></span>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
                                     <label asp-for="ContactEmail" class="form-label">
                                         <i class="bi bi-envelope text-warning"></i>
                                         Email i Kontaktit
@@ -253,34 +213,6 @@
                                     <span asp-validation-for="ContactEmail" class="text-danger"></span>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Shënime dhe Statusi -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-secondary text-white">
-                        <h5 class="mb-0">
-                            <i class="bi bi-card-text me-2"></i>
-                            Shënime dhe Statusi
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label asp-for="Notes" class="form-label">
-                                <i class="bi bi-sticky text-secondary"></i>
-                                Shënime
-                            </label>
-                            <textarea asp-for="Notes" class="form-control" rows="3" placeholder="Shënime shtesë për institucionin..."></textarea>
-                            <span asp-validation-for="Notes" class="text-danger"></span>
-                        </div>
-
-                        <div class="form-check form-switch">
-                            <input asp-for="IsActive" class="form-check-input" type="checkbox" />
-                            <label asp-for="IsActive" class="form-check-label">
-                                <i class="bi bi-toggle-on text-success"></i>
-                                Aktiv (mund të përdoret në dokumente)
-                            </label>
                         </div>
                     </div>
                 </div>
@@ -343,149 +275,5 @@
                 </div>
             </form>
         </div>
-
-        <!-- Sidebar me informacion -->
-        <div class="col-lg-4">
-            <div class="card shadow-sm mb-4 border-warning">
-                <div class="card-header bg-warning text-dark">
-                    <h5 class="mb-0">
-                        <i class="bi bi-info-circle me-2"></i>
-                        Informacion
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <h6 class="text-warning">
-                        <i class="bi bi-lightbulb-fill"></i> Modifikimi i Institucionit
-                    </h6>
-                    <p class="small mb-3">
-                        Të gjitha ndryshimet do të ruhen në historikun e sistemit dhe do të jenë të dukshme për përdoruesit e tjerë.
-                    </p>
-
-                    <hr />
-
-                    <h6 class="text-warning">
-                        <i class="bi bi-exclamation-triangle-fill"></i> Vërejtje
-                    </h6>
-                    <ul class="small mb-0">
-                        <li class="mb-2">Nëse çaktivizoni institucionin, ai nuk do të jetë i disponueshëm për dokumente të reja</li>
-                        <li class="mb-2">Dokumentet ekzistuese të lidhura me këtë institucion nuk do të ndikohen</li>
-                        <li>Ndryshimi i llojit të institucionit mund të ndikojë në raportimin</li>
-                    </ul>
-                </div>
-            </div>
-
-            <div class="alert alert-info">
-                <i class="bi bi-info-circle-fill me-2"></i>
-                <strong>ID:</strong> @Model.InstitutionId
-            </div>
-        </div>
     </div>
 </div>
-
-@section Scripts {
-    <script>
-        $(document).ready(function() {
-            $('#Type').on('change', function() {
-                var type = $(this).val();
-                var description = '';
-
-                        switch(type) {
-            case '0': description = 'Institucione të administratës shtetërore'; break;
-            case '1': description = 'Bashki dhe komuna të vendit'; break;
-            case '2': description = 'Ministritë qendrore'; break;
-            case '3': description = 'Kompani dhe shoqëri private'; break;
-            case '4': description = 'Organizata joqeveritare dhe jofitimprurëse'; break;
-            case '5': description = 'Organizata dhe institucione ndërkombëtare'; break;
-            case '6': description = 'Shkolla, universitete dhe institucione arsimore'; break;
-            case '7': description = 'Spitale, klinika dhe institucione shëndetësore'; break;
-            case '8': description = 'Gazeta, televizione, radio dhe media të tjera'; break;
-            case '9': description = 'Institucione që nuk përfshihen në kategoritë e tjera'; break;
-        }
-
-                if (description) {
-                    $('.text-info').remove();
-                    $('#Type').parent().append('<small class="text-info d-block mt-1"><i class="bi bi-info-circle"></i> ' + description + '</small>');
-                }
-            });
-
-            $('#Email, #ContactEmail').on('blur', function() {
-                var email = $(this).val();
-                var emailRegex = /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/;
-
-                if (email && !emailRegex.test(email)) {
-                    $(this).addClass('is-invalid');
-                } else {
-                    $(this).removeClass('is-invalid');
-                }
-            });
-
-            $('#Phone, #Fax, #ContactPhone').on('input', function() {
-                var value = $(this).val().replace(/\D/g, '');
-
-                if (value.startsWith('355')) {
-                    if (value.length > 3) {
-                        value = '+355 ' + value.substring(3);
-                    }
-                }
-                $(this).val(value);
-            });
-
-            $('#Website').on('blur', function() {
-                var url = $(this).val();
-                if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
-                    $(this).val('https://' + url);
-                }
-            });
-
-            $('form').on('submit', function(e) {
-                var name = $('#Name').val().trim();
-                var type = $('#Type').val();
-
-                if (!name) {
-                    e.preventDefault();
-                    alert('Ju lutem shkruani emrin e institucionit!');
-                    $('#Name').focus();
-                    return false;
-                }
-
-                if (!type) {
-                    e.preventDefault();
-                    alert('Ju lutem zgjidhni llojin e institucionit!');
-                    $('#Type').focus();
-                    return false;
-                }
-            });
-        });
-    </script>
-}
-
-@section Styles {
-    <style>
-        .form-check-input:checked {
-            background-color: #0d6efd;
-            border-color: #0d6efd;
-        }
-
-        .card-header {
-            font-weight: 600;
-        }
-
-        .form-label {
-            font-weight: 500;
-            margin-bottom: 0.5rem;
-        }
-
-        .alert {
-            border-left: 4px solid;
-        }
-
-        .is-invalid {
-            border-color: #dc3545;
-        }
-
-        .form-control:focus {
-            border-color: #80bdff;
-            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-        }
-    </style>
-}

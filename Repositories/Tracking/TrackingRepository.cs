@@ -1,8 +1,6 @@
 ﻿using eProtokoll.Models;
-using eProtokoll.Services.Mappers;
 using Microsoft.Data.SqlClient;
 using System.Text;
-using DocModel = eProtokoll.Models.Document;
 
 namespace eProtokoll.Repositories
 {
@@ -10,9 +8,9 @@ namespace eProtokoll.Repositories
     {
         private readonly string _connectionString;
 
-        public TrackingRepository(string connectionString)
+        public TrackingRepository(IConfiguration configuration)
         {
-            _connectionString = connectionString;
+            _connectionString = configuration.GetConnectionString("DefaultConnection")!;
         }
 
         // ==================== SHARED QUERY ====================
@@ -21,18 +19,17 @@ namespace eProtokoll.Repositories
             SELECT 
                 dt.TrackingId, dt.DocumentId, dt.AssignedToUserId, dt.AssignedByUserId,
                 dt.AssignedDate, dt.Priority, dt.DueDate, dt.Notes,
-                dt.CompletedDate, dt.IsActive, dt.CreatedDate,
-                d.ProtocolNumber  AS DocumentProtocolNumber,
-                d.Subject         AS DocumentSubject,
-                d.Discriminator   AS DocumentDiscriminator,
-                uat.FirstName     AS AssignedToFirstName,
-                uat.LastName      AS AssignedToLastName,
-                uab.FirstName     AS AssignedByFirstName,
-                uab.LastName      AS AssignedByLastName
+                dt.CompletedDate, dt.CreatedDate,
+                CAST(d.DocumentNumber AS VARCHAR) + '/' + CAST(d.Year AS VARCHAR) AS DocumentProtocolNumber,
+                d.Subject AS DocumentSubject,
+                uat.FirstName AS AssignedToFirstName,
+                uat.LastName AS AssignedToLastName,
+                uab.FirstName AS AssignedByFirstName,
+                uab.LastName AS AssignedByLastName
             FROM DocumentTrackings dt
-            LEFT JOIN Documents d   ON dt.DocumentId       = d.DocumentId
-            LEFT JOIN Users uat     ON dt.AssignedToUserId = uat.Id
-            LEFT JOIN Users uab     ON dt.AssignedByUserId = uab.Id";
+            LEFT JOIN Documents d ON dt.DocumentId = d.DocumentId
+            LEFT JOIN Users uat ON dt.AssignedToUserId = uat.Id
+            LEFT JOIN Users uab ON dt.AssignedByUserId = uab.Id";
 
         // ==================== INDEX — MANAGER ====================
 
@@ -47,9 +44,11 @@ namespace eProtokoll.Repositories
 
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
-                where.Append(@" AND (d.ProtocolNumber LIKE @SearchTerm
+                where.Append(@" AND (
+                    CAST(d.DocumentNumber AS VARCHAR) + '/' + CAST(d.Year AS VARCHAR) LIKE @SearchTerm
                     OR d.Subject LIKE @SearchTerm
                     OR dt.Notes LIKE @SearchTerm)");
+
                 parameters.Add(new SqlParameter("@SearchTerm", $"%{searchTerm}%"));
             }
 
@@ -62,6 +61,7 @@ namespace eProtokoll.Repositories
             {
                 foreach (var p in parameters)
                     cmd.Parameters.AddWithValue(p.ParameterName, p.Value);
+
                 totalCount = Convert.ToInt32(await cmd.ExecuteScalarAsync());
             }
 
@@ -74,10 +74,12 @@ namespace eProtokoll.Repositories
             {
                 foreach (var p in parameters)
                     cmd.Parameters.AddWithValue(p.ParameterName, p.Value);
+
                 cmd.Parameters.AddWithValue("@Offset", (page - 1) * pageSize);
                 cmd.Parameters.AddWithValue("@PageSize", pageSize);
 
                 using var reader = await cmd.ExecuteReaderAsync();
+
                 while (await reader.ReadAsync())
                     trackings.Add(MapTracking(reader));
             }
@@ -97,16 +99,18 @@ namespace eProtokoll.Repositories
             await connection.OpenAsync();
 
             using (var cmd = new SqlCommand(@"
-                SELECT COUNT(*) FROM DocumentTrackings dt
-                WHERE dt.AssignedToUserId = @UserId AND dt.IsActive = 1",
-                connection))
+                SELECT COUNT(*) 
+                FROM DocumentTrackings dt
+                WHERE dt.AssignedToUserId = @UserId
+                AND dt.CompletedDate IS NULL", connection))
             {
                 cmd.Parameters.AddWithValue("@UserId", userId);
                 totalCount = Convert.ToInt32(await cmd.ExecuteScalarAsync());
             }
 
             var query = $@"{SelectColumns}
-                WHERE dt.AssignedToUserId = @UserId AND dt.IsActive = 1
+                WHERE dt.AssignedToUserId = @UserId
+                AND dt.CompletedDate IS NULL
                 ORDER BY dt.AssignedDate DESC
                 OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY";
 
@@ -117,6 +121,7 @@ namespace eProtokoll.Repositories
                 cmd.Parameters.AddWithValue("@PageSize", pageSize);
 
                 using var reader = await cmd.ExecuteReaderAsync();
+
                 while (await reader.ReadAsync())
                     trackings.Add(MapTracking(reader));
             }
@@ -138,7 +143,9 @@ namespace eProtokoll.Repositories
             cmd.Parameters.AddWithValue("@TrackingId", trackingId);
 
             using var reader = await cmd.ExecuteReaderAsync();
-            if (!await reader.ReadAsync()) return null;
+
+            if (!await reader.ReadAsync())
+                return null;
 
             return MapTracking(reader);
         }
@@ -153,10 +160,10 @@ namespace eProtokoll.Repositories
             using var cmd = new SqlCommand(@"
                 INSERT INTO DocumentTrackings (
                     DocumentId, AssignedToUserId, AssignedByUserId,
-                    AssignedDate, Priority, DueDate, Notes, IsActive, CreatedDate
+                    AssignedDate, Priority, DueDate, Notes, CreatedDate
                 ) VALUES (
                     @DocumentId, @AssignedToUserId, @AssignedByUserId,
-                    @AssignedDate, @Priority, @DueDate, @Notes, 1, @CreatedDate
+                    @AssignedDate, @Priority, @DueDate, @Notes, @CreatedDate
                 )", connection);
 
             cmd.Parameters.AddWithValue("@DocumentId", model.DocumentId);
@@ -180,7 +187,7 @@ namespace eProtokoll.Repositories
 
             using var cmd = new SqlCommand(@"
                 UPDATE DocumentTrackings
-                SET CompletedDate = @CompletedDate, IsActive = 0
+                SET CompletedDate = @CompletedDate
                 WHERE TrackingId = @TrackingId", connection);
 
             cmd.Parameters.AddWithValue("@TrackingId", trackingId);
@@ -198,7 +205,7 @@ namespace eProtokoll.Repositories
 
             using var cmd = new SqlCommand(@"
                 UPDATE DocumentTrackings
-                SET IsActive = 0,
+                SET CompletedDate = GETDATE(),
                     Notes = CASE 
                         WHEN Notes IS NULL OR Notes = '' THEN @Reason
                         ELSE Notes + ' | Anuluar: ' + @Reason
@@ -213,31 +220,30 @@ namespace eProtokoll.Repositories
 
         // ==================== DROPDOWNS ====================
 
-        public async Task<List<DocModel>> GetDocumentsForDropdownAsync()
+        public async Task<List<Document>> GetDocumentsForDropdownAsync()
         {
-            var documents = new List<DocModel>();
+            var documents = new List<Document>();
 
             using var connection = new SqlConnection(_connectionString);
             await connection.OpenAsync();
 
             using var cmd = new SqlCommand(@"
-                SELECT DocumentId, ProtocolNumber, Subject, Discriminator
+                SELECT DocumentId, DocumentNumber, Year, Subject
                 FROM Documents
                 ORDER BY CreatedDate DESC", connection);
 
             using var reader = await cmd.ExecuteReaderAsync();
+
             while (await reader.ReadAsync())
             {
-                documents.Add(new DocModel
+                documents.Add(new Document
                 {
                     DocumentId = reader.GetInt32(reader.GetOrdinal("DocumentId")),
-                    ProtocolNumber = reader.GetString(reader.GetOrdinal("ProtocolNumber")),
+                    DocumentNumber = reader.GetInt32(reader.GetOrdinal("DocumentNumber")),
+                    Year = reader.GetInt32(reader.GetOrdinal("Year")),
                     Subject = reader.IsDBNull(reader.GetOrdinal("Subject"))
-                        ? string.Empty
-                        : reader.GetString(reader.GetOrdinal("Subject")),
-                    Discriminator = reader.IsDBNull(reader.GetOrdinal("Discriminator"))
-                        ? null
-                        : reader.GetString(reader.GetOrdinal("Discriminator"))
+                        ? ""
+                        : reader.GetString(reader.GetOrdinal("Subject"))
                 });
             }
 
@@ -252,23 +258,20 @@ namespace eProtokoll.Repositories
             await connection.OpenAsync();
 
             using var cmd = new SqlCommand(@"
-                SELECT u.Id, u.UserName, u.FirstName, u.LastName, u.Department
-                FROM Users u
-                WHERE u.Role = 3 AND u.IsActive = 1
-                ORDER BY u.FirstName, u.LastName", connection);
+                SELECT Id, FirstName, LastName
+                FROM Users
+                WHERE Role = 3 AND IsActive = 1
+                ORDER BY FirstName, LastName", connection);
 
             using var reader = await cmd.ExecuteReaderAsync();
+
             while (await reader.ReadAsync())
             {
                 employees.Add(new Users
                 {
                     Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                    UserName = reader.GetString(reader.GetOrdinal("UserName")),
                     FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
-                    LastName = reader.GetString(reader.GetOrdinal("LastName")),
-                    Department = reader.IsDBNull(reader.GetOrdinal("Department"))
-                        ? null
-                        : reader.GetString(reader.GetOrdinal("Department"))
+                    LastName = reader.GetString(reader.GetOrdinal("LastName"))
                 });
             }
 
@@ -279,7 +282,7 @@ namespace eProtokoll.Repositories
 
         private static DocumentTracking MapTracking(SqlDataReader reader)
         {
-            var tracking = new DocumentTracking
+            return new DocumentTracking
             {
                 TrackingId = reader.GetInt32(reader.GetOrdinal("TrackingId")),
                 DocumentId = reader.GetInt32(reader.GetOrdinal("DocumentId")),
@@ -288,39 +291,35 @@ namespace eProtokoll.Repositories
                 AssignedDate = reader.GetDateTime(reader.GetOrdinal("AssignedDate")),
                 Priority = (Priority)reader.GetInt32(reader.GetOrdinal("Priority")),
                 DueDate = reader.IsDBNull(reader.GetOrdinal("DueDate"))
-                                    ? null : reader.GetDateTime(reader.GetOrdinal("DueDate")),
+                    ? null : reader.GetDateTime(reader.GetOrdinal("DueDate")),
                 Notes = reader.IsDBNull(reader.GetOrdinal("Notes"))
-                                    ? null : reader.GetString(reader.GetOrdinal("Notes")),
+                    ? null : reader.GetString(reader.GetOrdinal("Notes")),
                 CompletedDate = reader.IsDBNull(reader.GetOrdinal("CompletedDate"))
-                                    ? null : reader.GetDateTime(reader.GetOrdinal("CompletedDate")),
-                IsActive = reader.GetBoolean(reader.GetOrdinal("IsActive")),
+                    ? null : reader.GetDateTime(reader.GetOrdinal("CompletedDate")),
                 CreatedDate = reader.GetDateTime(reader.GetOrdinal("CreatedDate")),
 
-                // NotMapped — populohen nga JOIN
                 DocumentProtocolNumber = reader.IsDBNull(reader.GetOrdinal("DocumentProtocolNumber"))
-                                    ? null : reader.GetString(reader.GetOrdinal("DocumentProtocolNumber")),
+                    ? null : reader.GetString(reader.GetOrdinal("DocumentProtocolNumber")),
+
                 DocumentSubject = reader.IsDBNull(reader.GetOrdinal("DocumentSubject"))
-                                    ? null : reader.GetString(reader.GetOrdinal("DocumentSubject")),
-                DocumentDiscriminator = reader.IsDBNull(reader.GetOrdinal("DocumentDiscriminator"))
-                                    ? null : reader.GetString(reader.GetOrdinal("DocumentDiscriminator")),
+                    ? null : reader.GetString(reader.GetOrdinal("DocumentSubject")),
 
                 AssignedToUser = new Users
                 {
                     FirstName = reader.IsDBNull(reader.GetOrdinal("AssignedToFirstName"))
-                    ? string.Empty : reader.GetString(reader.GetOrdinal("AssignedToFirstName")),
+                        ? string.Empty : reader.GetString(reader.GetOrdinal("AssignedToFirstName")),
                     LastName = reader.IsDBNull(reader.GetOrdinal("AssignedToLastName"))
-                    ? string.Empty : reader.GetString(reader.GetOrdinal("AssignedToLastName"))
+                        ? string.Empty : reader.GetString(reader.GetOrdinal("AssignedToLastName"))
                 },
+
                 AssignedByUser = new Users
                 {
                     FirstName = reader.IsDBNull(reader.GetOrdinal("AssignedByFirstName"))
-                    ? string.Empty : reader.GetString(reader.GetOrdinal("AssignedByFirstName")),
+                        ? string.Empty : reader.GetString(reader.GetOrdinal("AssignedByFirstName")),
                     LastName = reader.IsDBNull(reader.GetOrdinal("AssignedByLastName"))
-                    ? string.Empty : reader.GetString(reader.GetOrdinal("AssignedByLastName"))
+                        ? string.Empty : reader.GetString(reader.GetOrdinal("AssignedByLastName"))
                 }
             };
-
-            return tracking;
         }
     }
 }

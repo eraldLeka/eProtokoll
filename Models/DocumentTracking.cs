@@ -8,21 +8,29 @@ namespace eProtokoll.Models
     {
         [Key]
         public int TrackingId { get; set; }
+
         public int DocumentId { get; set; }
+
         public int AssignedToUserId { get; set; }
+
         public int AssignedByUserId { get; set; }
-        public DateTime AssignedDate { get; set; } = DateTime.Now;
+
+        public DateTime AssignedDate { get; set; } = DateTime.UtcNow;
+
         public Priority Priority { get; set; } = Priority.Normal;
+
         public DateTime? DueDate { get; set; }
+
         public string? Notes { get; set; }
+
         public DateTime? CompletedDate { get; set; }
-        public bool IsActive { get; set; } = true;
-        public DateTime CreatedDate { get; set; } = DateTime.Now;
+
+        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
 
         [NotMapped] public Users? AssignedToUser { get; set; }
         [NotMapped] public Users? AssignedByUser { get; set; }
         [NotMapped] public string? DocumentProtocolNumber { get; set; }
         [NotMapped] public string? DocumentSubject { get; set; }
-        [NotMapped] public string? DocumentDiscriminator { get; set; }
+        [NotMapped] public DocumentType DocumentType { get; set; }
     }
 }

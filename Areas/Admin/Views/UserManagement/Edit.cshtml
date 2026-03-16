@@ -8,8 +8,12 @@
 <div class="container-fluid">
     <nav aria-label="breadcrumb" class="mb-4">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
-            <li class="breadcrumb-item"><a asp-area="Admin" asp-controller="UserManagement" asp-action="Index">Përdoruesit</a></li>
+            <li class="breadcrumb-item">
+                <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
+            </li>
+            <li class="breadcrumb-item">
+                <a asp-area="Admin" asp-controller="UserManagement" asp-action="Index">Përdoruesit</a>
+            </li>
             <li class="breadcrumb-item active" aria-current="page">Modifiko</li>
         </ol>
     </nav>
@@ -30,6 +34,7 @@
                 <input type="hidden" asp-for="Id" />
                 <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
+                @* ===== LLOGARIA ===== *@
                 <div class="card shadow-sm mb-4">
                     <div class="card-header bg-primary text-white">
                         <h5 class="mb-0">
@@ -39,70 +44,54 @@
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label asp-for="UserName" class="form-label">
-                                        <i class="bi bi-at text-primary"></i>
-                                        Emri i Përdoruesit <span class="text-danger">*</span>
-                                    </label>
-                                    <input asp-for="UserName" class="form-control" />
-                                    <span asp-validation-for="UserName" class="text-danger"></span>
-                                </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="UserName" class="form-label">
+                                    <i class="bi bi-at text-primary"></i>
+                                    Emri i Përdoruesit <span class="text-danger">*</span>
+                                </label>
+                                <input asp-for="UserName" class="form-control" />
+                                <span asp-validation-for="UserName" class="text-danger"></span>
                             </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label asp-for="Email" class="form-label">
-                                        <i class="bi bi-envelope text-primary"></i>
-                                        Email <span class="text-danger">*</span>
-                                    </label>
-                                    <input asp-for="Email" class="form-control" type="email" />
-                                    <span asp-validation-for="Email" class="text-danger"></span>
-                                </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Email" class="form-label">
+                                    <i class="bi bi-envelope text-primary"></i>
+                                    Email <span class="text-danger">*</span>
+                                </label>
+                                <input asp-for="Email" class="form-control" type="email" />
+                                <span asp-validation-for="Email" class="text-danger"></span>
                             </div>
                         </div>
-
-                        <div class="alert alert-warning">
-                            <i class="bi bi-info-circle-fill me-2"></i>
-                            <strong>Njoftim:</strong> Lërini fushat e fjalëkalimit bosh nëse nuk dëshironi ta ndryshoni atë.
-                        </div>
-
                         <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="Password" class="form-label">
-                                        <i class="bi bi-key text-primary"></i>
-                                        Fjalëkalimi i Ri
-                                    </label>
-                                    <div class="input-group">
-                                        <input type="password" name="Password" id="Password" class="form-control" placeholder="Lër bosh për të mos ndryshuar" />
-                                        <button class="btn btn-outline-secondary" type="button" id="togglePassword">
-                                            <i class="bi bi-eye" id="eyeIcon"></i>
-                                        </button>
-                                    </div>
-                                    @if (TempData["PasswordError"] != null)
-                                    {
-                                        <span class="text-danger d-block mt-1">@TempData["PasswordError"]</span>
-                                    }
-                                    <small class="text-muted">Min. 6 karaktere (nëse plotësohet)</small>
-                                </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="Password" class="form-label">
+                                    <i class="bi bi-key text-primary"></i>
+                                    Fjalëkalimi i Ri
+                                </label>
+                                <input type="password" name="Password" id="Password" class="form-control"
+                                       placeholder="Lër bosh për të mos ndryshuar" />
+                                @if (TempData["PasswordError"] != null)
+                                {
+                                    <span class="text-danger d-block mt-1">@TempData["PasswordError"]</span>
+                                }
+                                <small class="text-muted">Min. 6 karaktere (nëse plotësohet)</small>
                             </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="ConfirmPassword" class="form-label">
-                                        <i class="bi bi-key-fill text-primary"></i>
-                                        Konfirmo Fjalëkalimin
-                                    </label>
-                                    <input type="password" name="ConfirmPassword" id="ConfirmPassword" class="form-control" placeholder="Përsërit fjalëkalimin e ri" />
-                                    @if (TempData["ConfirmPasswordError"] != null)
-                                    {
-                                        <span class="text-danger d-block mt-1">@TempData["ConfirmPasswordError"]</span>
-                                    }
-                                </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="ConfirmPassword" class="form-label">
+                                    <i class="bi bi-key-fill text-primary"></i>
+                                    Konfirmo Fjalëkalimin
+                                </label>
+                                <input type="password" name="ConfirmPassword" id="ConfirmPassword" class="form-control"
+                                       placeholder="Përsërit fjalëkalimin e ri" />
+                                @if (TempData["ConfirmPasswordError"] != null)
+                                {
+                                    <span class="text-danger d-block mt-1">@TempData["ConfirmPasswordError"]</span>
+                                }
                             </div>
                         </div>
                     </div>
                 </div>
 
+                @* ===== PERSONALE ===== *@
                 <div class="card shadow-sm mb-4">
                     <div class="card-header bg-success text-white">
                         <h5 class="mb-0">
@@ -112,33 +101,29 @@
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label asp-for="FirstName" class="form-label">Emri <span class="text-danger">*</span></label>
-                                    <input asp-for="FirstName" class="form-control" />
-                                    <span asp-validation-for="FirstName" class="text-danger"></span>
-                                </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="FirstName" class="form-label">
+                                    Emri <span class="text-danger">*</span>
+                                </label>
+                                <input asp-for="FirstName" class="form-control" />
+                                <span asp-validation-for="FirstName" class="text-danger"></span>
                             </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label asp-for="LastName" class="form-label">Mbiemri <span class="text-danger">*</span></label>
-                                    <input asp-for="LastName" class="form-control" />
-                                    <span asp-validation-for="LastName" class="text-danger"></span>
-                                </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="LastName" class="form-label">
+                                    Mbiemri <span class="text-danger">*</span>
+                                </label>
+                                <input asp-for="LastName" class="form-control" />
+                                <span asp-validation-for="LastName" class="text-danger"></span>
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label asp-for="Position" class="form-label">Pozicioni</label>
-                                    <input asp-for="Position" class="form-control" />
-                                </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Position" class="form-label">Pozicioni</label>
+                                <input asp-for="Position" class="form-control" />
                             </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label asp-for="Department" class="form-label">Departmenti</label>
-                                    <input asp-for="Department" class="form-control" />
-                                </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Department" class="form-label">Departmenti</label>
+                                <input asp-for="Department" class="form-control" />
                             </div>
                         </div>
                         <div class="mb-3">
@@ -148,6 +133,7 @@
                     </div>
                 </div>
 
+                @* ===== ROLI DHE STATUSI ===== *@
                 <div class="card shadow-sm mb-4">
                     <div class="card-header bg-warning text-dark">
                         <h5 class="mb-0">
@@ -157,16 +143,35 @@
                     </div>
                     <div class="card-body">
                         <div class="mb-3">
-                            <label asp-for="Role" class="form-label">Roli në Sistem <span class="text-danger">*</span></label>
-                            <select asp-for="Role" class="form-select" id="roleSelect" asp-items="Html.GetEnumSelectList<eProtokoll.Models.Users.UserRole>()">
+                            <label asp-for="Role" class="form-label">
+                                Roli në Sistem <span class="text-danger">*</span>
+                            </label>
+                            <select asp-for="Role" class="form-select"
+                                    asp-items="Html.GetEnumSelectList<eProtokoll.Models.Users.UserRole>()">
                                 <option value="">-- Zgjidh Rolin --</option>
                             </select>
                         </div>
 
-                        <div id="roleDescription" class="alert alert-light border shadow-sm" style="display: none;">
-                            <strong id="roleTitle"></strong>
-                            <p id="roleDetails" class="mb-0 mt-2 small"></p>
-                        </div>
+                        @* Përshkrimi statik i rolit aktual — shfaqet vetëm pas POST *@
+                        @{
+                            string roleAlertClass = Model.Role switch
+                            {
+                                Users.UserRole.Administrator => "alert-danger",
+                                Users.UserRole.Manager => "alert-warning",
+                                Users.UserRole.Employee => "alert-success",
+                                _ => "alert-light"
+                            };
+                            string roleIcon = Model.Role switch
+                            {
+                                Users.UserRole.Administrator => "👑 Administrator",
+                                Users.UserRole.Manager => "📋 Menaxher",
+                                Users.UserRole.Employee => "👤 Punonjës",
+                                _ => ""
+                            };
+
+                        }
+
+
 
                         <div class="form-check form-switch mt-3">
                             <input asp-for="IsActive" class="form-check-input" type="checkbox" />
@@ -175,6 +180,7 @@
                     </div>
                 </div>
 
+                @* ===== DATA ===== *@
                 @if (Model.CreatedDate != default || Model.ModifiedDate.HasValue)
                 {
                     <div class="card shadow-sm mb-4 bg-light">
@@ -197,7 +203,6 @@
                     </div>
                 }
 
-
                 <div class="d-flex justify-content-between mb-5">
                     <a asp-action="Index" class="btn btn-outline-secondary">
                         <i class="bi bi-arrow-left me-1"></i> Kthehu
@@ -209,114 +214,5 @@
             </form>
         </div>
 
-        <div class="col-lg-4">
-            <div class="card shadow-sm border-primary">
-                <div class="card-header bg-primary text-white">Udhëzime</div>
-                <div class="card-body small">
-                    <p><strong>ID e përdoruesit:</strong><br><code class="text-break">@Model.Id</code></p>
-                    <hr>
-                    <p><i class="bi bi-info-circle text-primary"></i> <strong>Ndryshimi i Fjalëkalimit:</strong> Plotësoni fushat e fjalëkalimit vetëm nëse dëshironi ta ndryshoni atë për këtë përdorues.</p>
-                    <p><i class="bi bi-exclamation-triangle text-warning"></i> <strong>Roli:</strong> Ndryshimi i rolit ndikon menjëherë në aksesin që përdoruesi ka në module të ndryshme.</p>
-                </div>
-            </div>
-        </div>
     </div>
 </div>
-
-@section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
-
-    <script>
-        $(document).ready(function() {
-            // Trigger role description on load
-            if ($('#roleSelect').val()) {
-                $('#roleSelect').trigger('change');
-            }
-
-            // Password Visibility
-            $('#togglePassword').on('click', function() {
-                const pass = $('#Password');
-                const icon = $('#eyeIcon');
-                if (pass.attr('type') === 'password') {
-                    pass.attr('type', 'text');
-                    icon.removeClass('bi-eye').addClass('bi-eye-slash');
-                } else {
-                    pass.attr('type', 'password');
-                    icon.removeClass('bi-eye-slash').addClass('bi-eye');
-                }
-            });
-
-            // Role Logic
-            $('#roleSelect').on('change', function() {
-                const role = $(this).val();
-                const box = $('#roleDescription');
-                const title = $('#roleTitle');
-                const details = $('#roleDetails');
-
-                if (role) {
-                    box.show();
-                    let htmlContent = '';
-
-                    if (role === '1') { // Admin
-                        title.text('👑 Administrator');
-                        box.removeClass().addClass('alert alert-danger border');
-                        htmlContent = 'Akses i plotë në të gjitha funksionet e sistemit, përfshirë menaxhimin e përdoruesve dhe konfigurimet.';
-                    } else if (role === '2') { // Manager
-                        title.text('📋 Menaxher');
-                        box.removeClass().addClass('alert alert-warning border');
-                        htmlContent = 'Mund të menaxhojë dokumentet, të caktojë detyra dhe të miratojë kërkesat e protokollit.';
-                    } else if (role === '3') { // Employee
-                        title.text('👤 Punonjës');
-                        box.removeClass().addClass('alert alert-success border');
-                        htmlContent = 'Akses i kufizuar. Mund të shikojë dhe të punojë vetëm me dokumentet ku është i përfshirë.';
-                    }
-                    details.html(htmlContent);
-                } else {
-                    box.hide();
-                }
-            });
-
-            // Password Strength (Optional check)
-            $('#Password').on('input', function() {
-                const val = $(this).val();
-                $('.pass-msg').remove();
-                if(val.length > 0 && val.length < 6) {
-                    $(this).after('<small class="pass-msg text-danger d-block">Fjalëkalimi është shumë i shkurtër!</small>');
-                }
-            });
-
-            // Form Submit Check
-            $('form').on('submit', function(e) {
-                const p1 = $('#Password').val();
-                const p2 = $('#ConfirmPassword').val();
-                if (p1 && p1 !== p2) {
-                    e.preventDefault();
-                    alert('Fjalëkalimet e reja nuk përputhen!');
-                }
-            });
-        });
-    </script>
-}
-
-@section Styles {
-    <style>
-        .form-control:focus {
-            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
-        }
-
-        .breadcrumb-item a {
-            text-decoration: none;
-        }
-
-        .card {
-            border: none;
-            border-radius: 10px;
-        }
-
-        .card-header {
-            border-radius: 10px 10px 0 0 !important;
-        }
-    </style>
-}

@@ -17,8 +17,14 @@ namespace eProtokoll.Areas.Admin.Controllers
         }
 
         // GET: Admin/Report
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int? year)
         {
+            int selectedYear = year ?? DateTime.Now.Year;
+
+            var monthlyData = await _reportRepository.GetMonthlyDocumentCountsAsync(selectedYear);
+            int maxCount = monthlyData.Any() ? monthlyData.Max(m => m.Count) : 1;
+            if (maxCount == 0) maxCount = 1;
+
             var viewModel = new ReportDashboardViewModel
             {
                 // Dokumentet
@@ -26,34 +32,22 @@ namespace eProtokoll.Areas.Admin.Controllers
                 TotalIncomingDocuments = await _reportRepository.GetTotalByDiscriminatorAsync("IncomingDocument"),
                 TotalOutgoingDocuments = await _reportRepository.GetTotalByDiscriminatorAsync("OutgoingDocument"),
                 TotalInternalDocuments = await _reportRepository.GetTotalByDiscriminatorAsync("InternalDocument"),
-
                 // Institucionet
                 TotalInstitutions = await _reportRepository.GetTotalInstitutionsAsync(),
                 ActiveInstitutions = await _reportRepository.GetActiveInstitutionsAsync(),
-
-                // Prioriteti
-                LowPriorityDocuments = await _reportRepository.GetTotalByPriorityAsync(Priority.Low),
-                NormalPriorityDocuments = await _reportRepository.GetTotalByPriorityAsync(Priority.Normal),
-                HighPriorityDocuments = await _reportRepository.GetTotalByPriorityAsync(Priority.High),
-
                 // Kohore
                 CurrentMonthDocuments = await _reportRepository.GetCurrentMonthDocumentsAsync(),
                 CurrentWeekDocuments = await _reportRepository.GetCurrentWeekDocumentsAsync(),
                 TodayDocuments = await _reportRepository.GetTodayDocumentsAsync(),
-
-                // Tracking
-                ActiveTrackings = await _reportRepository.GetActiveTrackingsAsync(),
-                CompletedTrackings = await _reportRepository.GetCompletedTrackingsAsync()
+                // TE REJA
+                MonthlyData = monthlyData,
+                MaxMonthlyCount = maxCount,
+                SelectedYear = selectedYear,
+                TopInstitutions = await _reportRepository.GetTopInstitutionsAsync(5),
+                TopUsers = await _reportRepository.GetTopUsersAsync(5)
             };
 
             return View(viewModel);
-        }
-
-        // GET: Admin/Report/AuditLog
-        public async Task<IActionResult> AuditLog()
-        {
-            var auditLogs = await _reportRepository.GetAuditLogAsync();
-            return View(auditLogs);
         }
     }
 
@@ -65,23 +59,19 @@ namespace eProtokoll.Areas.Admin.Controllers
         public int TotalIncomingDocuments { get; set; }
         public int TotalOutgoingDocuments { get; set; }
         public int TotalInternalDocuments { get; set; }
-
         // Institucionet
         public int TotalInstitutions { get; set; }
         public int ActiveInstitutions { get; set; }
-
-        // Prioriteti
-        public int LowPriorityDocuments { get; set; }
-        public int NormalPriorityDocuments { get; set; }
-        public int HighPriorityDocuments { get; set; }
-
+      
         // Kohore
         public int CurrentMonthDocuments { get; set; }
         public int CurrentWeekDocuments { get; set; }
         public int TodayDocuments { get; set; }
-
-        // Tracking
-        public int ActiveTrackings { get; set; }
-        public int CompletedTrackings { get; set; }
+        // TE REJA
+        public List<MonthlyDocumentCount> MonthlyData { get; set; } = new();
+        public int MaxMonthlyCount { get; set; } = 1;
+        public int SelectedYear { get; set; } = DateTime.Now.Year;
+        public List<TopInstitution> TopInstitutions { get; set; } = new();
+        public List<TopUser> TopUsers { get; set; } = new();
     }
 }

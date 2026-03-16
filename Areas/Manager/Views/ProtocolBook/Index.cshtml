@@ -18,38 +18,6 @@
             <p class="text-muted">Regjistri i plotë i të gjitha dokumenteve</p>
         </div>
     </div>
-    <!-- Statistics -->
-    <div class="row mb-4">
-        <div class="col">
-            <div class="card shadow-sm">
-                <div class="card-body py-2">
-                    <div class="row text-center">
-                        <div class="col">
-                            <h3 class="mb-0">@ViewBag.TotalDocuments</h3>
-                            <small class="text-muted">Total</small>
-                        </div>
-                        <div class="col border-start">
-                            <h3 class="mb-0 text-primary">@ViewBag.TodayDocuments</h3>
-                            <small class="text-primary">Sot</small>
-                        </div>
-                        <div class="col border-start">
-                            <h3 class="mb-0 text-info">@ViewBag.IncomingCount</h3>
-                            <small class="text-info">Hyrëse</small>
-                        </div>
-                        <div class="col border-start">
-                            <h3 class="mb-0 text-success">@ViewBag.OutgoingCount</h3>
-                            <small class="text-success">Dalëse</small>
-                        </div>
-                        <div class="col border-start">
-                            <h3 class="mb-0 text-warning">@ViewBag.InternalCount</h3>
-                            <small class="text-warning">Brendshme</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Protocol Book Table -->
     <div class="card shadow-sm">
         <div class="card-header bg-white">
@@ -68,7 +36,6 @@
                                 <th style="width:30%">Subjekti</th>
                                 <th style="width:10%">Data</th>
                                 <th style="width:10%">Klasifikimi</th>
-                                <th style="width:8%">Statusi</th>
                                 <th style="width:10%">Krijuar Nga</th>
                                 <th style="width:5%">Veprime</th>
                             </tr>
@@ -103,22 +70,7 @@
                                     <td>
                                         <div class="text-truncate" style="max-width:400px" title="@doc.Subject">@doc.Subject</div>
                                     </td>
-                                    <td><small>@doc.ProtocolDate.ToString("dd/MM/yyyy")<br/>@doc.ProtocolTime.ToString(@"hh\:mm")</small></td>
-                                    <td><small>@Html.DisplayFor(_ => doc.Classification)</small></td>                                    
-                                    <td>
-                                        @switch (doc.Status)
-                                        {
-                                            case DocumentStatus.Registered:
-                                               <span class="badge bg-info">Protokolluar</span> 
-                                                    break;
-                                            case DocumentStatus.InProgress: 
-                                                <span class="badge bg-primary">Në Proces</span>
-                                                    break;
-                                            default: 
-                                                <span class="badge bg-secondary">@doc.Status</span>
-                                                    break;
-                                        }
-                                    </td>
+                                    <td><small>@doc.CreatedDate.ToString("dd/MM/yyyy")<br/>@doc.CreatedDate.ToString("HH:mm")</small></td>                                    <td><small>@Html.DisplayFor(_ => doc.Classification)</small></td>                                    
                                     <td><small>@doc.Creator?.FullName</small></td>
                                     <td>
                                         <a asp-action="Details" asp-route-id="@doc.DocumentId" asp-route-type="@doc.DocumentType.ToString()"

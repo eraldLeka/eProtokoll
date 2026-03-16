@@ -47,30 +47,6 @@
 
     <div class="row">
         <div class="col-12">
-
-            <!-- PROTOKOLLI -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-warning text-dark">
-                    <h5 class="mb-0"><i class="bi bi-hash"></i> Protokolli</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-4">
-                            <small class="text-muted">Numri i Protokollit</small>
-                            <h5 class="text-warning">@Model.ProtocolNumber</h5>
-                        </div>
-                        <div class="col-md-4">
-                            <small class="text-muted">Data e Protokollimit</small>
-                            <h6><i class="bi bi-calendar"></i> @Model.ProtocolDate.ToString("dd/MM/yyyy")</h6>
-                        </div>
-                        <div class="col-md-4">
-                            <small class="text-muted">Ora e Protokollimit</small>
-                            <h6><i class="bi bi-clock"></i> @Model.ProtocolTime.ToString(@"hh\:mm")</h6>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <!-- QARKULLIMI -->
             <div class="card shadow-sm mb-4">
                 <div class="card-header bg-info text-white">
@@ -192,9 +168,11 @@
                     </div>
                     <div class="card-body p-0">
                         <div class="list-group list-group-flush">
-                            @foreach (var att in Model.Attachments.OrderBy(a => a.DisplayOrder))
+
+                            @foreach (var att in Model.Attachments)
                             {
                                 <div class="list-group-item d-flex align-items-center">
+
                                     <div class="me-3">
                                         @if (att.FileExtension == ".pdf")
                                         {
@@ -217,30 +195,36 @@
                                             <i class="bi bi-file-fill text-secondary" style="font-size:2rem;"></i>
                                         }
                                     </div>
+
                                     <div class="flex-grow-1">
+
                                         <h6 class="mb-1">
                                             @att.OriginalFileName
-                                            @if (att.IsPrimaryDocument)
-                                            {
-                                                <span class="badge bg-warning text-dark ms-2">Kryesor</span>
-                                            }
                                         </h6>
+
                                         <small class="text-muted">
                                             @att.FileSizeMB MB |
                                             Ngarkuar: @att.UploadedDate.ToString("dd/MM/yyyy HH:mm") |
-                                            Nga: @(Model.Creator?.FullName)
+                                            Nga: @(Model.Creator?.FullName ?? "N/A")
                                         </small>
+
                                     </div>
+
                                     <div class="btn-group btn-group-sm">
+
                                         <a href="@att.FilePath" target="_blank" class="btn btn-outline-primary">
                                             <i class="bi bi-eye"></i> Shiko
                                         </a>
+
                                         <a href="@att.FilePath" download class="btn btn-outline-success">
                                             <i class="bi bi-download"></i>
                                         </a>
+
                                     </div>
+
                                 </div>
                             }
+
                         </div>
                     </div>
                 </div>

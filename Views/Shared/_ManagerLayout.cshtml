@@ -131,11 +131,17 @@
 
                 <!-- Logout -->
                 <li class="nav-item">
-                    <form asp-controller="Account" asp-action="Logout" method="post">
+                    <form asp-area=""
+                          asp-controller="Account"
+                          asp-action="Logout"
+                          method="post">
+
                         @Html.AntiForgeryToken()
+
                         <button type="submit" class="btn btn-outline-light btn-sm">
                             <i class="bi bi-box-arrow-right"></i> Dilni
                         </button>
+
                     </form>
                 </li>
 

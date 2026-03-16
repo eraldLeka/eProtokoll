@@ -1,5 +1,6 @@
 ﻿using eProtokoll.Models;
 using eProtokoll.Helpers;
+using eProtokoll.Repositories.AuditLogs;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
@@ -12,11 +13,16 @@ namespace eProtokoll.Controllers
     public class AccountController : Controller
     {
         private readonly IUserRepository _userRepository;
+        private readonly IAuditLogRepository _auditLogRepository;
 
-        public AccountController(IUserRepository userRepository)
+        public AccountController(
+            IUserRepository userRepository,
+            IAuditLogRepository auditLogRepository)
         {
             _userRepository = userRepository;
+            _auditLogRepository = auditLogRepository;
         }
+
         // GET: Login
         [AllowAnonymous]
         public IActionResult Login(string? returnUrl = null)
@@ -42,7 +48,6 @@ namespace eProtokoll.Controllers
                 return View();
             }
 
-            // Merr përdoruesin nga databaza
             var user = await _userRepository.GetByUsernameAsync(username);
 
             if (user == null || !PasswordHelper.Verify(password, user.PasswordHash))
@@ -66,52 +71,64 @@ namespace eProtokoll.Controllers
                 new Claim(ClaimTypes.Role, user.Role.ToString())
             };
 
-            var identity = new ClaimsIdentity(
-                claims,
-                CookieAuthenticationDefaults.AuthenticationScheme);
-
+            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var principal = new ClaimsPrincipal(identity);
-
-            var authProperties = new AuthenticationProperties
-            {
-                IsPersistent = false
-            };
+            var authProperties = new AuthenticationProperties { IsPersistent = false };
 
             await HttpContext.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme,
                 principal,
                 authProperties);
 
-            // ReturnUrl
+            // Regjistro Login në Audit Log
+            await _auditLogRepository.LogAsync(new AuditLog
+            {
+                UserId = user.Id,
+                UserName = user.UserName,
+                Action = "Login",
+                Description = $"Hyrje në sistem nga roli {user.Role}",
+                Timestamp = DateTime.Now
+            });
+
             if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                 return Redirect(returnUrl);
 
-            // Redirect sipas rolit
             return user.Role switch
             {
                 Users.UserRole.Administrator =>
                     RedirectToAction("Index", "Dashboard", new { area = "Admin" }),
-
                 Users.UserRole.Manager =>
                     RedirectToAction("Index", "Dashboard", new { area = "Manager" }),
-
                 _ =>
                     RedirectToAction("Index", "Dashboard", new { area = "Employee" })
             };
         }
-        
-        // POST: Logout
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
-            await HttpContext.SignOutAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme);
+            // Merr të dhënat para SignOut
+            var userId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
+            var userName = User.Identity?.Name ?? "Unknown";
 
-            HttpContext.Session.Clear();
+            // Regjistro Logout në Audit Log
+            if (userId > 0)
+            {
+                await _auditLogRepository.LogAsync(new AuditLog
+                {
+                    UserId = userId,
+                    UserName = userName,
+                    Action = "Logout",
+                    Description = "Dalje nga sistemi",
+                    Timestamp = DateTime.Now
+                });
+            }
 
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return RedirectToAction("Login", "Account");
         }
+
         // Access Denied
         [AllowAnonymous]
         public IActionResult AccessDenied()

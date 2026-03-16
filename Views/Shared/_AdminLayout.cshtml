@@ -119,11 +119,17 @@
 
                 <!-- Logout -->
                 <li class="nav-item">
-                    <form asp-controller="Account" asp-action="Logout" method="post">
+                    <form asp-area=""
+                          asp-controller="Account"
+                          asp-action="Logout"
+                          method="post">
+
                         @Html.AntiForgeryToken()
+
                         <button type="submit" class="btn btn-outline-light btn-sm">
                             <i class="bi bi-box-arrow-right"></i> Dilni
                         </button>
+
                     </form>
                 </li>
 
@@ -177,27 +183,6 @@
                     </li>
 
                 </ul>
-
-
-                <h6 class="sidebar-heading px-3 mt-4 mb-1 text-muted">
-                    CILËSIMET
-                </h6>
-
-                <ul class="nav flex-column">
-
-                    <li class="nav-item">
-                        <a class="nav-link"
-                           asp-area="Admin"
-                           asp-controller="Settings"
-                           asp-action="ProtocolSettings">
-                            <i class="bi bi-file-earmark-ruled"></i>
-                            Cilësimet e Protokollit
-                        </a>
-                    </li>
-
-                </ul>
-
-
                 <h6 class="sidebar-heading px-3 mt-4 mb-1 text-muted">
                     RAPORTE
                 </h6>
@@ -217,8 +202,8 @@
                     <li class="nav-item">
                         <a class="nav-link"
                            asp-area="Admin"
-                           asp-controller="Report"
-                           asp-action="AuditLog">
+                           asp-controller="AuditLog"
+                           asp-action="Index">
                             <i class="bi bi-journal-text"></i>
                             Log i Aktiviteteve
                         </a>

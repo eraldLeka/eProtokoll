@@ -76,16 +76,6 @@
                                     <span asp-validation-for="Type" class="text-danger"></span>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label asp-for="TaxCode" class="form-label">
-                                        <i class="bi bi-hash text-primary"></i>
-                                        NIPT/Kodi Fiskal
-                                    </label>
-                                    <input asp-for="TaxCode" class="form-control" placeholder="p.sh. K12345678A" />
-                                    <span asp-validation-for="TaxCode" class="text-danger"></span>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -109,16 +99,6 @@
                         </div>
 
                         <div class="row">
-                            <div class="col-md-5">
-                                <div class="mb-3">
-                                    <label asp-for="City" class="form-label">
-                                        <i class="bi bi-pin-map text-info"></i>
-                                        Qyteti
-                                    </label>
-                                    <input asp-for="City" class="form-control" placeholder="p.sh. Tiranë" />
-                                    <span asp-validation-for="City" class="text-danger"></span>
-                                </div>
-                            </div>
                             <div class="col-md-3">
                                 <div class="mb-3">
                                     <label asp-for="PostalCode" class="form-label">
@@ -135,7 +115,7 @@
                                         <i class="bi bi-flag text-info"></i>
                                         Shteti
                                     </label>
-                                    <input asp-for="Country" class="form-control" value="Albania" />
+                                    <input asp-for="Country" class="form-control" />
                                     <span asp-validation-for="Country" class="text-danger"></span>
                                 </div>
                             </div>
@@ -161,16 +141,6 @@
                                     </label>
                                     <input asp-for="Phone" class="form-control" placeholder="+355 4 123 4567" />
                                     <span asp-validation-for="Phone" class="text-danger"></span>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label asp-for="Fax" class="form-label">
-                                        <i class="bi bi-printer text-success"></i>
-                                        Faksi
-                                    </label>
-                                    <input asp-for="Fax" class="form-control" placeholder="+355 4 123 4568" />
-                                    <span asp-validation-for="Fax" class="text-danger"></span>
                                 </div>
                             </div>
                             <div class="col-md-4">
@@ -231,16 +201,6 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label asp-for="ContactPhone" class="form-label">
-                                        <i class="bi bi-phone text-warning"></i>
-                                        Telefoni i Kontaktit
-                                    </label>
-                                    <input asp-for="ContactPhone" class="form-control" placeholder="+355 69 123 4567" />
-                                    <span asp-validation-for="ContactPhone" class="text-danger"></span>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
                                     <label asp-for="ContactEmail" class="form-label">
                                         <i class="bi bi-envelope text-warning"></i>
                                         Email i Kontaktit
@@ -249,34 +209,6 @@
                                     <span asp-validation-for="ContactEmail" class="text-danger"></span>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Shënime dhe Statusi -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-secondary text-white">
-                        <h5 class="mb-0">
-                            <i class="bi bi-card-text me-2"></i>
-                            Shënime dhe Statusi
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label asp-for="Notes" class="form-label">
-                                <i class="bi bi-sticky text-secondary"></i>
-                                Shënime
-                            </label>
-                            <textarea asp-for="Notes" class="form-control" rows="3" placeholder="Shënime shtesë për institucionin..."></textarea>
-                            <span asp-validation-for="Notes" class="text-danger"></span>
-                        </div>
-
-                        <div class="form-check form-switch">
-                            <input asp-for="IsActive" class="form-check-input" type="checkbox" checked />
-                            <label asp-for="IsActive" class="form-check-label">
-                                <i class="bi bi-toggle-on text-success"></i>
-                                Aktiv (mund të përdoret në dokumente)
-                            </label>
                         </div>
                     </div>
                 </div>
@@ -299,7 +231,7 @@
             </form>
         </div>
 
-        <!-- Sidebar me informacion -->
+        <!-- Sidebar -->
         <div class="col-lg-4">
             <div class="card shadow-sm mb-4 border-primary">
                 <div class="card-header bg-primary text-white">
@@ -313,8 +245,8 @@
                         <i class="bi bi-lightbulb-fill"></i> Llojet e Institucioneve
                     </h6>
                     <ul class="small">
-                        <li class="mb-2"><strong>Shteteror:</strong> Institucione qeveritare</li>
-                        <li class="mb-2"><strong>Bashki/Komune:</strong> Njësi vendore</li>
+                        <li class="mb-2"><strong>Shtetëror:</strong> Institucione qeveritare</li>
+                        <li class="mb-2"><strong>Bashki/Komunë:</strong> Njësi vendore</li>
                         <li class="mb-2"><strong>Ministri:</strong> Ministritë qendrore</li>
                         <li class="mb-2"><strong>Private:</strong> Kompani private</li>
                         <li class="mb-2"><strong>OJF/OJQ:</strong> Organizata joqeveritare</li>
@@ -324,18 +256,14 @@
                         <li class="mb-2"><strong>Media:</strong> Gazeta, TV, radio</li>
                         <li class="mb-2"><strong>Tjetër:</strong> Kategori të tjera</li>
                     </ul>
-
                     <hr />
-
                     <h6 class="text-primary">
                         <i class="bi bi-check-circle"></i> Fusha të Detyrueshme
                     </h6>
                     <p class="small text-muted mb-2">
                         Vetëm <strong>Emri</strong> dhe <strong>Lloji</strong> janë të detyrueshme. Fushat e tjera mund të shtohen më vonë.
                     </p>
-
                     <hr />
-
                     <h6 class="text-primary">
                         <i class="bi bi-person-vcard"></i> Personi i Kontaktit
                     </h6>
@@ -357,124 +285,3 @@
         </div>
     </div>
 </div>
-
-@section Scripts {
-    <script>
-        $(document).ready(function() {
-            $('#Type').on('change', function() {
-                var type = $(this).val();
-                var description = '';
-
-                switch(type) {
-                    case '1': description = 'Institucione të administratës shtetërore'; break;
-                    case '2': description = 'Bashki dhe komuna të vendit'; break;
-                    case '3': description = 'Ministritë qendrore'; break;
-                    case '4': description = 'Kompani dhe shoqëri private'; break;
-                    case '5': description = 'Organizata joqeveritare dhe jofitimprurëse'; break;
-                    case '6': description = 'Organizata dhe institucione ndërkombëtare'; break;
-                    case '7': description = 'Shkolla, universitete dhe institucione arsimore'; break;
-                    case '8': description = 'Spitale, klinika dhe institucione shëndetësore'; break;
-                    case '9': description = 'Gazeta, televizione, radio dhe media të tjera'; break;
-                    case '10': description = 'Institucione që nuk përfshihen në kategoritë e tjera'; break;
-                }
-
-                if (description) {
-                    $('.text-info').remove();
-                    $('#Type').parent().append('<small class="text-info d-block mt-1"><i class="bi bi-info-circle"></i> ' + description + '</small>');
-                }
-            });
-
-            $('#Name').on('blur', function() {
-                var fullName = $(this).val();
-                var shortName = $('#ShortName').val();
-
-                if (!shortName && fullName) {
-                    var words = fullName.split(' ');
-                    var acronym = words.map(function(word) {
-                        return word.charAt(0).toUpperCase();
-                    }).join('');
-                    $('#ShortName').val(acronym.substring(0, 5));
-                }
-            });
-
-            $('#Email, #ContactEmail').on('blur', function() {
-                var email = $(this).val();
-                var emailRegex = /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/;
-
-                if (email && !emailRegex.test(email)) {
-                    $(this).addClass('is-invalid');
-                } else {
-                    $(this).removeClass('is-invalid');
-                }
-            });
-
-            $('#Phone, #Fax, #ContactPhone').on('input', function() {
-                var value = $(this).val().replace(/\D/g, '');
-
-                if (value.startsWith('355')) {
-                    if (value.length > 3) {
-                        value = '+355 ' + value.substring(3);
-                    }
-                }
-                $(this).val(value);
-            });
-
-            $('#Website').on('blur', function() {
-                var url = $(this).val();
-                if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
-                    $(this).val('https://' + url);
-                }
-            });
-
-            $('form').on('submit', function(e) {
-                var name = $('#Name').val().trim();
-                var type = $('#Type').val();
-
-                if (!name) {
-                    e.preventDefault();
-                    alert('Ju lutem shkruani emrin e institucionit!');
-                    $('#Name').focus();
-                    return false;
-                }
-
-                if (!type) {
-                    e.preventDefault();
-                    alert('Ju lutem zgjidhni llojin e institucionit!');
-                    $('#Type').focus();
-                    return false;
-                }
-            });
-        });
-    </script>
-}
-
-@section Styles {
-    <style>
-        .form-check-input:checked {
-            background-color: #0d6efd;
-            border-color: #0d6efd;
-        }
-
-        .card-header {
-            font-weight: 600;
-        }
-
-        .form-label {
-            font-weight: 500;
-            margin-bottom: 0.5rem;
-        }
-
-        .alert {
-            border-left: 4px solid;
-        }
-
-        .is-invalid {
-            border-color: #dc3545;
-        }
-
-        .form-control:focus {
-            border-color: #80bdff;
-            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-        }
-    </style>
-}

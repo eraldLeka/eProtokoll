@@ -69,7 +69,7 @@
                     </a>
                 </div>
                 <div class="card-body p-0">
-                    @if (ViewBag.RecentDocuments != null && ((IEnumerable<Document>)ViewBag.RecentDocuments).Any())
+                    @if (ViewBag.RecentDocuments != null && ((List<Document>)ViewBag.RecentDocuments).Any())
                     {
                         <div class="table-responsive">
                             <table class="table table-hover align-middle mb-0">
@@ -83,7 +83,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach (var doc in (IEnumerable<Document>)ViewBag.RecentDocuments)
+                                    @foreach (var doc in (List<Document>)ViewBag.RecentDocuments)
                                     {
                                         <tr>
                                             <td><strong>@doc.ProtocolNumber</strong></td>

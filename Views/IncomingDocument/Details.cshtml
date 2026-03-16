@@ -31,45 +31,12 @@
             </h2>
             <div class="d-flex gap-2 flex-wrap">
                 <span class="badge bg-info fs-6">@Model.ProtocolNumber</span>
-
-                @switch (Model.Status)
-                {
-                    case DocumentStatus.Registered:
-                        <span class="badge bg-primary fs-6">Protokolluar</span>
-                         break;
-                    case DocumentStatus.InProgress:
-                        <span class="badge bg-warning text-dark fs-6">Në Proces</span>
-                         break;
-                }
             </div>
         </div>
     </div>
 
     <div class="row">
         <div class="col-12">
-
-            <!-- PROTOKOLLI -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-info text-white">
-                    <h5 class="mb-0"><i class="bi bi-hash"></i> Protokolli</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-4">
-                            <small class="text-muted">Numri i Protokollit</small>
-                            <h5 class="text-info">@Model.ProtocolNumber</h5>
-                        </div>
-                        <div class="col-md-4">
-                            <small class="text-muted">Data e Protokollimit</small>
-                            <h6><i class="bi bi-calendar"></i> @Model.ProtocolDate.ToString("dd/MM/yyyy")</h6>
-                        </div>
-                        <div class="col-md-4">
-                            <small class="text-muted">Ora e Protokollimit</small>
-                            <h6><i class="bi bi-clock"></i> @Model.ProtocolTime.ToString(@"hh\:mm")</h6>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             <!-- INFORMACIONI I DËRGUESIT -->
             <div class="card shadow-sm mb-4">
@@ -123,48 +90,31 @@
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-3 mb-3">
+                        <div class="col-md-4 mb-3">
                             <small class="text-muted">Klasifikimi</small>
                             <h6>
                                 <i class="bi bi-shield-lock text-warning"></i>
                                 @Html.DisplayFor(model => model.Classification)
                             </h6>
                         </div>
-                        <div class="col-md-3 mb-3">
-                            <small class="text-muted">Statusi</small>
-                            <h6>
-                                @switch (Model.Status)
-                                {
-                                    case DocumentStatus.Registered:
-                                        <span class="badge bg-primary">Protokolluar</span>
-                                        break;
-                                    case DocumentStatus.InProgress:
-                                        <span class="badge bg-warning text-dark">Në Proces</span>
-                                         break;
-                                    default:
-                                        <span class="badge bg-secondary">@Model.Status</span>
-                                         break;
-                                }
-                            </h6>
-                        </div>
-                        <div class="col-md-3 mb-3">
+                        <div class="col-md-4 mb-3">
                             <small class="text-muted">Prioriteti</small>
                             <h6>
                                 @switch (Model.Priority)
                                 {
                                     case Priority.High:
                                         <span class="badge bg-warning text-dark">I Lartë</span>
-                                         break;
+                                        break;
                                     case Priority.Normal:
                                         <span class="badge bg-info">Normal</span>
-                                         break;
+                                        break;
                                     case Priority.Low:
                                         <span class="badge bg-secondary">I Ulët</span>
-                                         break;
+                                        break;
                                 }
                             </h6>
                         </div>
-                        <div class="col-md-3 mb-3">
+                        <div class="col-md-4 mb-3">
                             <small class="text-muted">Bashkëngjitje</small>
                             <h6>
                                 @if (Model.HasAttachments && Model.Attachments != null && Model.Attachments.Any())
@@ -195,10 +145,13 @@
                     </div>
                     <div class="card-body p-0">
                         <div class="list-group list-group-flush">
-                            @foreach (var att in Model.Attachments.OrderBy(a => a.DisplayOrder))
+
+                            @foreach (var att in Model.Attachments)
                             {
                                 <div class="list-group-item d-flex align-items-center">
+
                                     <div class="me-3">
+
                                         @if (att.FileExtension == ".pdf")
                                         {
                                             <i class="bi bi-file-pdf-fill text-danger" style="font-size:2rem;"></i>
@@ -219,35 +172,43 @@
                                         {
                                             <i class="bi bi-file-fill text-secondary" style="font-size:2rem;"></i>
                                         }
+
                                     </div>
+
                                     <div class="flex-grow-1">
+
                                         <h6 class="mb-1">
                                             @att.OriginalFileName
-                                            @if (att.IsPrimaryDocument)
-                                            {
-                                                <span class="badge bg-primary ms-2">Kryesor</span>
-                                            }
                                         </h6>
+
                                         <small class="text-muted">
                                             @att.FileSizeMB MB |
                                             Ngarkuar: @att.UploadedDate.ToString("dd/MM/yyyy HH:mm") |
-                                            Nga: @(Model.Creator!.FullName)
+                                            Nga: @(Model.Creator?.FullName ?? "N/A")
                                         </small>
+
                                     </div>
+
                                     <div class="btn-group btn-group-sm">
+
                                         <a href="@att.FilePath" target="_blank" class="btn btn-outline-primary">
                                             <i class="bi bi-eye"></i> Shiko
                                         </a>
+
                                         <a href="@att.FilePath" download class="btn btn-outline-success">
                                             <i class="bi bi-download"></i>
                                         </a>
+
                                     </div>
+
                                 </div>
                             }
+
                         </div>
                     </div>
                 </div>
             }
+
             <!-- SHËNIME -->
             @if (!string.IsNullOrEmpty(Model.Notes))
             {
@@ -272,6 +233,7 @@
                     </div>
                 </div>
             </div>
+
         </div>
     </div>
 </div>

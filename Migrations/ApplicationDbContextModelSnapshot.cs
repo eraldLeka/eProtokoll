@@ -22,6 +22,39 @@ namespace eProtokoll.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("eProtokoll.Models.AuditLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("DocumentId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AuditLogs");
+                });
+
             modelBuilder.Entity("eProtokoll.Models.Document", b =>
                 {
                     b.Property<int>("DocumentId")
@@ -36,7 +69,7 @@ namespace eProtokoll.Migrations
                     b.Property<string>("Content")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("CreatedBy")
+                    b.Property<int>("CreatedBy")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedDate")
@@ -46,6 +79,9 @@ namespace eProtokoll.Migrations
                         .IsRequired()
                         .HasMaxLength(21)
                         .HasColumnType("nvarchar(21)");
+
+                    b.Property<int>("DocumentNumber")
+                        .HasColumnType("int");
 
                     b.Property<int>("DocumentType")
                         .HasColumnType("int");
@@ -60,17 +96,6 @@ namespace eProtokoll.Migrations
                     b.Property<int>("Priority")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("ProtocolDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ProtocolNumber")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<TimeSpan>("ProtocolTime")
-                        .HasColumnType("time");
-
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
@@ -79,15 +104,18 @@ namespace eProtokoll.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<int>("Year")
+                        .HasColumnType("int");
+
                     b.HasKey("DocumentId");
 
                     b.HasIndex("CreatedBy");
 
                     b.HasIndex("DocumentType");
 
-                    b.HasIndex("ProtocolDate");
+                    b.HasIndex("Year");
 
-                    b.HasIndex("ProtocolNumber")
+                    b.HasIndex("DocumentNumber", "Year")
                         .IsUnique();
 
                     b.ToTable("Documents");
@@ -352,182 +380,6 @@ namespace eProtokoll.Migrations
                     b.ToTable("Institutions");
                 });
 
-            modelBuilder.Entity("eProtokoll.Models.ProtocolSettings", b =>
-                {
-                    b.Property<int>("ProtocolSettingsId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ProtocolSettingsId"));
-
-                    b.Property<bool>("AllowManualEdit")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("AutoResetYearly")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("ClosedBy")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime?>("ClosedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("FiscalYearEnd")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("FiscalYearStart")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("IncomingCurrentNumber")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("IncomingEndNumber")
-                        .HasColumnType("int");
-
-                    b.Property<string>("IncomingPrefix")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<int>("IncomingStartNumber")
-                        .HasColumnType("int");
-
-                    b.Property<string>("IncomingSuffix")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<string>("InstitutionAddress")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("InstitutionCode")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("InstitutionEmail")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("InstitutionName")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("InstitutionPhone")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<string>("InstitutionWebsite")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<int>("InternalCurrentNumber")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("InternalEndNumber")
-                        .HasColumnType("int");
-
-                    b.Property<string>("InternalPrefix")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<int>("InternalStartNumber")
-                        .HasColumnType("int");
-
-                    b.Property<string>("InternalSuffix")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsClosed")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("ModifiedBy")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime?>("ModifiedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int>("NumberPadding")
-                        .HasColumnType("int");
-
-                    b.Property<int>("OutgoingCurrentNumber")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("OutgoingEndNumber")
-                        .HasColumnType("int");
-
-                    b.Property<string>("OutgoingPrefix")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<int>("OutgoingStartNumber")
-                        .HasColumnType("int");
-
-                    b.Property<string>("OutgoingSuffix")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<string>("ProtocolNumberFormat")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<bool>("ShowYearInNumber")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("UseSeparatorSlash")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("Year")
-                        .HasColumnType("int");
-
-                    b.HasKey("ProtocolSettingsId");
-
-                    b.HasIndex("Year")
-                        .IsUnique();
-
-                    b.ToTable("ProtocolSettings");
-
-                    b.HasData(
-                        new
-                        {
-                            ProtocolSettingsId = 1,
-                            AllowManualEdit = false,
-                            AutoResetYearly = true,
-                            CreatedDate = new DateTime(2026, 3, 12, 15, 18, 50, 71, DateTimeKind.Local).AddTicks(6491),
-                            IncomingCurrentNumber = 1,
-                            IncomingPrefix = "H",
-                            IncomingStartNumber = 1,
-                            InternalCurrentNumber = 1,
-                            InternalPrefix = "B",
-                            InternalStartNumber = 1,
-                            IsActive = true,
-                            IsClosed = false,
-                            NumberPadding = 4,
-                            OutgoingCurrentNumber = 1,
-                            OutgoingPrefix = "D",
-                            OutgoingStartNumber = 1,
-                            ProtocolNumberFormat = "{PREFIX}-{NUMBER}/{YEAR}",
-                            ShowYearInNumber = true,
-                            UseSeparatorSlash = true,
-                            Year = 2026
-                        });
-                });
-
             modelBuilder.Entity("eProtokoll.Models.Users", b =>
                 {
                     b.Property<int>("Id")
@@ -714,7 +566,8 @@ namespace eProtokoll.Migrations
                     b.HasOne("eProtokoll.Models.Users", "Creator")
                         .WithMany("CreatedDocuments")
                         .HasForeignKey("CreatedBy")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("Creator");
                 });

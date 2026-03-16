@@ -93,11 +93,10 @@
                         <thead class="table-light">
                             <tr>
                                 <th style="width: 12%;">Nr. Protokolli</th>
-                                <th style="width: 30%;">Subjekti</th>
+                                <th style="width: 35%;">Subjekti</th>
                                 <th style="width: 18%;">Nga → Për</th>
-                                <th style="width: 10%;">Data</th>
+                                <th style="width: 12%;">Data</th>
                                 <th style="width: 12%;">Prioriteti</th>
-                                <th style="width: 10%;">Statusi</th>
                                 <th style="width: 8%;" class="text-end">Veprime</th>
                             </tr>
                         </thead>
@@ -107,10 +106,6 @@
                                 <tr>
                                     <td>
                                         <strong class="text-warning">@doc.ProtocolNumber</strong>
-                                        <br />
-                                        <small class="text-muted">
-                                            <i class="bi bi-calendar"></i> @doc.ProtocolDate.ToString("dd/MM/yyyy")
-                                        </small>
                                     </td>
                                     <td>
                                         <div class="text-truncate" style="max-width: 350px;" title="@doc.Subject">
@@ -145,7 +140,7 @@
                                     </td>
                                     <td>
                                         <small>
-                                            <i class="bi bi-calendar-event"></i> @doc.CreatedDate.ToString("dd/MM/yyyy")
+                                            <i class="bi bi-calendar-event"></i> @doc.CreatedDate.ToString("dd/MM/yyyy HH:mm")
                                         </small>
                                     </td>
                                     <td>
@@ -165,20 +160,6 @@
                                                 <span class="badge bg-secondary">
                                                     <i class="bi bi-arrow-down"></i> I Ulët
                                                 </span>
-                                                break;
-                                        }
-                                    </td>
-                                    <td>
-                                        @switch (doc.Status)
-                                        {
-                                            case DocumentStatus.Registered:
-                                                <span class="badge bg-primary">Protokolluar</span>
-                                                break;
-                                            case DocumentStatus.InProgress:
-                                                <span class="badge bg-warning text-dark">Në Proces</span>
-                                                break;
-                                            default:
-                                                <span class="badge bg-secondary">@doc.Status</span>
                                                 break;
                                         }
                                     </td>
@@ -211,19 +192,15 @@
                                         <i class="bi bi-chevron-left"></i> Mbrapa
                                     </a>
                                 </li>
-
                                 @for (int i = 1; i <= ViewBag.TotalPages; i++)
                                 {
                                     <li class="page-item @(ViewBag.CurrentPage == i ? "active" : "")">
                                         <a class="page-link" href="@Url.Action("Index", new {
                                             searchTerm = ViewBag.SearchTerm,
                                             page = i
-                                        })">
-                                            @i
-                                        </a>
+                                        })">@i</a>
                                     </li>
                                 }
-
                                 <li class="page-item @(ViewBag.CurrentPage == ViewBag.TotalPages ? "disabled" : "")">
                                     <a class="page-link" href="@Url.Action("Index", new {
                                         searchTerm = ViewBag.SearchTerm,
@@ -263,12 +240,10 @@
         .stat-card {
             transition: transform 0.2s, box-shadow 0.2s;
         }
-
-            .stat-card:hover {
-                transform: translateY(-5px);
-                box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
-            }
-
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+        }
         .stat-icon {
             width: 60px;
             height: 60px;
@@ -278,32 +253,24 @@
             justify-content: center;
             font-size: 1.5rem;
         }
-
-        .bg-warning-subtle {
-            background-color: rgba(255, 193, 7, 0.1) !important;
+        .bg-warning-subtle { 
+                background-color: rgba(255, 193, 7, 0.1) !important;
         }
-
         .bg-primary-subtle {
-            background-color: rgba(13, 110, 253, 0.1) !important;
-        }
 
+            background-color: rgba(13, 110, 253, 0.1) !important; }
         .table-hover tbody tr:hover {
             background-color: rgba(255, 193, 7, 0.05);
         }
-
-        .card {
+        .card { 
             border-radius: 12px;
         }
-
         .card-header {
             border-radius: 12px 12px 0 0 !important;
         }
-
         .pagination .page-link {
-            border-radius: 6px;
-            margin: 0 2px;
+            border-radius: 6px; margin: 0 2px;
         }
-
         .pagination .page-item.active .page-link {
             background-color: #ffc107;
             border-color: #ffc107;
