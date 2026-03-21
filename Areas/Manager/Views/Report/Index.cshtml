@@ -1,4 +1,5 @@
-﻿@{
+﻿@using eProtokoll.Repositories
+@{
     ViewData["Title"] = "Raporte Statistikore";
 }
 
@@ -41,8 +42,8 @@
         <div class="col-md-3">
             <div class="card border-0 shadow-sm">
                 <div class="card-body text-center">
-                    <h6 class="text-muted small">VITI</h6>
-                    <h2 class="fw-bold text-warning">@ViewBag.YearCount</h2>
+                    <h6 class="text-muted small">JAVA</h6>
+                    <h2 class="fw-bold text-warning">@ViewBag.WeekCount</h2>
                 </div>
             </div>
         </div>
@@ -104,30 +105,19 @@
                 </div>
                 <div class="card-body">
                     @{
-                        int totalPri = (int)(ViewBag.Urgent ?? 0) + (int)(ViewBag.High ?? 0) +
-                        (int)(ViewBag.Normal ?? 0) + (int)(ViewBag.Low ?? 0);
+                        int totalPri = (int)(ViewBag.High ?? 0) + (int)(ViewBag.Normal ?? 0) + (int)(ViewBag.Low ?? 0);
                         if (totalPri == 0) totalPri = 1;
-                        int urgentPct = (int)(ViewBag.Urgent ?? 0) * 100 / totalPri;
                         int highPct = (int)(ViewBag.High ?? 0) * 100 / totalPri;
                         int normalPct = (int)(ViewBag.Normal ?? 0) * 100 / totalPri;
                         int lowPct = (int)(ViewBag.Low ?? 0) * 100 / totalPri;
                     }
                     <div class="mb-3">
                         <div class="d-flex justify-content-between mb-1">
-                            <span><i class="bi bi-circle-fill text-danger me-1"></i> Urgjent</span>
-                            <strong>@ViewBag.Urgent (@urgentPct%)</strong>
-                        </div>
-                        <div class="progress" style="height:10px;">
-                            <div class="progress-bar bg-danger" style="width:@urgentPct%;"></div>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between mb-1">
-                            <span><i class="bi bi-circle-fill text-warning me-1"></i> I Lartë</span>
+                            <span><i class="bi bi-circle-fill text-danger me-1"></i> I Lartë</span>
                             <strong>@ViewBag.High (@highPct%)</strong>
                         </div>
                         <div class="progress" style="height:10px;">
-                            <div class="progress-bar bg-warning" style="width:@highPct%;"></div>
+                            <div class="progress-bar bg-danger" style="width:@highPct%;"></div>
                         </div>
                     </div>
                     <div class="mb-3">
@@ -162,21 +152,21 @@
                 </div>
                 <div class="card-body">
                     @{
-                        var monthlyData = ViewBag.MonthlyData as IEnumerable<dynamic>;
+                        var monthlyData = ViewBag.MonthlyData as List<MonthlyDocumentCount>;
                         int maxMonthVal = monthlyData != null && monthlyData.Any()
-                        ? (int)monthlyData.Max(d => (int)d.Count) : 1;
+                            ? monthlyData.Max(m => m.Count) : 1;
                         if (maxMonthVal == 0) maxMonthVal = 1;
                     }
-                    @if (monthlyData != null)
+                    @if (monthlyData != null && monthlyData.Any())
                     {
                         <div class="d-flex align-items-end gap-2 w-100" style="height:180px;">
                             @foreach (var m in monthlyData)
                             {
-                                int hPct = (int)m.Count * 100 / maxMonthVal;
+                                int hPct = m.Count * 100 / maxMonthVal;
                                 <div class="d-flex flex-column align-items-center flex-fill h-100 justify-content-end">
                                     <small class="text-muted mb-1" style="font-size:0.65rem;">@m.Count</small>
                                     <div class="bg-primary rounded-top w-75" style="height:@(Math.Max(hPct, 2))%;"></div>
-                                    <small class="text-muted mt-1" style="font-size:0.6rem;">@m.Month</small>
+                                    <small class="text-muted mt-1" style="font-size:0.6rem;">@m.MonthName</small>
                                 </div>
                             }
                         </div>
@@ -195,23 +185,26 @@
         <div class="col-lg-6">
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white">
-                    <h5 class="mb-0"><i class="bi bi-building"></i> Top 10 Institucione</h5>
+                    <h5 class="mb-0"><i class="bi bi-building"></i> Top 5 Institucione</h5>
                 </div>
                 <div class="card-body">
-                    @if (ViewBag.TopInstitutions != null && ((IEnumerable<dynamic>)ViewBag.TopInstitutions).Any())
+                    @{
+                        var topInstitutions = ViewBag.TopInstitutions as IEnumerable<eProtokoll.Repositories.TopInstitution>;
+                    }
+                    @if (topInstitutions != null && topInstitutions.Any())
                     {
                         <table class="table table-sm">
                             <tbody>
                                 @{
                                     int rank = 1;
                                 }
-                                @foreach (var inst in (IEnumerable<dynamic>)ViewBag.TopInstitutions)
+                                @foreach (var inst in topInstitutions)
                                 {
                                     <tr>
                                         <td width="30"><strong>@rank.</strong></td>
                                         <td>@inst.Name</td>
                                         <td width="60" class="text-end">
-                                            <span class="badge bg-primary">@inst.Count</span>
+                                            <span class="badge bg-primary">@inst.TotalDocuments</span>
                                         </td>
                                     </tr>
                                     rank++;
@@ -230,26 +223,29 @@
         <div class="col-lg-6">
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white">
-                    <h5 class="mb-0"><i class="bi bi-people"></i> Top 10 Përdorues</h5>
+                    <h5 class="mb-0"><i class="bi bi-people"></i> Top 5 Përdorues</h5>
                 </div>
                 <div class="card-body">
-                    @if (ViewBag.TopUsers != null && ((IEnumerable<dynamic>)ViewBag.TopUsers).Any())
+                    @{
+                        var topUsers = ViewBag.TopUsers as IEnumerable<eProtokoll.Repositories.TopUser>;
+                    }
+                    @if (topUsers != null && topUsers.Any())
                     {
                         <table class="table table-sm">
                             <tbody>
                                 @{
-                                    int rank = 1;
+                                    int rankU = 1;
                                 }
-                                @foreach (var user in (IEnumerable<dynamic>)ViewBag.TopUsers)
+                                @foreach (var user in topUsers)
                                 {
                                     <tr>
-                                        <td width="30"><strong>@rank.</strong></td>
-                                        <td>@user.Name</td>
+                                        <td width="30"><strong>@rankU.</strong></td>
+                                        <td>@user.FullName</td>
                                         <td width="60" class="text-end">
-                                            <span class="badge bg-success">@user.Count</span>
+                                            <span class="badge bg-success">@user.TotalDocuments</span>
                                         </td>
                                     </tr>
-                                    rank++;
+                                    rankU++;
                                 }
                             </tbody>
                         </table>

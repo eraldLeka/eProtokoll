@@ -67,13 +67,12 @@ namespace eProtokoll.Controllers.Base
             return View("~/Views/InternalDocument/Create.cshtml", document);
         }
 
-        // POST: Create
         [HttpPost]
         [ValidateAntiForgeryToken]
         public virtual async Task<IActionResult> Create(
-            InternalDocument model,
-            IFormFile? attachmentFile,
-            List<int>? accessUserIds)
+          InternalDocument model,
+          IFormFile? attachmentFile,
+          List<int>? accessUserIds)
         {
             ViewData["area"] = AreaName;
 
@@ -81,15 +80,9 @@ namespace eProtokoll.Controllers.Base
             model.DocumentNumber = await _protocolNumberService
                 .GetNextDocumentNumberAsync(DocumentType.Internal, year);
             model.Year = year;
-            model.Priority = Priority.Normal;
 
             ModelState.Remove(nameof(model.DocumentNumber));
             ModelState.Remove(nameof(model.Year));
-
-            if (attachmentFile == null || attachmentFile.Length == 0)
-                ModelState.AddModelError("attachmentFile", "Ngarko pdf per dokumentin intern.");
-            else if (Path.GetExtension(attachmentFile.FileName).ToLower() != ".pdf")
-                ModelState.AddModelError("attachmentFile", "Vetëm PDF lejohet.");
 
             if (model.Classification == Classification.Confidential &&
                 (accessUserIds == null || accessUserIds.Count == 0))
@@ -122,7 +115,6 @@ namespace eProtokoll.Controllers.Base
                         userId);
 
                     savedFile.Category = FileCategory.PDF;
-
                     await _documentRepository.InsertAttachmentAsync(savedFile);
                 }
 
@@ -152,7 +144,6 @@ namespace eProtokoll.Controllers.Base
             ViewBag.SelectedAccessUserIds = accessUserIds ?? new List<int>();
             return View("~/Views/InternalDocument/Create.cshtml", model);
         }
-
         // GET: Details
         public virtual async Task<IActionResult> Details(int? id)
         {

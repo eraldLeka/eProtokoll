@@ -1,29 +1,30 @@
-﻿namespace eProtokoll.Repositories
+﻿using eProtokoll.Models;
+
+namespace eProtokoll.Repositories
 {
     public interface IReportRepository
     {
         // ==================== DOKUMENTET ====================
         Task<int> GetTotalDocumentsAsync();
-        Task<int> GetTotalByDiscriminatorAsync(string discriminator);
+        Task<int> GetTotalByTypeAsync(DocumentType type);
 
         // ==================== INSTITUCIONET ====================
         Task<int> GetTotalInstitutionsAsync();
-        Task<int> GetActiveInstitutionsAsync();
-
 
         // ==================== KOHORE ====================
         Task<int> GetCurrentMonthDocumentsAsync();
         Task<int> GetCurrentWeekDocumentsAsync();
         Task<int> GetTodayDocumentsAsync();
 
+        // ==================== PRIORITETI ====================
+        Task<int> GetByPriorityAsync(Priority priority);
 
-        // ==================== TRE TE REJA ====================
+        // ==================== GRAFIKU & LISTAT ====================
         Task<List<MonthlyDocumentCount>> GetMonthlyDocumentCountsAsync(int year);
         Task<List<TopInstitution>> GetTopInstitutionsAsync(int topCount = 5);
         Task<List<TopUser>> GetTopUsersAsync(int topCount = 5);
     }
 
-    // ==================== DTOs ====================
     public class MonthlyDocumentCount
     {
         public int Month { get; set; }

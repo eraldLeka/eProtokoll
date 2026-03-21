@@ -18,7 +18,6 @@ namespace eProtokoll.Repositories
             _connectionString = configuration.GetConnectionString("DefaultConnection")!;
         }
 
-        // ==================== HELPER ====================
         private async Task<int> CountAsync(string query, Action<SqlCommand>? addParams = null)
         {
             using var connection = new SqlConnection(_connectionString);
@@ -33,17 +32,14 @@ namespace eProtokoll.Repositories
         public Task<int> GetTotalDocumentsAsync() =>
             CountAsync("SELECT COUNT(*) FROM Documents");
 
-        public Task<int> GetTotalByDiscriminatorAsync(string discriminator) =>
+        public Task<int> GetTotalByTypeAsync(DocumentType type) =>
             CountAsync(
-                "SELECT COUNT(*) FROM Documents WHERE Discriminator = @Discriminator",
-                cmd => cmd.Parameters.AddWithValue("@Discriminator", discriminator));
+                "SELECT COUNT(*) FROM Documents WHERE DocumentType = @Type",
+                cmd => cmd.Parameters.AddWithValue("@Type", (int)type));
 
         // ==================== INSTITUCIONET ====================
         public Task<int> GetTotalInstitutionsAsync() =>
             CountAsync("SELECT COUNT(*) FROM Institutions");
-
-        public Task<int> GetActiveInstitutionsAsync() =>
-            CountAsync("SELECT COUNT(*) FROM Institutions WHERE IsActive = 1");
 
         // ==================== KOHORE ====================
         public Task<int> GetCurrentMonthDocumentsAsync() =>
@@ -65,6 +61,11 @@ namespace eProtokoll.Repositories
                 "SELECT COUNT(*) FROM Documents WHERE CAST(CreatedDate AS DATE) = @Today",
                 cmd => cmd.Parameters.AddWithValue("@Today", DateTime.Now.Date));
 
+        // ==================== PRIORITETI ====================
+        public Task<int> GetByPriorityAsync(Priority priority) =>
+            CountAsync(
+                "SELECT COUNT(*) FROM Documents WHERE Priority = @Priority",
+                cmd => cmd.Parameters.AddWithValue("@Priority", (int)priority));
 
         // ==================== GRAFIKU 12 MUAJ ====================
         public async Task<List<MonthlyDocumentCount>> GetMonthlyDocumentCountsAsync(int year)
@@ -85,11 +86,7 @@ namespace eProtokoll.Repositories
 
             using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
-            {
-                int month = reader.GetInt32(0);
-                int count = reader.GetInt32(1);
-                results[month] = count;
-            }
+                results[reader.GetInt32(0)] = reader.GetInt32(1);
 
             return results.Select(kvp => new MonthlyDocumentCount
             {
@@ -107,11 +104,11 @@ namespace eProtokoll.Repositories
                     i.InstitutionId,
                     i.Name,
                     COUNT(d.DocumentId) AS TotalDocuments,
-                    SUM(CASE WHEN d.Discriminator = 'IncomingDocument' THEN 1 ELSE 0 END) AS Incoming,
-                    SUM(CASE WHEN d.Discriminator = 'OutgoingDocument' THEN 1 ELSE 0 END) AS Outgoing
+                    SUM(CASE WHEN d.DocumentType = @Incoming THEN 1 ELSE 0 END) AS Incoming,
+                    SUM(CASE WHEN d.DocumentType = @Outgoing THEN 1 ELSE 0 END) AS Outgoing
                 FROM Institutions i
                 INNER JOIN Documents d ON d.InstitutionId = i.InstitutionId
-                WHERE d.Discriminator IN ('IncomingDocument', 'OutgoingDocument')
+                WHERE d.DocumentType IN (@Incoming, @Outgoing)
                 GROUP BY i.InstitutionId, i.Name
                 ORDER BY TotalDocuments DESC";
 
@@ -121,6 +118,8 @@ namespace eProtokoll.Repositories
             await connection.OpenAsync();
             using var cmd = new SqlCommand(sql, connection);
             cmd.Parameters.AddWithValue("@TopCount", topCount);
+            cmd.Parameters.AddWithValue("@Incoming", (int)DocumentType.Incoming);
+            cmd.Parameters.AddWithValue("@Outgoing", (int)DocumentType.Outgoing);
 
             using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
@@ -138,17 +137,17 @@ namespace eProtokoll.Repositories
             return list;
         }
 
-        // ==================== TOP 5 PERDORUESIT ====================
+        // ==================== TOP 5 PËRDORUESIT ====================
         public async Task<List<TopUser>> GetTopUsersAsync(int topCount = 5)
         {
             const string sql = @"
                 SELECT TOP (@TopCount)
                     u.Id,
-                    CONCAT(u.FirstName, ' ', u.LastName) AS FullName,
-                    CAST(u.Role AS NVARCHAR(50))         AS RoleName,
-                    COUNT(d.DocumentId)                  AS TotalDocuments
+                    ISNULL(u.FirstName + ' ' + u.LastName, 'N/A') AS FullName,
+                    CAST(u.Role AS NVARCHAR(50)) AS RoleName,
+                    COUNT(d.DocumentId) AS TotalDocuments
                 FROM Users u
-                INNER JOIN Documents d ON d.CreatedBy = CAST(u.Id AS NVARCHAR(450))
+                INNER JOIN Documents d ON d.CreatedBy = u.Id
                 GROUP BY u.Id, u.FirstName, u.LastName, u.Role
                 ORDER BY TotalDocuments DESC";
 
@@ -165,8 +164,8 @@ namespace eProtokoll.Repositories
                 list.Add(new TopUser
                 {
                     UserId = reader.GetInt32(0),
-                    FullName = reader.GetString(1),
-                    Role = !reader.IsDBNull(2) ? reader.GetString(2) : "—",
+                    FullName = reader.IsDBNull(1) ? "N/A" : reader.GetString(1).Trim(),
+                    Role = reader.IsDBNull(2) ? "—" : reader.GetString(2),
                     TotalDocuments = reader.GetInt32(3)
                 });
             }

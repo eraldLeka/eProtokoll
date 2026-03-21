@@ -78,8 +78,8 @@ namespace eProtokoll.Repositories.Dashboard
                 SELECT TOP 10
                     d.DocumentId, d.DocumentNumber, d.Year, d.DocumentType,
                     d.Subject, d.Content, d.Classification, d.Priority,
-                    d.Notes, d.HasAttachments, d.CreatedBy, d.CreatedDate,
-                    d.Discriminator,
+                    d.HasAttachments, d.CreatedBy, d.CreatedDate,
+                    d.RequiresResponse,
                     u.UserName AS CreatorUserName,
                     u.FirstName AS CreatorFirstName,
                     u.LastName AS CreatorLastName

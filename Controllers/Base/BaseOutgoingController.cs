@@ -74,9 +74,9 @@ namespace eProtokoll.Controllers.Base
         [HttpPost]
         [ValidateAntiForgeryToken]
         public virtual async Task<IActionResult> Create(
-            OutgoingDocument model,
-            IFormFile? attachmentFile,
-            List<int>? accessUserIds)
+       OutgoingDocument model,
+       IFormFile? attachmentFile,
+       List<int>? accessUserIds)
         {
             ViewData["area"] = AreaName;
 
@@ -84,15 +84,9 @@ namespace eProtokoll.Controllers.Base
             model.DocumentNumber = await _protocolNumberService
                 .GetNextDocumentNumberAsync(DocumentType.Outgoing, year);
             model.Year = year;
-            model.Priority = Priority.Normal;
 
             ModelState.Remove(nameof(model.DocumentNumber));
             ModelState.Remove(nameof(model.Year));
-
-            if (attachmentFile == null || attachmentFile.Length == 0)
-                ModelState.AddModelError("attachmentFile", "Ngarko PDF për dokumentin dalës.");
-            else if (Path.GetExtension(attachmentFile.FileName).ToLower() != ".pdf")
-                ModelState.AddModelError("attachmentFile", "Vetëm PDF lejohet.");
 
             if (model.Classification == Classification.Confidential &&
                 (accessUserIds == null || accessUserIds.Count == 0))

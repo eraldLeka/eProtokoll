@@ -13,7 +13,7 @@ namespace eProtokoll.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
     [Migration("20260315070611_globalnumber")]
-    partial class globalnumber
+    partial class Globalnumber
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

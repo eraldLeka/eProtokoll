@@ -80,12 +80,9 @@ namespace eProtokoll.Controllers.Base
             model.DocumentNumber = await _protocolNumberService
                 .GetNextDocumentNumberAsync(DocumentType.Incoming, year);
             model.Year = year;
-            model.ReceivedDate = DateTime.Now.Date;
-            model.Priority = Priority.Normal;
 
             ModelState.Remove(nameof(model.DocumentNumber));
             ModelState.Remove(nameof(model.Year));
-            ModelState.Remove(nameof(model.ReceivedDate));
 
             if (attachmentFile == null || attachmentFile.Length == 0)
                 ModelState.AddModelError("attachmentFile", "Ngarko pdf per dokumentin hyres.");
@@ -151,7 +148,6 @@ namespace eProtokoll.Controllers.Base
             ViewBag.SelectedAccessUserIds = accessUserIds ?? new List<int>();
             return View("~/Views/IncomingDocument/Create.cshtml", model);
         }
-
         // GET: Details
         public virtual async Task<IActionResult> Details(int? id)
         {

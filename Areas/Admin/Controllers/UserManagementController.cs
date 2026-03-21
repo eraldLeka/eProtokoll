@@ -19,7 +19,7 @@ namespace eProtokoll.Areas.Admin.Controllers
             IConfiguration configuration,
             IUserRepository userRepository)
         {
-            _connectionString = configuration.GetConnectionString("DefaultConnection");
+            _connectionString = configuration.GetConnectionString("DefaultConnection")!;
             _userRepository = userRepository;
         }
 
@@ -29,6 +29,7 @@ namespace eProtokoll.Areas.Admin.Controllers
             var users = await _userRepository.GetAllAsync();
             return View(users);
         }
+
         // GET: Admin/UserManagement/Create
         public IActionResult Create()
         {
@@ -42,8 +43,12 @@ namespace eProtokoll.Areas.Admin.Controllers
         {
             ModelState.Remove("PasswordHash");
             ModelState.Remove("CreatedDate");
-            ModelState.Remove("ModifedDate");
+            ModelState.Remove("ModifiedDate");
+            ModelState.Remove("ModifiedBy");
             ModelState.Remove("FullName");
+            ModelState.Remove("CreatedDocuments");
+            ModelState.Remove("AssignedDocuments");
+
             bool hasErrors = false;
 
             if (string.IsNullOrEmpty(Password))
@@ -150,6 +155,16 @@ namespace eProtokoll.Areas.Admin.Controllers
 
             var user = await _userRepository.GetByIdAsync(id);
             if (user == null) return NotFound();
+
+            ModelState.Remove("PasswordHash");
+            ModelState.Remove("CreatedDate");
+            ModelState.Remove("ModifiedDate");
+            ModelState.Remove("ModifiedBy");
+            ModelState.Remove("FullName");
+            ModelState.Remove("CreatedDocuments");
+            ModelState.Remove("AssignedDocuments");
+            ModelState.Remove("Password");        
+            ModelState.Remove("ConfirmPassword");
 
             bool hasErrors = false;
 

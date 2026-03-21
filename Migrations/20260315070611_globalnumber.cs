@@ -5,7 +5,7 @@
 namespace eProtokoll.Migrations
 {
     /// <inheritdoc />
-    public partial class globalnumber : Migration
+    public partial class Globalnumber : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

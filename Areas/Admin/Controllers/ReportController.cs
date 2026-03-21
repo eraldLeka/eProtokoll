@@ -16,7 +16,6 @@ namespace eProtokoll.Areas.Admin.Controllers
             _reportRepository = reportRepository;
         }
 
-        // GET: Admin/Report
         public async Task<IActionResult> Index(int? year)
         {
             int selectedYear = year ?? DateTime.Now.Year;
@@ -27,19 +26,14 @@ namespace eProtokoll.Areas.Admin.Controllers
 
             var viewModel = new ReportDashboardViewModel
             {
-                // Dokumentet
                 TotalDocuments = await _reportRepository.GetTotalDocumentsAsync(),
-                TotalIncomingDocuments = await _reportRepository.GetTotalByDiscriminatorAsync("IncomingDocument"),
-                TotalOutgoingDocuments = await _reportRepository.GetTotalByDiscriminatorAsync("OutgoingDocument"),
-                TotalInternalDocuments = await _reportRepository.GetTotalByDiscriminatorAsync("InternalDocument"),
-                // Institucionet
+                TotalIncomingDocuments = await _reportRepository.GetTotalByTypeAsync(DocumentType.Incoming),
+                TotalOutgoingDocuments = await _reportRepository.GetTotalByTypeAsync(DocumentType.Outgoing),
+                TotalInternalDocuments = await _reportRepository.GetTotalByTypeAsync(DocumentType.Internal),
                 TotalInstitutions = await _reportRepository.GetTotalInstitutionsAsync(),
-                ActiveInstitutions = await _reportRepository.GetActiveInstitutionsAsync(),
-                // Kohore
                 CurrentMonthDocuments = await _reportRepository.GetCurrentMonthDocumentsAsync(),
                 CurrentWeekDocuments = await _reportRepository.GetCurrentWeekDocumentsAsync(),
                 TodayDocuments = await _reportRepository.GetTodayDocumentsAsync(),
-                // TE REJA
                 MonthlyData = monthlyData,
                 MaxMonthlyCount = maxCount,
                 SelectedYear = selectedYear,
@@ -51,23 +45,16 @@ namespace eProtokoll.Areas.Admin.Controllers
         }
     }
 
-    // ViewModel
     public class ReportDashboardViewModel
     {
-        // Dokumentet
         public int TotalDocuments { get; set; }
         public int TotalIncomingDocuments { get; set; }
         public int TotalOutgoingDocuments { get; set; }
         public int TotalInternalDocuments { get; set; }
-        // Institucionet
         public int TotalInstitutions { get; set; }
-        public int ActiveInstitutions { get; set; }
-      
-        // Kohore
         public int CurrentMonthDocuments { get; set; }
         public int CurrentWeekDocuments { get; set; }
         public int TodayDocuments { get; set; }
-        // TE REJA
         public List<MonthlyDocumentCount> MonthlyData { get; set; } = new();
         public int MaxMonthlyCount { get; set; } = 1;
         public int SelectedYear { get; set; } = DateTime.Now.Year;

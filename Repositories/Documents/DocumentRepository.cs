@@ -12,6 +12,7 @@ namespace eProtokoll.Repositories.Documents
         {
             _connectionString = configuration.GetConnectionString("DefaultConnection")!;
         }
+
         // ==================== INCOMING ====================
 
         public async Task<(List<IncomingDocument> Documents, int TotalCount)> GetIncomingAsync(
@@ -24,7 +25,7 @@ namespace eProtokoll.Repositories.Documents
 
             if (accessUserId.HasValue)
             {
-                whereClause = @"WHERE d.Discriminator = 'IncomingDocument'
+                whereClause = @"WHERE d.DocumentType = @DocumentType
                     AND (
                         d.Classification = 1
                         OR d.CreatedBy = @AccessUserId
@@ -36,11 +37,11 @@ namespace eProtokoll.Repositories.Documents
             }
             else if (createdBy.HasValue)
             {
-                whereClause = "WHERE d.Discriminator = 'IncomingDocument' AND d.CreatedBy = @CreatedBy";
+                whereClause = "WHERE d.DocumentType = @DocumentType AND d.CreatedBy = @CreatedBy";
             }
             else
             {
-                whereClause = "WHERE d.Discriminator = 'IncomingDocument'";
+                whereClause = "WHERE d.DocumentType = @DocumentType";
             }
 
             using var connection = new SqlConnection(_connectionString);
@@ -49,6 +50,7 @@ namespace eProtokoll.Repositories.Documents
             using (var cmd = new SqlCommand(
                 $"SELECT COUNT(*) FROM Documents d {whereClause}", connection))
             {
+                cmd.Parameters.AddWithValue("@DocumentType", (int)DocumentType.Incoming);
                 if (accessUserId.HasValue)
                     cmd.Parameters.AddWithValue("@AccessUserId", accessUserId.Value);
                 else if (createdBy.HasValue)
@@ -71,6 +73,7 @@ namespace eProtokoll.Repositories.Documents
 
             using (var cmd = new SqlCommand(query, connection))
             {
+                cmd.Parameters.AddWithValue("@DocumentType", (int)DocumentType.Incoming);
                 if (accessUserId.HasValue)
                     cmd.Parameters.AddWithValue("@AccessUserId", accessUserId.Value);
                 else if (createdBy.HasValue)
@@ -126,10 +129,11 @@ namespace eProtokoll.Repositories.Documents
                 FROM Documents d
                 LEFT JOIN Institutions i ON d.InstitutionId = i.InstitutionId
                 LEFT JOIN Users u ON d.CreatedBy = u.Id
-                WHERE d.DocumentId = @DocumentId AND d.Discriminator = 'IncomingDocument'";
+                WHERE d.DocumentId = @DocumentId AND d.DocumentType = @DocumentType";
 
             using var cmd = new SqlCommand(query, connection);
             cmd.Parameters.AddWithValue("@DocumentId", id);
+            cmd.Parameters.AddWithValue("@DocumentType", (int)DocumentType.Incoming);
 
             using var reader = await cmd.ExecuteReaderAsync();
             if (!await reader.ReadAsync()) return null;
@@ -171,17 +175,17 @@ namespace eProtokoll.Repositories.Documents
             try
             {
                 var query = @"
-            INSERT INTO Documents (
-                DocumentNumber, Year, DocumentType, Subject, Content,
-                Classification, Priority, Notes, HasAttachments, CreatedDate, CreatedBy,
-                InstitutionId, SenderName, ReceivedDate, OriginalDocumentNumber, OriginalDocumentDate,
-                Discriminator
-            ) OUTPUT INSERTED.DocumentId VALUES (
-                @DocumentNumber, @Year, @DocumentType, @Subject, @Content,
-                @Classification, @Priority, @Notes, @HasAttachments, @CreatedDate, @CreatedBy,
-                @InstitutionId, @SenderName, @ReceivedDate, @OriginalDocumentNumber, @OriginalDocumentDate,
-                'IncomingDocument'
-            )";
+                    INSERT INTO Documents (
+                        DocumentNumber, Year, DocumentType, Subject, Content,
+                        Classification, Priority, RequiresResponse, HasAttachments,
+                        CreatedDate, CreatedBy, InstitutionId, SenderName, ReceivedDate,
+                        OriginalDocumentNumber, OriginalDocumentDate
+                    ) OUTPUT INSERTED.DocumentId VALUES (
+                        @DocumentNumber, @Year, @DocumentType, @Subject, @Content,
+                        @Classification, @Priority, @RequiresResponse, @HasAttachments,
+                        @CreatedDate, @CreatedBy, @InstitutionId, @SenderName, @ReceivedDate,
+                        @OriginalDocumentNumber, @OriginalDocumentDate
+                    )";
 
                 using var cmd = new SqlCommand(query, connection, transaction);
                 cmd.Parameters.AddWithValue("@DocumentNumber", model.DocumentNumber);
@@ -191,7 +195,7 @@ namespace eProtokoll.Repositories.Documents
                 cmd.Parameters.AddWithValue("@Content", (object?)model.Content ?? DBNull.Value);
                 cmd.Parameters.AddWithValue("@Classification", (int)model.Classification);
                 cmd.Parameters.AddWithValue("@Priority", (int)model.Priority);
-                cmd.Parameters.AddWithValue("@Notes", (object?)model.Notes ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@RequiresResponse", model.RequiresResponse);
                 cmd.Parameters.AddWithValue("@HasAttachments", false);
                 cmd.Parameters.AddWithValue("@CreatedDate", model.CreatedDate);
                 cmd.Parameters.AddWithValue("@CreatedBy", model.CreatedBy);
@@ -213,6 +217,7 @@ namespace eProtokoll.Repositories.Documents
                 throw;
             }
         }
+
         // ==================== OUTGOING ====================
 
         public async Task<(List<OutgoingDocument> Documents, int TotalCount)> GetOutgoingAsync(
@@ -225,7 +230,7 @@ namespace eProtokoll.Repositories.Documents
 
             if (accessUserId.HasValue)
             {
-                whereClause = @"WHERE d.Discriminator = 'OutgoingDocument'
+                whereClause = @"WHERE d.DocumentType = @DocumentType
                     AND (
                         d.Classification = 1
                         OR d.CreatedBy = @AccessUserId
@@ -237,11 +242,11 @@ namespace eProtokoll.Repositories.Documents
             }
             else if (createdBy.HasValue)
             {
-                whereClause = "WHERE d.Discriminator = 'OutgoingDocument' AND d.CreatedBy = @CreatedBy";
+                whereClause = "WHERE d.DocumentType = @DocumentType AND d.CreatedBy = @CreatedBy";
             }
             else
             {
-                whereClause = "WHERE d.Discriminator = 'OutgoingDocument'";
+                whereClause = "WHERE d.DocumentType = @DocumentType";
             }
 
             using var connection = new SqlConnection(_connectionString);
@@ -250,6 +255,7 @@ namespace eProtokoll.Repositories.Documents
             using (var cmd = new SqlCommand(
                 $"SELECT COUNT(*) FROM Documents d {whereClause}", connection))
             {
+                cmd.Parameters.AddWithValue("@DocumentType", (int)DocumentType.Outgoing);
                 if (accessUserId.HasValue)
                     cmd.Parameters.AddWithValue("@AccessUserId", accessUserId.Value);
                 else if (createdBy.HasValue)
@@ -272,6 +278,7 @@ namespace eProtokoll.Repositories.Documents
 
             using (var cmd = new SqlCommand(query, connection))
             {
+                cmd.Parameters.AddWithValue("@DocumentType", (int)DocumentType.Outgoing);
                 if (accessUserId.HasValue)
                     cmd.Parameters.AddWithValue("@AccessUserId", accessUserId.Value);
                 else if (createdBy.HasValue)
@@ -327,10 +334,11 @@ namespace eProtokoll.Repositories.Documents
                 FROM Documents d
                 LEFT JOIN Institutions i ON d.InstitutionId = i.InstitutionId
                 LEFT JOIN Users u ON d.CreatedBy = u.Id
-                WHERE d.DocumentId = @DocumentId AND d.Discriminator = 'OutgoingDocument'";
+                WHERE d.DocumentId = @DocumentId AND d.DocumentType = @DocumentType";
 
             using var cmd = new SqlCommand(query, connection);
             cmd.Parameters.AddWithValue("@DocumentId", id);
+            cmd.Parameters.AddWithValue("@DocumentType", (int)DocumentType.Outgoing);
 
             using var reader = await cmd.ExecuteReaderAsync();
             if (!await reader.ReadAsync()) return null;
@@ -372,17 +380,17 @@ namespace eProtokoll.Repositories.Documents
             try
             {
                 var query = @"
-            INSERT INTO Documents (
-                DocumentNumber, Year, DocumentType, Subject, Content,
-                Classification, Priority, Notes, HasAttachments,
-                CreatedDate, CreatedBy, InstitutionId, RecipientName, IsResponse,
-                OriginalIncomingDocumentId, ArchiveLocation, Discriminator
-            ) OUTPUT INSERTED.DocumentId VALUES (
-                @DocumentNumber, @Year, @DocumentType, @Subject, @Content,
-                @Classification, @Priority, @Notes, @HasAttachments,
-                @CreatedDate, @CreatedBy, @InstitutionId, @RecipientName, @IsResponse,
-                @OriginalIncomingDocumentId, @ArchiveLocation, 'OutgoingDocument'
-            )";
+                    INSERT INTO Documents (
+                        DocumentNumber, Year, DocumentType, Subject, Content,
+                        Classification, Priority, RequiresResponse,HasAttachments,
+                        CreatedDate, CreatedBy, InstitutionId, RecipientName, IsResponse,
+                        OriginalIncomingDocumentId, ArchiveLocation
+                    ) OUTPUT INSERTED.DocumentId VALUES (
+                        @DocumentNumber, @Year, @DocumentType, @Subject, @Content,
+                        @Classification, @Priority, @RequiresResponse,@HasAttachments,
+                        @CreatedDate, @CreatedBy, @InstitutionId, @RecipientName, @IsResponse,
+                        @OriginalIncomingDocumentId, @ArchiveLocation
+                    )";
 
                 using var cmd = new SqlCommand(query, connection, transaction);
                 cmd.Parameters.AddWithValue("@DocumentNumber", model.DocumentNumber);
@@ -392,7 +400,7 @@ namespace eProtokoll.Repositories.Documents
                 cmd.Parameters.AddWithValue("@Content", (object?)model.Content ?? DBNull.Value);
                 cmd.Parameters.AddWithValue("@Classification", (int)model.Classification);
                 cmd.Parameters.AddWithValue("@Priority", (int)model.Priority);
-                cmd.Parameters.AddWithValue("@Notes", (object?)model.Notes ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@RequiresResponse", model.RequiresResponse);
                 cmd.Parameters.AddWithValue("@HasAttachments", false);
                 cmd.Parameters.AddWithValue("@CreatedDate", model.CreatedDate);
                 cmd.Parameters.AddWithValue("@CreatedBy", model.CreatedBy);
@@ -414,6 +422,7 @@ namespace eProtokoll.Repositories.Documents
                 throw;
             }
         }
+
         // ==================== INTERNAL ====================
 
         public async Task<(List<InternalDocument> Documents, int TotalCount)> GetInternalAsync(
@@ -426,7 +435,7 @@ namespace eProtokoll.Repositories.Documents
 
             if (accessUserId.HasValue)
             {
-                whereClause = @"WHERE d.Discriminator = 'InternalDocument'
+                whereClause = @"WHERE d.DocumentType = @DocumentType
                     AND (
                         d.Classification = 1
                         OR d.CreatedBy = @AccessUserId
@@ -438,11 +447,11 @@ namespace eProtokoll.Repositories.Documents
             }
             else if (createdBy.HasValue)
             {
-                whereClause = "WHERE d.Discriminator = 'InternalDocument' AND d.CreatedBy = @CreatedBy";
+                whereClause = "WHERE d.DocumentType = @DocumentType AND d.CreatedBy = @CreatedBy";
             }
             else
             {
-                whereClause = "WHERE d.Discriminator = 'InternalDocument'";
+                whereClause = "WHERE d.DocumentType = @DocumentType";
             }
 
             using var connection = new SqlConnection(_connectionString);
@@ -451,6 +460,7 @@ namespace eProtokoll.Repositories.Documents
             using (var cmd = new SqlCommand(
                 $"SELECT COUNT(*) FROM Documents d {whereClause}", connection))
             {
+                cmd.Parameters.AddWithValue("@DocumentType", (int)DocumentType.Internal);
                 if (accessUserId.HasValue)
                     cmd.Parameters.AddWithValue("@AccessUserId", accessUserId.Value);
                 else if (createdBy.HasValue)
@@ -471,6 +481,7 @@ namespace eProtokoll.Repositories.Documents
 
             using (var cmd = new SqlCommand(query, connection))
             {
+                cmd.Parameters.AddWithValue("@DocumentType", (int)DocumentType.Internal);
                 if (accessUserId.HasValue)
                     cmd.Parameters.AddWithValue("@AccessUserId", accessUserId.Value);
                 else if (createdBy.HasValue)
@@ -512,10 +523,11 @@ namespace eProtokoll.Repositories.Documents
                     u.LastName as CreatorLastName
                 FROM Documents d
                 LEFT JOIN Users u ON d.CreatedBy = u.Id
-                WHERE d.DocumentId = @DocumentId AND d.Discriminator = 'InternalDocument'";
+                WHERE d.DocumentId = @DocumentId AND d.DocumentType = @DocumentType";
 
             using var cmd = new SqlCommand(query, connection);
             cmd.Parameters.AddWithValue("@DocumentId", id);
+            cmd.Parameters.AddWithValue("@DocumentType", (int)DocumentType.Internal);
 
             using var reader = await cmd.ExecuteReaderAsync();
             if (!await reader.ReadAsync()) return null;
@@ -544,15 +556,15 @@ namespace eProtokoll.Repositories.Documents
             try
             {
                 var query = @"
-            INSERT INTO Documents (
-                DocumentNumber, Year, DocumentType, Subject, Content,
-                Classification, Priority, Notes, HasAttachments,
-                CreatedDate, CreatedBy, FromDepartment, ToDepartment, Discriminator
-            ) OUTPUT INSERTED.DocumentId VALUES (
-                @DocumentNumber, @Year, @DocumentType, @Subject, @Content,
-                @Classification, @Priority, @Notes, @HasAttachments,
-                @CreatedDate, @CreatedBy, @FromDepartment, @ToDepartment, 'InternalDocument'
-            )";
+                    INSERT INTO Documents (
+                        DocumentNumber, Year, DocumentType, Subject, Content,
+                        Classification, Priority, RequiresResponse,HasAttachments,
+                        CreatedDate, CreatedBy, FromDepartment, ToDepartment
+                    ) OUTPUT INSERTED.DocumentId VALUES (
+                        @DocumentNumber, @Year, @DocumentType, @Subject, @Content,
+                        @Classification, @Priority, @RequiresResponse,@HasAttachments,
+                        @CreatedDate, @CreatedBy, @FromDepartment, @ToDepartment
+                    )";
 
                 using var cmd = new SqlCommand(query, connection, transaction);
                 cmd.Parameters.AddWithValue("@DocumentNumber", model.DocumentNumber);
@@ -562,7 +574,7 @@ namespace eProtokoll.Repositories.Documents
                 cmd.Parameters.AddWithValue("@Content", (object?)model.Content ?? DBNull.Value);
                 cmd.Parameters.AddWithValue("@Classification", (int)model.Classification);
                 cmd.Parameters.AddWithValue("@Priority", (int)model.Priority);
-                cmd.Parameters.AddWithValue("@Notes", (object?)model.Notes ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@RequiresResponse", model.RequiresResponse);
                 cmd.Parameters.AddWithValue("@HasAttachments", false);
                 cmd.Parameters.AddWithValue("@CreatedDate", model.CreatedDate);
                 cmd.Parameters.AddWithValue("@CreatedBy", model.CreatedBy);
@@ -581,45 +593,30 @@ namespace eProtokoll.Repositories.Documents
                 throw;
             }
         }
+
         // ==================== SHARED ====================
 
         public async Task<int> GetCountAsync(DocumentType type)
         {
-            var discriminator = type switch
-            {
-                DocumentType.Incoming => "IncomingDocument",
-                DocumentType.Outgoing => "OutgoingDocument",
-                DocumentType.Internal => "InternalDocument",
-                _ => throw new ArgumentException($"Unknown DocumentType: {type}")
-            };
-
             using var connection = new SqlConnection(_connectionString);
             await connection.OpenAsync();
 
             using var cmd = new SqlCommand(
-                "SELECT COUNT(*) FROM Documents WHERE Discriminator = @Discriminator", connection);
-            cmd.Parameters.AddWithValue("@Discriminator", discriminator);
+                "SELECT COUNT(*) FROM Documents WHERE DocumentType = @DocumentType", connection);
+            cmd.Parameters.AddWithValue("@DocumentType", (int)type);
             return Convert.ToInt32(await cmd.ExecuteScalarAsync());
         }
 
         public async Task<int> GetTodayCountAsync(DocumentType type)
         {
-            var discriminator = type switch
-            {
-                DocumentType.Incoming => "IncomingDocument",
-                DocumentType.Outgoing => "OutgoingDocument",
-                DocumentType.Internal => "InternalDocument",
-                _ => throw new ArgumentException($"Unknown DocumentType: {type}")
-            };
-
             using var connection = new SqlConnection(_connectionString);
             await connection.OpenAsync();
 
             using var cmd = new SqlCommand(@"
                 SELECT COUNT(*) FROM Documents
-                WHERE Discriminator = @Discriminator
+                WHERE DocumentType = @DocumentType
                 AND CAST(CreatedDate AS DATE) = @Today", connection);
-            cmd.Parameters.AddWithValue("@Discriminator", discriminator);
+            cmd.Parameters.AddWithValue("@DocumentType", (int)type);
             cmd.Parameters.AddWithValue("@Today", DateTime.Now.Date);
             return Convert.ToInt32(await cmd.ExecuteScalarAsync());
         }
@@ -684,7 +681,7 @@ namespace eProtokoll.Repositories.Documents
             await connection.OpenAsync();
 
             using var cmd = new SqlCommand(
-                "SELECT * FROM DocumentAttachments WHERE DocumentId = @DocumentId ORDER BY DisplayOrder",
+                "SELECT * FROM DocumentAttachments WHERE DocumentId = @DocumentId",
                 connection);
             cmd.Parameters.AddWithValue("@DocumentId", documentId);
 
@@ -732,7 +729,7 @@ namespace eProtokoll.Repositories.Documents
             await connection.OpenAsync();
 
             using var cmd = new SqlCommand(
-                "SELECT Id, FirstName, LastName, UserName FROM Users WHERE IsActive = 1 AND ROLE = 3 ORDER BY FirstName, LastName",
+                "SELECT Id, FirstName, LastName, UserName FROM Users WHERE IsActive = 1 AND Role = 3 ORDER BY FirstName, LastName",
                 connection);
 
             using var reader = await cmd.ExecuteReaderAsync();

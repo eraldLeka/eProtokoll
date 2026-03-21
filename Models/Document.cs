@@ -43,12 +43,6 @@ namespace eProtokoll.Models
         [Display(Name = "Prioriteti")]
         public Priority Priority { get; set; } = Priority.Normal;
 
-        [StringLength(1000)]
-        [Display(Name = "Shënime")]
-        [DataType(DataType.MultilineText)]
-        public string? Notes { get; set; }
-
-
         [Display(Name = "Ka Attachment")]
         public bool HasAttachments { get; set; } = false;
 
@@ -61,6 +55,9 @@ namespace eProtokoll.Models
 
         [ForeignKey("CreatedBy")]
         public virtual Users? Creator { get; set; }
+
+        [Display(Name = "Kerkon pergjigje")]
+        public bool RequiresResponse { get; set; } = false;
 
         public virtual ICollection<DocumentAttachment> Attachments { get; set; } = new List<DocumentAttachment>();
 

@@ -32,6 +32,8 @@
         <div class="col-lg-8">
             <form asp-action="Edit" method="post">
                 <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="PasswordHash" />
+                <input type="hidden" asp-for="CreatedDate" />
                 <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
                 @* ===== LLOGARIA ===== *@
@@ -152,27 +154,6 @@
                             </select>
                         </div>
 
-                        @* Përshkrimi statik i rolit aktual — shfaqet vetëm pas POST *@
-                        @{
-                            string roleAlertClass = Model.Role switch
-                            {
-                                Users.UserRole.Administrator => "alert-danger",
-                                Users.UserRole.Manager => "alert-warning",
-                                Users.UserRole.Employee => "alert-success",
-                                _ => "alert-light"
-                            };
-                            string roleIcon = Model.Role switch
-                            {
-                                Users.UserRole.Administrator => "👑 Administrator",
-                                Users.UserRole.Manager => "📋 Menaxher",
-                                Users.UserRole.Employee => "👤 Punonjës",
-                                _ => ""
-                            };
-
-                        }
-
-
-
                         <div class="form-check form-switch mt-3">
                             <input asp-for="IsActive" class="form-check-input" type="checkbox" />
                             <label asp-for="IsActive" class="form-check-label">Llogari Aktive</label>
@@ -213,6 +194,21 @@
                 </div>
             </form>
         </div>
-
     </div>
 </div>
+
+@section Styles {
+    <style>
+        .avatar-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+    </style>
+}
