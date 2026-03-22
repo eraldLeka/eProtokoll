@@ -1,13 +1,23 @@
 ﻿@model IEnumerable<eProtokoll.Models.Document>
+@using eProtokoll.Models
 
 @{
+    var area = ViewData["area"]?.ToString() ?? "Manager";
+    Layout = area == "Employee"
+        ? "~/Views/Shared/_EmployeeLayout.cshtml"
+        : area == "Admin"
+            ? "~/Views/Shared/_AdminLayout.cshtml"
+            : "~/Views/Shared/_ManagerLayout.cshtml";
+
     ViewData["Title"] = "Libri i Protokollit";
 }
 
 <div class="container-fluid">
     <nav aria-label="breadcrumb" class="mb-3">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a asp-area="Manager" asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
+            <li class="breadcrumb-item">
+                <a asp-area="@area" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
+            </li>
             <li class="breadcrumb-item active">Libri i Protokollit</li>
         </ol>
     </nav>
@@ -18,6 +28,7 @@
             <p class="text-muted">Regjistri i plotë i të gjitha dokumenteve</p>
         </div>
     </div>
+
     <!-- Protocol Book Table -->
     <div class="card shadow-sm">
         <div class="card-header bg-white">
@@ -30,25 +41,24 @@
                     <table class="table table-hover table-sm align-middle mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th style="width:5%">#</th>
-                                <th style="width:12%">Protokolli</th>
-                                <th style="width:10%">Lloji</th>
-                                <th style="width:30%">Subjekti</th>
-                                <th style="width:10%">Data</th>
-                                <th style="width:10%">Klasifikimi</th>
+                                <th style="width:10%">Protokolli</th>
+                                <th style="width:8%">Lloji</th>
+                                <th style="width:25%">Subjekti</th>
+                                <th style="width:8%">Data</th>
+                                <th style="width:8%">Klasifikimi</th>
+                                <th style="width:8%">Prioriteti</th>
+                                <th style="width:10%">Kërkon Përgjigje</th>
                                 <th style="width:10%">Krijuar Nga</th>
                                 <th style="width:5%">Veprime</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @{int counter = (ViewBag.CurrentPage - 1) * 50 + 1;}
                             @foreach (var doc in Model)
                             {
                                 <tr>
-                                    <td>@counter</td>
                                     <td>
                                         <strong class="
-                                            @(doc.DocumentType == DocumentType.Incoming ? "text-info" : 
+                                            @(doc.DocumentType == DocumentType.Incoming ? "text-info" :
                                               doc.DocumentType == DocumentType.Outgoing ? "text-success" : "text-warning")">
                                             @doc.ProtocolNumber
                                         </strong>
@@ -68,18 +78,48 @@
                                         }
                                     </td>
                                     <td>
-                                        <div class="text-truncate" style="max-width:400px" title="@doc.Subject">@doc.Subject</div>
+                                        <div class="text-truncate" style="max-width:300px" title="@doc.Subject">@doc.Subject</div>
                                     </td>
-                                    <td><small>@doc.CreatedDate.ToString("dd/MM/yyyy")<br/>@doc.CreatedDate.ToString("HH:mm")</small></td>                                    <td><small>@Html.DisplayFor(_ => doc.Classification)</small></td>                                    
+                                    <td><small>@doc.CreatedDate.ToString("dd/MM/yyyy")<br />@doc.CreatedDate.ToString("HH:mm")</small></td>
+                                    <td><small>@Html.DisplayFor(_ => doc.Classification)</small></td>
+                                    <td>
+                                        @switch (doc.Priority)
+                                        {
+                                            case Priority.High:
+                                                <span class="badge bg-danger">I Lartë</span>
+                                                break;
+                                            case Priority.Normal:
+                                                <span class="badge bg-secondary">Normal</span>
+                                                break;
+                                            case Priority.Low:
+                                                <span class="badge bg-light text-dark">I Ulët</span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        @if (doc.RequiresResponse)
+                                        {
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="bi bi-reply-fill me-1"></i>Po
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">Jo</span>
+                                        }
+                                    </td>
                                     <td><small>@doc.Creator?.FullName</small></td>
                                     <td>
-                                        <a asp-action="Details" asp-route-id="@doc.DocumentId" asp-route-type="@doc.DocumentType.ToString()"
+                                        <a asp-area="@area"
+                                           asp-action="Details"
+                                           asp-controller="ProtocolBook"
+                                           asp-route-id="@doc.DocumentId"
+                                           asp-route-type="@doc.DocumentType.ToString()"
                                            class="btn btn-sm btn-outline-primary" title="Detajet">
                                             <i class="bi bi-eye"></i>
                                         </a>
                                     </td>
                                 </tr>
-                                counter++;
                             }
                         </tbody>
                     </table>
@@ -91,36 +131,24 @@
                         <nav>
                             <ul class="pagination pagination-sm mb-0 justify-content-center">
                                 <li class="page-item @(ViewBag.CurrentPage == 1 ? "disabled" : "")">
-                                    <a class="page-link" href="@Url.Action("Index", new { 
-                                        searchTerm = ViewBag.SearchTerm, 
-                                        documentType = ViewBag.SelectedDocumentType,
-                                        status = ViewBag.SelectedStatus,
-                                        dateFrom = ViewBag.DateFrom,
-                                        dateTo = ViewBag.DateTo,
-                                        page = ViewBag.CurrentPage - 1 
+                                    <a class="page-link" href="@Url.Action("Index", new {
+                                        searchTerm = ViewBag.SearchTerm,
+                                        page = ViewBag.CurrentPage - 1
                                     })">Mbrapa</a>
                                 </li>
                                 @for (int i = 1; i <= ViewBag.TotalPages; i++)
                                 {
                                     <li class="page-item @(ViewBag.CurrentPage == i ? "active" : "")">
-                                        <a class="page-link" href="@Url.Action("Index", new { 
-                                            searchTerm = ViewBag.SearchTerm, 
-                                            documentType = ViewBag.SelectedDocumentType,
-                                            status = ViewBag.SelectedStatus,
-                                            dateFrom = ViewBag.DateFrom,
-                                            dateTo = ViewBag.DateTo,
-                                            page = i 
+                                        <a class="page-link" href="@Url.Action("Index", new {
+                                            searchTerm = ViewBag.SearchTerm,
+                                            page = i
                                         })">@i</a>
                                     </li>
                                 }
                                 <li class="page-item @(ViewBag.CurrentPage == ViewBag.TotalPages ? "disabled" : "")">
-                                    <a class="page-link" href="@Url.Action("Index", new { 
-                                        searchTerm = ViewBag.SearchTerm, 
-                                        documentType = ViewBag.SelectedDocumentType,
-                                        status = ViewBag.SelectedStatus,
-                                        dateFrom = ViewBag.DateFrom,
-                                        dateTo = ViewBag.DateTo,
-                                        page = ViewBag.CurrentPage + 1 
+                                    <a class="page-link" href="@Url.Action("Index", new {
+                                        searchTerm = ViewBag.SearchTerm,
+                                        page = ViewBag.CurrentPage + 1
                                     })">Përpara</a>
                                 </li>
                             </ul>
@@ -134,7 +162,7 @@
             else
             {
                 <div class="text-center py-5">
-                    <i class="bi bi-inbox" style="font-size:4rem" class="text-muted"></i>
+                    <i class="bi bi-inbox" style="font-size:4rem"></i>
                     <h4 class="mt-3 text-muted">Nuk ka dokumente</h4>
                 </div>
             }

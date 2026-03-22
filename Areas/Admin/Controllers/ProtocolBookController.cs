@@ -2,13 +2,13 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace eProtokoll.Areas.Manager.Controllers
+namespace eProtokoll.Areas.Admin.Controllers
 {
-    [Area("Manager")]
-    [Authorize(Roles = "Manager")]
+    [Area("Admin")]
+    [Authorize(Roles = "Administrator")]
     public class ProtocolBookController : BaseProtocolBookController
     {
-        protected override string AreaName => "Manager";
+        protected override string AreaName => "Admin";
 
         public ProtocolBookController(IConfiguration configuration) : base(configuration) { }
     }
