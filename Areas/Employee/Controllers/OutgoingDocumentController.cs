@@ -1,81 +1,104 @@
-﻿using eProtokoll.Controllers.Base;
-using eProtokoll.Models;
-using eProtokoll.Repositories.AuditLogs;
-using eProtokoll.Repositories.Documents;
-using eProtokoll.Services.ProtocolNumber;
+﻿using eProtokoll.Models;
+using eProtokoll.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using DocumentType = eProtokoll.Models.DocumentType;
 
 namespace eProtokoll.Areas.Employee.Controllers
 {
     [Area("Employee")]
     [Authorize(Roles = "Employee")]
-    public class OutgoingDocumentController : BaseOutgoingDocumentController
+    public class OutgoingDocumentController : Controller
     {
-        protected override string AreaName => "Employee";
+        private readonly IDocumentService _service;
 
-        public OutgoingDocumentController(
-            IDocumentRepository documentRepository,
-            IWebHostEnvironment environment,
-            IProtocolNumberService protocolNumberService,
-            IAuditLogRepository auditLogRepository)
-            : base(documentRepository, environment, protocolNumberService, auditLogRepository)
+        public OutgoingDocumentController(IDocumentService service)
         {
+            _service = service;
         }
 
-        // GET: Index
-        public override async Task<IActionResult> Index(int page = 1)
+        // ================= INDEX =================
+        public async Task<IActionResult> Index(int page = 1)
         {
-            ViewData["area"] = AreaName;
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var (documents, totalItems) =
+                await _service.GetOutgoingListAsync(page, 20);
 
-            var (documents, totalItems) = await _documentRepository
-                .GetOutgoingAsync(page, 20, accessUserId: userId);
-
-            ViewBag.TotalOutgoing = totalItems;
-            ViewBag.TodayOutgoing = await _documentRepository
-                .GetTodayCountAsync(DocumentType.Outgoing);
             ViewBag.CurrentPage = page;
-            ViewBag.TotalPages = (int)Math.Ceiling(totalItems / (double)20);
             ViewBag.TotalItems = totalItems;
 
             return View("~/Views/OutgoingDocument/Index.cshtml", documents);
         }
 
-        // GET: Create
-        public override async Task<IActionResult> Create()
+        // ================= CREATE (GET) =================
+        public async Task<IActionResult> Create()
         {
-            ViewData["area"] = AreaName;
-            var document = new OutgoingDocument { Priority = Priority.Normal };
-            await LoadDropdowns(isEmployee: true);
-            return View("~/Views/OutgoingDocument/Create.cshtml", document);
+            await _service.LoadDropdownsAsync(
+                setInstitutions: s => ViewBag.Institutions = s,
+                setClassifications: s => ViewBag.Classifications = s,
+                setUsers: s => ViewBag.AccessUsers = s,
+                isEmployee: true
+            );
+
+            var model = new OutgoingDocument
+            {
+                Priority = Priority.Normal
+            };
+
+            return View("~/Views/OutgoingDocument/Create.cshtml", model);
         }
 
-        // POST: Create
+        // ================= CREATE (POST) =================
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public override async Task<IActionResult> Create(
+        public async Task<IActionResult> Create(
             OutgoingDocument model,
             IFormFile? attachmentFile,
-            List<int>? accessUserIds)
+            List<int>? accessUserIds,
+            string? scanSessionKey)
         {
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+            // rule: employee cannot create secret documents
             if (model.Classification == Classification.Secret)
             {
-                ModelState.AddModelError("Classification",
-                    "Punonjësit nuk lejohen të regjistrojnë dokumente sekrete.");
+                ModelState.AddModelError(
+                    nameof(model.Classification),
+                    "Nuk lejohet krijimi i dokumenteve sekrete."
+                );
             }
 
             if (!ModelState.IsValid)
             {
-                ViewData["area"] = AreaName;
-                await LoadDropdowns(isEmployee: true);
-                ViewBag.SelectedAccessUserIds = accessUserIds ?? new List<int>();
+                await _service.LoadDropdownsAsync(
+                    setInstitutions: s => ViewBag.Institutions = s,
+                    setClassifications: s => ViewBag.Classifications = s,
+                    setUsers: s => ViewBag.AccessUsers = s,
+                    isEmployee: true
+                );
+
                 return View("~/Views/OutgoingDocument/Create.cshtml", model);
             }
 
-            return await base.Create(model, attachmentFile, accessUserIds);
+            await _service.CreateOutgoingAsync(
+                model,
+                attachmentFile,
+                accessUserIds,
+                scanSessionKey,
+                userId
+            );
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        // ================= DETAILS =================
+        public async Task<IActionResult> Details(int id)
+        {
+            var document = await _service.GetOutgoingByIdAsync(id);
+
+            if (document == null)
+                return NotFound();
+
+            return View("~/Views/OutgoingDocument/Details.cshtml", document);
         }
     }
 }

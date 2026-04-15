@@ -1,81 +1,101 @@
-﻿using eProtokoll.Controllers.Base;
-using eProtokoll.Models;
-using eProtokoll.Repositories.AuditLogs;
-using eProtokoll.Repositories.Documents;
-using eProtokoll.Services.ProtocolNumber;
+﻿using eProtokoll.Models;
+using eProtokoll.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using DocumentType = eProtokoll.Models.DocumentType;
 
 namespace eProtokoll.Areas.Employee.Controllers
 {
     [Area("Employee")]
     [Authorize(Roles = "Employee")]
-    public class InternalDocumentController : BaseInternalDocumentController
+    public class InternalDocumentController : Controller
     {
-        protected override string AreaName => "Employee";
+        private readonly IDocumentService _service;
 
-        public InternalDocumentController(
-            IDocumentRepository documentRepository,
-            IWebHostEnvironment environment,
-            IProtocolNumberService protocolNumberService,
-            IAuditLogRepository auditLogRepository)
-            : base(documentRepository, environment, protocolNumberService, auditLogRepository)
+        public InternalDocumentController(IDocumentService service)
         {
+            _service = service;
         }
 
-        // GET: Index — filtron vetëm dokumentet e këtij punonjësi
-        public override async Task<IActionResult> Index(int page = 1)
+        // ================= INDEX =================
+        public async Task<IActionResult> Index(int page = 1)
         {
-            ViewData["area"] = AreaName;
-            int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var (documents, totalItems) = await _service.GetInternalListAsync(page, 20);
 
-            var (documents, totalItems) = await _documentRepository
-                .GetInternalAsync(page, 20, accessUserId: userId);
-
-            ViewBag.TotalInternal = totalItems;
-            ViewBag.TodayInternal =
-                await _documentRepository.GetTodayCountAsync(DocumentType.Internal);
             ViewBag.CurrentPage = page;
-            ViewBag.TotalPages = (int)Math.Ceiling(totalItems / (double)20);
             ViewBag.TotalItems = totalItems;
 
             return View("~/Views/InternalDocument/Index.cshtml", documents);
         }
 
-        // GET: Create
-        public override async Task<IActionResult> Create()
+        // ================= CREATE (GET) =================
+        public async Task<IActionResult> Create()
         {
-            ViewData["area"] = AreaName;
-            var document = new InternalDocument { Priority = Priority.Normal };
-            await LoadDropdowns(isEmployee: true);
-            return View("~/Views/InternalDocument/Create.cshtml", document);
+            await _service.LoadDropdownsAsync(
+                setInstitutions: s => ViewBag.Institutions = s,
+                setClassifications: s => ViewBag.Classifications = s,
+                setUsers: s => ViewBag.AccessUsers = s,
+                isEmployee: true
+            );
+
+            var model = new InternalDocument
+            {
+                Priority = Priority.Normal
+            };
+
+            return View("~/Views/InternalDocument/Create.cshtml", model);
         }
 
-        // POST: Create — bllokon Secret nga server
+        // ================= CREATE (POST) =================
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public override async Task<IActionResult> Create(
+        public async Task<IActionResult> Create(
             InternalDocument model,
             IFormFile? attachmentFile,
-            List<int>? accessUserIds)
+            List<int>? accessUserIds,
+            string? scanSessionKey)
         {
+            int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
             if (model.Classification == Classification.Secret)
             {
-                ModelState.AddModelError("Classification",
+                ModelState.AddModelError(
+                    nameof(model.Classification),
                     "Punonjësit nuk lejohen të regjistrojnë dokumente sekrete.");
             }
 
             if (!ModelState.IsValid)
             {
-                ViewData["area"] = AreaName;
-                await LoadDropdowns(isEmployee: true);
-                ViewBag.SelectedAccessUserIds = accessUserIds ?? new List<int>();
+                await _service.LoadDropdownsAsync(
+                    s => ViewBag.Institutions = s,
+                    s => ViewBag.Classifications = s,
+                    s => ViewBag.AccessUsers = s,
+                    isEmployee: true
+                );
+
                 return View("~/Views/InternalDocument/Create.cshtml", model);
             }
 
-            return await base.Create(model, attachmentFile, accessUserIds);
+            await _service.CreateInternalAsync(
+                model,
+                attachmentFile,
+                accessUserIds,
+                scanSessionKey,
+                userId
+            );
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        // ================= DETAILS =================
+        public async Task<IActionResult> Details(int id)
+        {
+            var document = await _service.GetInternalByIdAsync(id);
+
+            if (document == null)
+                return NotFound();
+
+            return View("~/Views/InternalDocument/Details.cshtml", document);
         }
     }
 }

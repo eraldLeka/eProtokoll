@@ -49,9 +49,12 @@ namespace eProtokoll.Models
     }
 
 
-    public enum FileCategory
-    {
-        [Display(Name = "PDF")]
-        PDF = 1
-    }
+ public enum FileCategory
+{
+    [Display(Name = "PDF")]
+    PDF = 1,
+
+    [Display(Name = "I Skanuar")]
+    Scanned = 2
+}
 }

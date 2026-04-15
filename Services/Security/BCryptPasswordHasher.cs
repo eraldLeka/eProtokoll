@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using BCrypt.Net;
 
-namespace eProtokoll.Services
+namespace eProtokoll.Services.Security
 {
     public class BCryptPasswordHasher<TUser> : IPasswordHasher<TUser> where TUser : class
     {

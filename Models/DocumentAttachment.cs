@@ -15,10 +15,6 @@ namespace eProtokoll.Models
         public virtual Document? Document { get; set; }
 
         [Required]
-        [StringLength(255)]
-        public string FileName { get; set; } = string.Empty;
-
-        [Required]
         [StringLength(500)]
         public string OriginalFileName { get; set; } = string.Empty;
 
@@ -30,8 +26,6 @@ namespace eProtokoll.Models
         [StringLength(64)]
         public string FileHash { get; set; } = string.Empty;
 
-        [StringLength(100)]
-        public string? ContentType { get; set; }
 
         [StringLength(50)]
         public string? FileExtension { get; set; }

@@ -125,6 +125,65 @@ namespace eProtokoll.Repositories.ProtocolBook
             return (documents, totalItems);
         }
 
+        // ── Print: Admin & Manager ────────────────────────────────────────────
+        public async Task<List<Document>> GetForPrintAsync()
+        {
+            using var connection = new SqlConnection(_connectionString);
+            await connection.OpenAsync();
+
+            var sql = @"
+                SELECT d.*,
+                       u.UserName  AS CreatorUserName,
+                       u.FirstName AS CreatorFirstName,
+                       u.LastName  AS CreatorLastName
+                FROM Documents d
+                LEFT JOIN Users u ON d.CreatedBy = u.Id
+                ORDER BY d.Year ASC, d.DocumentNumber ASC";
+
+            var documents = new List<Document>();
+
+            using var cmd = new SqlCommand(sql, connection);
+            using var reader = await cmd.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+                documents.Add(MapDocument(reader));
+
+            return documents;
+        }
+
+        // ── Print: Employee (vetëm dokumentet ku ka leje) ────────────────────
+        public async Task<List<Document>> GetForPrintForEmployeeAsync(int userId)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            await connection.OpenAsync();
+
+            var sql = @"
+                SELECT d.*,
+                       u.UserName  AS CreatorUserName,
+                       u.FirstName AS CreatorFirstName,
+                       u.LastName  AS CreatorLastName
+                FROM Documents d
+                LEFT JOIN Users u ON d.CreatedBy = u.Id
+                WHERE EXISTS (
+                    SELECT 1 FROM DocumentPermissions dp
+                    WHERE dp.DocumentId = d.DocumentId
+                      AND dp.UserId = @UserId
+                )
+                ORDER BY d.Year ASC, d.DocumentNumber ASC";
+
+            var documents = new List<Document>();
+
+            using var cmd = new SqlCommand(sql, connection);
+            cmd.Parameters.AddWithValue("@UserId", userId);
+
+            using var reader = await cmd.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+                documents.Add(MapDocument(reader));
+
+            return documents;
+        }
+
         // ── Helpers ──────────────────────────────────────────────────────────
 
         private async Task<int> GetCount(SqlConnection connection, string sql, string searchTerm)

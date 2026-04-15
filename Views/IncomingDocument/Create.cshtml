@@ -233,14 +233,30 @@
                             <label class="form-label">Ngarko Skedarin</label>
                             <input type="file"
                                    name="attachmentFile"
+                                   id="attachmentFile"
                                    class="form-control"
-                                   accept=".pdf"
-                                   required />
+                                   accept=".pdf" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Ose Merr nga Skaneri</label>
+                            <div class="d-flex gap-2">
+                                <select id="scannerSelect" class="form-select" disabled>
+                                    <option value="">-- Duke kërkuar skanerët... --</option>
+                                </select>
+                                <button type="button" class="btn btn-outline-secondary" onclick="loadScanners()">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </button>
+                                <button type="button" class="btn btn-primary" id="scanBtn" onclick="startScan()" disabled>
+                                    <i class="bi bi-scanner me-1"></i> Skano
+                                </button>
+                            </div>
+                            <div id="scanStatus" class="form-text mt-1"></div>
                         </div>
                     </div>
                 </div>
 
-             <!-- Buttons -->
+                <!-- Buttons -->
                 <div class="card shadow-sm mb-4">
                     <div class="card-body d-flex justify-content-between">
                         <a asp-area="@area"
@@ -249,6 +265,7 @@
                                class="btn btn-outline-secondary">
                             Kthehu
                         </a>
+                        <input type="hidden" id="scanSessionKey" name="scanSessionKey" value="" />
                         <button type="submit" class="btn btn-info btn-lg px-5">
                             Ruaj Dokumentin
                         </button>
@@ -262,9 +279,84 @@
 
 <script>
     var confidentialValue = '@confidentialValue';
+    var currentScanKey = null;
 
     function toggleAccessUsers(val) {
         var section = document.getElementById('accessUsersSection');
         section.style.display = (val === confidentialValue) ? 'block' : 'none';
     }
+
+        async function loadScanners() {
+        try {
+            const status = document.getElementById('scanStatus');
+            const select = document.getElementById('scannerSelect');
+
+            status.textContent = 'Duke kërkuar skanerët...';
+
+            const response = await fetch('http://localhost:7331/scanners');
+            const scanners = await response.json();
+
+            select.innerHTML = '';
+
+            scanners.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s;
+                opt.textContent = s;
+                select.appendChild(opt);
+            });
+
+            select.disabled = false;
+            document.getElementById('scanBtn').disabled = false;
+
+            status.textContent = scanners.length + ' skaner gjetur.';
+        }
+        catch (e) {
+            document.getElementById('scanStatus').textContent =
+                'Shërbimi i skanerit nuk është aktiv.';
+        }
+    }
+
+    async function startScan() {
+        const scanner = document.getElementById('scannerSelect').value;
+
+        const status = document.getElementById('scanStatus');
+        const btn = document.getElementById('scanBtn');
+
+        status.textContent = 'Duke skanuar...';
+        btn.disabled = true;
+
+        try {
+            const res = await fetch(
+                'http://localhost:7331/scan?subfolder=outgoing&scanner=' +
+                encodeURIComponent(scanner),
+                { method: 'POST' }
+            );
+
+            const result = await res.json();
+
+            if (result.success) {
+                currentScanKey = result.sessionKey;
+                document.getElementById('scanSessionKey').value = result.sessionKey;
+
+                status.textContent = 'Skanimi u krye me sukses!';
+            }
+        }
+        catch (e) {
+            status.textContent = 'Gabim gjatë skanimit.';
+        }
+        finally {
+            btn.disabled = false;
+        }
+    }
+
+    async function cancelScan() {
+        if (currentScanKey) {
+            navigator.sendBeacon('/api/scan/cancel?key=' + currentScanKey);
+            currentScanKey = null;
+        }
+    }
+
+    window.addEventListener('beforeunload', cancelScan);
+
+    loadScanners();
 </script>

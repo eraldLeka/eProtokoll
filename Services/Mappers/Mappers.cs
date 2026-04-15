@@ -116,12 +116,10 @@ namespace eProtokoll.Services.Mappers
             {
                 AttachmentId = reader.GetInt32(reader.GetOrdinal("AttachmentId")),
                 DocumentId = reader.GetInt32(reader.GetOrdinal("DocumentId")),
-                FileName = reader.GetString(reader.GetOrdinal("FileName")),
                 OriginalFileName = reader.GetString(reader.GetOrdinal("OriginalFileName")),
                 FilePath = reader.GetString(reader.GetOrdinal("FilePath")),
                 FileSize = reader.GetInt64(reader.GetOrdinal("FileSize")),
                 FileExtension = reader.IsDBNull(iExt) ? null : reader.GetString(iExt),
-                ContentType = reader.IsDBNull(iCt) ? null : reader.GetString(iCt),
                 UploadedDate = reader.GetDateTime(reader.GetOrdinal("UploadedDate")),
                 UploadedBy = reader.GetInt32(reader.GetOrdinal("UploadedBy")),
                 Category = (FileCategory)reader.GetInt32(reader.GetOrdinal("Category")),

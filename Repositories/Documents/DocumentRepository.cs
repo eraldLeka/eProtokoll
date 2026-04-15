@@ -207,7 +207,7 @@ namespace eProtokoll.Repositories.Documents
                 cmd.Parameters.AddWithValue("@OriginalDocumentDate",
                     (object?)model.OriginalDocumentDate ?? DBNull.Value);
 
-                var documentId = (int)await cmd.ExecuteScalarAsync();
+                var documentId = Convert.ToInt32(await cmd.ExecuteScalarAsync());
                 transaction.Commit();
                 return documentId;
             }
@@ -412,7 +412,7 @@ namespace eProtokoll.Repositories.Documents
                 cmd.Parameters.AddWithValue("@ArchiveLocation",
                     (object?)model.ArchiveLocation ?? DBNull.Value);
 
-                var documentId = (int)await cmd.ExecuteScalarAsync();
+                var documentId = Convert.ToInt32(await cmd.ExecuteScalarAsync());
                 transaction.Commit();
                 return documentId;
             }
@@ -583,7 +583,7 @@ namespace eProtokoll.Repositories.Documents
                 cmd.Parameters.AddWithValue("@ToDepartment",
                     (object?)model.ToDepartment ?? DBNull.Value);
 
-                var documentId = (int)await cmd.ExecuteScalarAsync();
+                var documentId = Convert.ToInt32(await cmd.ExecuteScalarAsync());
                 transaction.Commit();
                 return documentId;
             }
@@ -594,32 +594,6 @@ namespace eProtokoll.Repositories.Documents
             }
         }
 
-        // ==================== SHARED ====================
-
-        public async Task<int> GetCountAsync(DocumentType type)
-        {
-            using var connection = new SqlConnection(_connectionString);
-            await connection.OpenAsync();
-
-            using var cmd = new SqlCommand(
-                "SELECT COUNT(*) FROM Documents WHERE DocumentType = @DocumentType", connection);
-            cmd.Parameters.AddWithValue("@DocumentType", (int)type);
-            return Convert.ToInt32(await cmd.ExecuteScalarAsync());
-        }
-
-        public async Task<int> GetTodayCountAsync(DocumentType type)
-        {
-            using var connection = new SqlConnection(_connectionString);
-            await connection.OpenAsync();
-
-            using var cmd = new SqlCommand(@"
-                SELECT COUNT(*) FROM Documents
-                WHERE DocumentType = @DocumentType
-                AND CAST(CreatedDate AS DATE) = @Today", connection);
-            cmd.Parameters.AddWithValue("@DocumentType", (int)type);
-            cmd.Parameters.AddWithValue("@Today", DateTime.Now.Date);
-            return Convert.ToInt32(await cmd.ExecuteScalarAsync());
-        }
 
         // ==================== ATTACHMENTS ====================
 
@@ -633,22 +607,20 @@ namespace eProtokoll.Repositories.Documents
             {
                 var query = @"
                     INSERT INTO DocumentAttachments (
-                        DocumentId, FileName, OriginalFileName, FilePath, FileSize, FileExtension,
-                        ContentType, UploadedDate, UploadedBy, Category, FileHash
+                        DocumentId, OriginalFileName, FilePath, FileSize, FileExtension,
+                        UploadedDate, UploadedBy, Category, FileHash
                     ) VALUES (
-                        @DocumentId, @FileName, @OriginalFileName, @FilePath, @FileSize, @FileExtension,
-                        @ContentType, @UploadedDate, @UploadedBy, @Category, @FileHash
+                        @DocumentId, @OriginalFileName, @FilePath, @FileSize, @FileExtension,
+                        @UploadedDate, @UploadedBy, @Category, @FileHash
                     )";
 
                 using (var cmd = new SqlCommand(query, connection, transaction))
                 {
                     cmd.Parameters.AddWithValue("@DocumentId", attachment.DocumentId);
-                    cmd.Parameters.AddWithValue("@FileName", attachment.FileName);
                     cmd.Parameters.AddWithValue("@OriginalFileName", attachment.OriginalFileName);
                     cmd.Parameters.AddWithValue("@FilePath", attachment.FilePath);
                     cmd.Parameters.AddWithValue("@FileSize", attachment.FileSize);
                     cmd.Parameters.AddWithValue("@FileExtension", (object?)attachment.FileExtension ?? DBNull.Value);
-                    cmd.Parameters.AddWithValue("@ContentType", (object?)attachment.ContentType ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@UploadedDate", attachment.UploadedDate);
                     cmd.Parameters.AddWithValue("@UploadedBy", attachment.UploadedBy);
                     cmd.Parameters.AddWithValue("@Category", (int)attachment.Category);

@@ -112,5 +112,58 @@ namespace eProtokoll.Areas.Employee.Controllers
 
             return View("~/Views/ProtocolBook/Index.cshtml", documents);
         }
+
+        public override async Task<IActionResult> Print()
+        {
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+            using var connection = new SqlConnection(_connectionString);
+            await connection.OpenAsync();
+
+            var sql = @"
+                SELECT d.*,
+                       u.UserName  AS CreatorUserName,
+                       u.FirstName AS CreatorFirstName,
+                       u.LastName  AS CreatorLastName
+                FROM Documents d
+                LEFT JOIN Users u ON d.CreatedBy = u.Id
+                WHERE (
+                    d.Classification = 1
+                    OR d.CreatedBy = @UserId
+                    OR (d.Classification = 2 AND EXISTS (
+                        SELECT 1 FROM DocumentPermissions dp
+                        WHERE dp.DocumentId = d.DocumentId AND dp.UserId = @UserId
+                    ))
+                )
+                ORDER BY d.Year ASC, d.DocumentNumber ASC";
+
+            var documents = new List<Document>();
+
+            using var cmd = new SqlCommand(sql, connection);
+            cmd.Parameters.AddWithValue("@UserId", userId);
+
+            using var reader = await cmd.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                var document = DocumentMapper.MapToDocument(reader);
+                document.Classification = (Classification)reader.GetInt32(reader.GetOrdinal("Classification"));
+
+                if (!reader.IsDBNull(reader.GetOrdinal("CreatorUserName")))
+                {
+                    document.Creator = new Users
+                    {
+                        UserName = reader.GetString(reader.GetOrdinal("CreatorUserName")),
+                        FirstName = reader.GetString(reader.GetOrdinal("CreatorFirstName")),
+                        LastName = reader.GetString(reader.GetOrdinal("CreatorLastName"))
+                    };
+                }
+
+                documents.Add(document);
+            }
+
+            ViewData["area"] = AreaName;
+            return View("~/Views/ProtocolBook/Print.cshtml", documents);
+        }
     }
 }

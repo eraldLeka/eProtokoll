@@ -5,12 +5,13 @@ using eProtokoll.Repositories.Dashboard;
 using eProtokoll.Repositories.Documents;
 using eProtokoll.Repositories.Institutions;
 using eProtokoll.Repositories.User;
+using eProtokoll.Services.Files;
 using eProtokoll.Services.ProtocolNumber;
 using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Cookie Authentication
+// ==================== AUTH ====================
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
@@ -22,9 +23,10 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 
 builder.Services.AddAuthorization();
 
+// ==================== MVC ====================
 builder.Services.AddControllersWithViews();
 
-// Repositories
+// ==================== REPOSITORIES ====================
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
 builder.Services.AddScoped<ITrackingRepository, TrackingRepository>();
@@ -33,12 +35,20 @@ builder.Services.AddScoped<IDashboardRepository, DashboardRepository>();
 builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 builder.Services.AddScoped<IInstitutionRepository, InstitutionRepository>();
 
-// Services
+// ==================== SERVICES ====================
 builder.Services.AddScoped<IProtocolNumberService, ProtocolNumberService>();
+builder.Services.AddScoped<IFileStorageService, FileStorageService>();
+builder.Services.AddScoped<IFileSecurityService, FileSecurityService>();
+builder.Services.AddScoped<IDocumentFileService, DocumentFileService>();
+builder.Services.AddScoped<IDocumentService, DocumentService>();
+
+// ==================== CACHE & SESSION ====================
+builder.Services.AddMemoryCache();
+builder.Services.AddSession();
 
 var app = builder.Build();
 
-// Seed admin user
+// ==================== SEED ====================
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -55,7 +65,7 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// Middleware
+// ==================== MIDDLEWARE ====================
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -64,12 +74,15 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
 app.UseRouting();
+
+app.UseSession();
 
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Routes
+// ==================== ROUTING ====================
 app.MapControllerRoute(
     name: "areas",
     pattern: "{area:exists}/{controller=Dashboard}/{action=Index}/{id?}");

@@ -31,11 +31,6 @@ namespace eProtokoll.Repositories.Documents
 
         Task<int> InsertInternalAsync(InternalDocument model);
 
-        // ================= STATISTICS =================
-
-        Task<int> GetCountAsync(DocumentType type);
-
-        Task<int> GetTodayCountAsync(DocumentType type);
 
         // ================= ATTACHMENTS =================
 

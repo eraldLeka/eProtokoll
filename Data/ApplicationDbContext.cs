@@ -135,7 +135,6 @@ namespace eProtokoll.Data
                 entity.HasIndex(e => e.DocumentId);
                 entity.HasIndex(e => e.UploadedDate);
 
-                entity.Property(e => e.FileName).IsRequired().HasMaxLength(255);
                 entity.Property(e => e.FilePath).IsRequired().HasMaxLength(500);
                 entity.Property(e => e.FileSize).IsRequired();
 

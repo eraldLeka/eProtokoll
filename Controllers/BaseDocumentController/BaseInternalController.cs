@@ -1,5 +1,6 @@
 ﻿using eProtokoll.Models;
 using eProtokoll.Repositories.Documents;
+using eProtokoll.Repositories.AuditLogs;
 using eProtokoll.Services.Files;
 using eProtokoll.Services.ProtocolNumber;
 using Microsoft.AspNetCore.Mvc;
@@ -8,33 +9,28 @@ using System.Security.Claims;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 using DocumentType = eProtokoll.Models.DocumentType;
-using eProtokoll.Repositories.AuditLogs;
 
 namespace eProtokoll.Controllers.Base
 {
     public abstract class BaseInternalDocumentController : Controller
     {
         protected readonly IDocumentRepository _documentRepository;
-        protected readonly IWebHostEnvironment _environment;
         protected readonly IProtocolNumberService _protocolNumberService;
-        protected readonly FileService _fileService;
         protected readonly IAuditLogRepository _auditLogRepository;
+        protected readonly IDocumentFileService _documentFileService;
 
         protected virtual string AreaName => "Manager";
 
         protected BaseInternalDocumentController(
             IDocumentRepository documentRepository,
-            IWebHostEnvironment environment,
             IProtocolNumberService protocolNumberService,
-            IAuditLogRepository auditLogRepository)
+            IAuditLogRepository auditLogRepository,
+            IDocumentFileService documentFileService)
         {
             _documentRepository = documentRepository;
-            _environment = environment;
             _protocolNumberService = protocolNumberService;
             _auditLogRepository = auditLogRepository;
-
-            var uploadsFolder = Path.Combine(environment.WebRootPath, "uploads", "internal");
-            _fileService = new FileService(uploadsFolder);
+            _documentFileService = documentFileService;
         }
 
         // GET: Index
@@ -42,10 +38,10 @@ namespace eProtokoll.Controllers.Base
         {
             ViewData["area"] = AreaName;
 
-            var (documents, totalItems) = await _documentRepository.GetInternalAsync(page, 20);
+            var (documents, totalItems) =
+                await _documentRepository.GetInternalAsync(page, 20);
 
             ViewBag.TotalInternal = totalItems;
-            ViewBag.TodayInternal = await _documentRepository.GetTodayCountAsync(DocumentType.Internal);
             ViewBag.CurrentPage = page;
             ViewBag.TotalPages = (int)Math.Ceiling(totalItems / (double)20);
             ViewBag.TotalItems = totalItems;
@@ -67,23 +63,28 @@ namespace eProtokoll.Controllers.Base
             return View("~/Views/InternalDocument/Create.cshtml", document);
         }
 
+        // POST: Create (CLEAN VERSION)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public virtual async Task<IActionResult> Create(
-          InternalDocument model,
-          IFormFile? attachmentFile,
-          List<int>? accessUserIds)
+            InternalDocument model,
+            IFormFile? attachmentFile,
+            List<int>? accessUserIds,
+            string? scanSessionKey)
         {
             ViewData["area"] = AreaName;
 
             var year = DateTime.Now.Year;
-            model.DocumentNumber = await _protocolNumberService
-                .GetNextDocumentNumberAsync(DocumentType.Internal, year);
+
+            model.DocumentNumber =
+                await _protocolNumberService.GetNextDocumentNumberAsync(DocumentType.Internal, year);
+
             model.Year = year;
 
             ModelState.Remove(nameof(model.DocumentNumber));
             ModelState.Remove(nameof(model.Year));
 
+            // business validation only
             if (model.Classification == Classification.Confidential &&
                 (accessUserIds == null || accessUserIds.Count == 0))
             {
@@ -91,59 +92,61 @@ namespace eProtokoll.Controllers.Base
                     "Për klasifikimin 'I kufizuar' duhet të zgjidhni të paktën një përdorues.");
             }
 
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-
-                model.CreatedDate = DateTime.Now;
-                model.CreatedBy = userId;
-                model.DocumentType = DocumentType.Internal;
-
-                var documentId = await _documentRepository.InsertInternalAsync(model);
-
-                if (attachmentFile != null && attachmentFile.Length > 0)
-                {
-                    using var ms = new MemoryStream();
-                    await attachmentFile.CopyToAsync(ms);
-                    var fileBytes = ms.ToArray();
-
-                    var savedFile = _fileService.SaveFile(
-                        fileBytes,
-                        attachmentFile.FileName,
-                        documentId,
-                        attachmentFile.ContentType,
-                        userId);
-
-                    savedFile.Category = FileCategory.PDF;
-                    await _documentRepository.InsertAttachmentAsync(savedFile);
-                }
-
-                if (model.Classification == Classification.Confidential &&
-                    accessUserIds != null && accessUserIds.Count > 0)
-                {
-                    await _documentRepository.InsertDocumentPermissionsAsync(documentId, accessUserIds);
-                }
-
-                TempData["SuccessMessage"] =
-                    $"Dokumenti intern '{model.ProtocolNumber}' u regjistrua me sukses!";
-
-                await _auditLogRepository.LogAsync(new AuditLog
-                {
-                    UserId = (int)model.CreatedBy,
-                    UserName = User.Identity!.Name!,
-                    Action = "Create",
-                    DocumentId = documentId,
-                    Description = $"Krijoi dokument intern '{model.ProtocolNumber}'",
-                    Timestamp = DateTime.Now
-                });
-
-                return RedirectToAction(nameof(Index));
+                await LoadDropdowns();
+                ViewBag.SelectedAccessUserIds = accessUserIds ?? new List<int>();
+                return View("~/Views/InternalDocument/Create.cshtml", model);
             }
 
-            await LoadDropdowns();
-            ViewBag.SelectedAccessUserIds = accessUserIds ?? new List<int>();
-            return View("~/Views/InternalDocument/Create.cshtml", model);
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+            model.CreatedDate = DateTime.Now;
+            model.CreatedBy = userId;
+            model.DocumentType = DocumentType.Internal;
+
+            var documentId =
+                await _documentRepository.InsertInternalAsync(model);
+
+            // 🔥 FILE LOGIC MOVED OUT
+            var attachment =
+                await _documentFileService.ProcessFileAsync(
+                    uploadFile: attachmentFile,
+                    scanSessionKey: scanSessionKey,
+                    documentId: documentId,
+                    originalFileNameFallback: $"{model.Subject}.pdf",
+                    contentType: "application/pdf",
+                    userId: userId,
+                    isSecret: model.Classification == Classification.Secret,
+                    documentTypeFolder: "uploads/internal"
+                );
+
+            await _documentRepository.InsertAttachmentAsync(attachment);
+
+            // permissions
+            if (model.Classification == Classification.Confidential &&
+                accessUserIds != null && accessUserIds.Count > 0)
+            {
+                await _documentRepository.InsertDocumentPermissionsAsync(documentId, accessUserIds);
+            }
+
+            // audit
+            await _auditLogRepository.LogAsync(new AuditLog
+            {
+                UserId = userId,
+                UserName = User.Identity!.Name!,
+                Action = "Create",
+                DocumentId = documentId,
+                Description = $"Krijoi dokument intern '{model.ProtocolNumber}'",
+                Timestamp = DateTime.Now
+            });
+
+            TempData["SuccessMessage"] =
+                $"Dokumenti intern '{model.ProtocolNumber}' u regjistrua me sukses!";
+
+            return RedirectToAction(nameof(Index));
         }
+
         // GET: Details
         public virtual async Task<IActionResult> Details(int? id)
         {
@@ -152,7 +155,8 @@ namespace eProtokoll.Controllers.Base
             if (id == null)
                 return NotFound();
 
-            var document = await _documentRepository.GetInternalByIdAsync(id.Value);
+            var document =
+                await _documentRepository.GetInternalByIdAsync(id.Value);
 
             if (document == null)
                 return NotFound();
@@ -163,14 +167,16 @@ namespace eProtokoll.Controllers.Base
             return View("~/Views/InternalDocument/Details.cshtml", document);
         }
 
-        // Dropdown helper
+        // Dropdown helper (UNCHANGED)
         protected async Task LoadDropdowns(
             int? selectedClassificationId = null,
             bool isEmployee = false)
         {
             var classifications = Enum.GetValues(typeof(Classification))
                 .Cast<Classification>()
-                .Where(c => !isEmployee || c == Classification.Public || c == Classification.Confidential)
+                .Where(c => !isEmployee ||
+                            c == Classification.Public ||
+                            c == Classification.Confidential)
                 .Select(c => new SelectListItem
                 {
                     Value = ((int)c).ToString(),

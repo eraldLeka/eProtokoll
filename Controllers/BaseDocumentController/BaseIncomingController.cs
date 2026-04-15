@@ -15,36 +15,33 @@ namespace eProtokoll.Controllers.Base
     public abstract class BaseIncomingDocumentController : Controller
     {
         protected readonly IDocumentRepository _documentRepository;
-        protected readonly IWebHostEnvironment _environment;
         protected readonly IProtocolNumberService _protocolNumberService;
-        protected readonly FileService _fileService;
         protected readonly IAuditLogRepository _auditLogRepository;
+        protected readonly IDocumentFileService _documentFileService;
 
         protected virtual string AreaName => "Manager";
 
         protected BaseIncomingDocumentController(
             IDocumentRepository documentRepository,
-            IWebHostEnvironment environment,
             IProtocolNumberService protocolNumberService,
-            IAuditLogRepository auditLogRepository)
+            IAuditLogRepository auditLogRepository,
+            IDocumentFileService documentFileService)
         {
             _documentRepository = documentRepository;
-            _environment = environment;
             _protocolNumberService = protocolNumberService;
             _auditLogRepository = auditLogRepository;
-
-            var uploadsFolder = Path.Combine(environment.WebRootPath, "uploads", "incoming");
-            _fileService = new FileService(uploadsFolder);
+            _documentFileService = documentFileService;
         }
 
         // GET: Index
         public virtual async Task<IActionResult> Index(int page = 1)
         {
             ViewData["area"] = AreaName;
-            var (documents, totalItems) = await _documentRepository.GetIncomingAsync(page, 20);
+
+            var (documents, totalItems) =
+                await _documentRepository.GetIncomingAsync(page, 20);
 
             ViewBag.TotalIncoming = totalItems;
-            ViewBag.TodayIncoming = await _documentRepository.GetTodayCountAsync(DocumentType.Incoming);
             ViewBag.CurrentPage = page;
             ViewBag.TotalPages = (int)Math.Ceiling(totalItems / (double)20);
             ViewBag.TotalItems = totalItems;
@@ -72,22 +69,20 @@ namespace eProtokoll.Controllers.Base
         public virtual async Task<IActionResult> Create(
             IncomingDocument model,
             IFormFile? attachmentFile,
-            List<int>? accessUserIds)
+            List<int>? accessUserIds,
+            string? scanSessionKey)
         {
             ViewData["area"] = AreaName;
 
             var year = DateTime.Now.Year;
-            model.DocumentNumber = await _protocolNumberService
-                .GetNextDocumentNumberAsync(DocumentType.Incoming, year);
+
+            model.DocumentNumber =
+                await _protocolNumberService.GetNextDocumentNumberAsync(DocumentType.Incoming, year);
+
             model.Year = year;
 
             ModelState.Remove(nameof(model.DocumentNumber));
             ModelState.Remove(nameof(model.Year));
-
-            if (attachmentFile == null || attachmentFile.Length == 0)
-                ModelState.AddModelError("attachmentFile", "Ngarko pdf per dokumentin hyres.");
-            else if (Path.GetExtension(attachmentFile.FileName).ToLower() != ".pdf")
-                ModelState.AddModelError("attachmentFile", "Vetem PDF lejohet.");
 
             if (model.Classification == Classification.Confidential &&
                 (accessUserIds == null || accessUserIds.Count == 0))
@@ -96,58 +91,58 @@ namespace eProtokoll.Controllers.Base
                     "Për klasifikimin 'I kufizuar' duhet të zgjidhni të paktën një përdorues.");
             }
 
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                model.CreatedDate = DateTime.Now;
-                model.CreatedBy = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-                model.DocumentType = DocumentType.Incoming;
-
-                // 1. Fut dokumentin — merr documentId
-                var documentId = await _documentRepository.InsertIncomingAsync(model);
-
-                // 2. Ruaj file fizikisht + fut attachment në DB
-                if (attachmentFile != null && attachmentFile.Length > 0)
-                {
-                    using var ms = new MemoryStream();
-                    await attachmentFile.CopyToAsync(ms);
-                    var fileBytes = ms.ToArray();
-                    var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-
-                    var savedFile = _fileService.SaveFile(
-                        fileBytes, attachmentFile.FileName, documentId,
-                        attachmentFile.ContentType, userId);
-
-                    savedFile.Category = FileCategory.PDF;
-                    await _documentRepository.InsertAttachmentAsync(savedFile);
-                }
-
-                // 3. Nëse Confidential, ruaj access users
-                if (model.Classification == Classification.Confidential &&
-                    accessUserIds != null && accessUserIds.Count > 0)
-                {
-                    await _documentRepository.InsertDocumentPermissionsAsync(documentId, accessUserIds);
-                }
-
-                TempData["SuccessMessage"] =
-                    $"Dokumenti hyrës '{model.ProtocolNumber}' u regjistrua me sukses!";
-
-                await _auditLogRepository.LogAsync(new AuditLog
-                {
-                    UserId = (int)model.CreatedBy,
-                    UserName = User.Identity!.Name!,
-                    Action = "Create",
-                    DocumentId = documentId,
-                    Description = $"Krijoi dokument hyrës '{model.ProtocolNumber}'",
-                    Timestamp = DateTime.Now
-                });
-
-                return RedirectToAction(nameof(Index));
+                await LoadDropdowns();
+                ViewBag.SelectedAccessUserIds = accessUserIds ?? new List<int>();
+                return View("~/Views/IncomingDocument/Create.cshtml", model);
             }
 
-            await LoadDropdowns();
-            ViewBag.SelectedAccessUserIds = accessUserIds ?? new List<int>();
-            return View("~/Views/IncomingDocument/Create.cshtml", model);
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+            model.CreatedDate = DateTime.Now;
+            model.CreatedBy = userId;
+            model.DocumentType = DocumentType.Incoming;
+
+            var documentId = await _documentRepository.InsertIncomingAsync(model);
+
+            var attachment = await _documentFileService.ProcessFileAsync(
+                uploadFile: attachmentFile,
+                scanSessionKey: scanSessionKey,
+                documentId: documentId,
+                originalFileNameFallback: $"{model.Subject}.pdf",
+                contentType: "application/pdf",
+                userId: userId,
+                isSecret: model.Classification == Classification.Secret,
+                documentTypeFolder: "uploads/incoming"
+            );
+
+            await _documentRepository.InsertAttachmentAsync(attachment);
+
+            // permissions
+            if (model.Classification == Classification.Confidential &&
+                accessUserIds != null && accessUserIds.Count > 0)
+            {
+                await _documentRepository.InsertDocumentPermissionsAsync(documentId, accessUserIds);
+            }
+
+            // audit
+            await _auditLogRepository.LogAsync(new AuditLog
+            {
+                UserId = userId,
+                UserName = User.Identity!.Name!,
+                Action = "Create",
+                DocumentId = documentId,
+                Description = $"Krijoi dokument hyrës '{model.ProtocolNumber}'",
+                Timestamp = DateTime.Now
+            });
+
+            TempData["SuccessMessage"] =
+                $"Dokumenti hyrës '{model.ProtocolNumber}' u regjistrua me sukses!";
+
+            return RedirectToAction(nameof(Index));
         }
+
         // GET: Details
         public virtual async Task<IActionResult> Details(int? id)
         {
@@ -156,10 +151,11 @@ namespace eProtokoll.Controllers.Base
             if (id == null) return NotFound();
 
             var document = await _documentRepository.GetIncomingByIdAsync(id.Value);
+
             if (document == null) return NotFound();
 
-            document.Attachments = await _documentRepository
-                .GetAttachmentsByDocumentIdAsync(id.Value);
+            document.Attachments =
+                await _documentRepository.GetAttachmentsByDocumentIdAsync(id.Value);
 
             return View("~/Views/IncomingDocument/Details.cshtml", document);
         }

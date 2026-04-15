@@ -59,6 +59,57 @@ namespace eProtokoll.Controllers.Base
             return View("~/Views/ProtocolBook/Index.cshtml", documents);
         }
 
+        // ── Print: Admin & Manager ────────────────────────────────────────────
+        public virtual async Task<IActionResult> Print()
+        {
+            using var connection = new SqlConnection(_connectionString);
+            await connection.OpenAsync();
+
+            var documents = await FetchAllDocuments(connection);
+
+            ViewData["area"] = AreaName;
+            ViewData["InstitutionName"] = "Institucioni"; // ose nga config
+
+            return View("~/Views/ProtocolBook/Print.cshtml", documents);
+        }
+
+        protected virtual async Task<List<Document>> FetchAllDocuments(SqlConnection connection)
+        {
+            var documents = new List<Document>();
+
+            var sql = @"
+                SELECT d.*,
+                       u.UserName  AS CreatorUserName,
+                       u.FirstName AS CreatorFirstName,
+                       u.LastName  AS CreatorLastName
+                FROM Documents d
+                LEFT JOIN Users u ON d.CreatedBy = u.Id
+                ORDER BY d.Year ASC, d.DocumentNumber ASC";
+
+            using var cmd = new SqlCommand(sql, connection);
+            using var reader = await cmd.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                var document = DocumentMapper.MapToDocument(reader);
+                document.Classification = (Classification)reader.GetInt32(reader.GetOrdinal("Classification"));
+
+                if (!reader.IsDBNull(reader.GetOrdinal("CreatorUserName")))
+                {
+                    document.Creator = new Users
+                    {
+                        UserName = reader.GetString(reader.GetOrdinal("CreatorUserName")),
+                        FirstName = reader.GetString(reader.GetOrdinal("CreatorFirstName")),
+                        LastName = reader.GetString(reader.GetOrdinal("CreatorLastName"))
+                    };
+                }
+
+                documents.Add(document);
+            }
+
+            return documents;
+        }
+
         protected virtual async Task<List<Document>> FetchDocuments(
             SqlConnection connection,
             string where,
