@@ -7,6 +7,18 @@ namespace eProtokoll.Services.Mappers
 
     public static class DocumentMapper
     {
+        private static int? TryGetOrdinal(SqlDataReader reader, string columnName)
+        {
+            try
+            {
+                return reader.GetOrdinal(columnName);
+            }
+            catch (IndexOutOfRangeException)
+            {
+                return null;
+            }
+        }
+
         private static void MapBase(SqlDataReader reader, Document document)
         {
             document.DocumentId = reader.GetInt32(reader.GetOrdinal("DocumentId"));
@@ -28,6 +40,73 @@ namespace eProtokoll.Services.Mappers
 
             document.CreatedBy = reader.GetInt32(reader.GetOrdinal("CreatedBy"));
             document.CreatedDate = reader.GetDateTime(reader.GetOrdinal("CreatedDate"));
+
+            var iCreatorFirstName = TryGetOrdinal(reader, "CreatorFirstName");
+            var iCreatorLastName = TryGetOrdinal(reader, "CreatorLastName");
+            var iCreatorUserName = TryGetOrdinal(reader, "CreatorUserName");
+
+            if (iCreatorFirstName.HasValue || iCreatorLastName.HasValue || iCreatorUserName.HasValue)
+            {
+                document.Creator = new Users
+                {
+                    Id = document.CreatedBy,
+                    FirstName = iCreatorFirstName.HasValue && !reader.IsDBNull(iCreatorFirstName.Value)
+                        ? reader.GetString(iCreatorFirstName.Value)
+                        : string.Empty,
+                    LastName = iCreatorLastName.HasValue && !reader.IsDBNull(iCreatorLastName.Value)
+                        ? reader.GetString(iCreatorLastName.Value)
+                        : string.Empty,
+                    UserName = iCreatorUserName.HasValue && !reader.IsDBNull(iCreatorUserName.Value)
+                        ? reader.GetString(iCreatorUserName.Value)
+                        : string.Empty,
+                    PasswordHash = string.Empty,
+                    Email = string.Empty
+                };
+            }
+
+            var iLatestAttachmentPath = TryGetOrdinal(reader, "LatestAttachmentPath");
+            if (iLatestAttachmentPath.HasValue && !reader.IsDBNull(iLatestAttachmentPath.Value))
+            {
+                var iLatestAttachmentId = TryGetOrdinal(reader, "LatestAttachmentId");
+                var iLatestAttachmentName = TryGetOrdinal(reader, "LatestAttachmentName");
+                var iLatestAttachmentExtension = TryGetOrdinal(reader, "LatestAttachmentExtension");
+                var iLatestAttachmentSize = TryGetOrdinal(reader, "LatestAttachmentSize");
+                var iLatestAttachmentUploadedDate = TryGetOrdinal(reader, "LatestAttachmentUploadedDate");
+                var iLatestAttachmentUploadedBy = TryGetOrdinal(reader, "LatestAttachmentUploadedBy");
+                var iLatestAttachmentCategory = TryGetOrdinal(reader, "LatestAttachmentCategory");
+
+                document.Attachments = new List<DocumentAttachment>
+                {
+                    new DocumentAttachment
+                    {
+                        AttachmentId = iLatestAttachmentId.HasValue && !reader.IsDBNull(iLatestAttachmentId.Value)
+                            ? reader.GetInt32(iLatestAttachmentId.Value)
+                            : 0,
+                        DocumentId = document.DocumentId,
+                        OriginalFileName = iLatestAttachmentName.HasValue && !reader.IsDBNull(iLatestAttachmentName.Value)
+                            ? reader.GetString(iLatestAttachmentName.Value)
+                            : "Dokument",
+                        FilePath = reader.GetString(iLatestAttachmentPath.Value),
+                        FileExtension = iLatestAttachmentExtension.HasValue && !reader.IsDBNull(iLatestAttachmentExtension.Value)
+                            ? reader.GetString(iLatestAttachmentExtension.Value)
+                            : null,
+                        FileSize = iLatestAttachmentSize.HasValue && !reader.IsDBNull(iLatestAttachmentSize.Value)
+                            ? reader.GetInt64(iLatestAttachmentSize.Value)
+                            : 0,
+                        UploadedDate = iLatestAttachmentUploadedDate.HasValue && !reader.IsDBNull(iLatestAttachmentUploadedDate.Value)
+                            ? reader.GetDateTime(iLatestAttachmentUploadedDate.Value)
+                            : DateTime.UtcNow,
+                        UploadedBy = iLatestAttachmentUploadedBy.HasValue && !reader.IsDBNull(iLatestAttachmentUploadedBy.Value)
+                            ? reader.GetInt32(iLatestAttachmentUploadedBy.Value)
+                            : 0,
+                        Category = iLatestAttachmentCategory.HasValue && !reader.IsDBNull(iLatestAttachmentCategory.Value)
+                            ? (FileCategory)reader.GetInt32(iLatestAttachmentCategory.Value)
+                            : FileCategory.PDF,
+                        FileHash = string.Empty
+                    }
+                };
+                document.HasAttachments = true;
+            }
         }
 
         public static Document MapToDocument(SqlDataReader reader)
@@ -42,9 +121,15 @@ namespace eProtokoll.Services.Mappers
             var document = new IncomingDocument();
             MapBase(reader, document);
 
-            document.InstitutionId = reader.GetInt32(reader.GetOrdinal("InstitutionId"));
-            document.SenderName = reader.GetString(reader.GetOrdinal("SenderName"));
-            document.ReceivedDate = reader.GetDateTime(reader.GetOrdinal("ReceivedDate"));
+            int iInstitutionId = reader.GetOrdinal("InstitutionId");
+            document.InstitutionId = reader.IsDBNull(iInstitutionId) ? 0 : reader.GetInt32(iInstitutionId);
+            int iSenderName = reader.GetOrdinal("SenderName");
+            document.SenderName = reader.IsDBNull(iSenderName) ? string.Empty : reader.GetString(iSenderName);
+
+            int iReceivedDate = reader.GetOrdinal("ReceivedDate");
+            document.ReceivedDate = reader.IsDBNull(iReceivedDate)
+                ? document.CreatedDate
+                : reader.GetDateTime(iReceivedDate);
 
             int iReceivedBy = reader.GetOrdinal("ReceivedBy");
             document.ReceivedBy = reader.IsDBNull(iReceivedBy) ? null : reader.GetInt32(iReceivedBy);
@@ -64,6 +149,20 @@ namespace eProtokoll.Services.Mappers
             int iRespDocId = reader.GetOrdinal("ResponseDocumentId");
             document.ResponseDocumentId = reader.IsDBNull(iRespDocId) ? null : reader.GetInt32(iRespDocId);
 
+            var iInstitutionName = TryGetOrdinal(reader, "InstitutionName");
+            if (iInstitutionName.HasValue && !reader.IsDBNull(iInstitutionName.Value))
+            {
+                document.Institution ??= new Institution();
+                document.Institution.Name = reader.GetString(iInstitutionName.Value);
+            }
+
+            var iInstitutionAdress = TryGetOrdinal(reader, "InstitutionAdress");
+            if (iInstitutionAdress.HasValue && !reader.IsDBNull(iInstitutionAdress.Value))
+            {
+                document.Institution ??= new Institution();
+                document.Institution.Adress = reader.GetString(iInstitutionAdress.Value);
+            }
+
             return document;
         }
 
@@ -72,8 +171,10 @@ namespace eProtokoll.Services.Mappers
             var document = new OutgoingDocument();
             MapBase(reader, document);
 
-            document.InstitutionId = reader.GetInt32(reader.GetOrdinal("InstitutionId"));
-            document.RecipientName = reader.GetString(reader.GetOrdinal("RecipientName"));
+            int iInstitutionId = reader.GetOrdinal("InstitutionId");
+            document.InstitutionId = reader.IsDBNull(iInstitutionId) ? 0 : reader.GetInt32(iInstitutionId);
+            int iRecipientName = reader.GetOrdinal("RecipientName");
+            document.RecipientName = reader.IsDBNull(iRecipientName) ? string.Empty : reader.GetString(iRecipientName);
 
             int iIsResp = reader.GetOrdinal("IsResponse");
             document.IsResponse = !reader.IsDBNull(iIsResp) && reader.GetBoolean(iIsResp);
@@ -83,6 +184,20 @@ namespace eProtokoll.Services.Mappers
 
             int iArchive = reader.GetOrdinal("ArchiveLocation");
             document.ArchiveLocation = reader.IsDBNull(iArchive) ? null : reader.GetString(iArchive);
+
+            var iInstitutionName = TryGetOrdinal(reader, "InstitutionName");
+            if (iInstitutionName.HasValue && !reader.IsDBNull(iInstitutionName.Value))
+            {
+                document.Institution ??= new Institution();
+                document.Institution.Name = reader.GetString(iInstitutionName.Value);
+            }
+
+            var iInstitutionAdress = TryGetOrdinal(reader, "InstitutionAdress");
+            if (iInstitutionAdress.HasValue && !reader.IsDBNull(iInstitutionAdress.Value))
+            {
+                document.Institution ??= new Institution();
+                document.Institution.Adress = reader.GetString(iInstitutionAdress.Value);
+            }
 
             return document;
         }
@@ -109,7 +224,6 @@ namespace eProtokoll.Services.Mappers
         public static DocumentAttachment Map(SqlDataReader reader)
         {
             int iExt = reader.GetOrdinal("FileExtension");
-            int iCt = reader.GetOrdinal("ContentType");
             int iDesc = reader.GetOrdinal("Description");
 
             return new DocumentAttachment

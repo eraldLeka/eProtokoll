@@ -14,18 +14,6 @@ namespace eProtokoll.Models
         Internal = 3
     }
 
-    public enum DocumentStatus
-    {
-        [Display(Name = "I Protokolluar")]
-        Registered = 1,
-
-        [Display(Name = "Në Proces")]
-        InProgress = 2,
-
-        [Display(Name = "I Mbyllur")]
-        Closed = 3
-    }
-
     public enum Priority
     {
         [Display(Name = "I Ulët")]

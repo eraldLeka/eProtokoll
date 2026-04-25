@@ -1,49 +1,54 @@
 ﻿using eProtokoll.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 public interface IDocumentService
 {
-    // ================= LISTING =================
-    Task<(IEnumerable<IncomingDocument> Documents, int TotalItems)> GetIncomingListAsync(int page, int pageSize);
-
-    Task<(IEnumerable<OutgoingDocument> Documents, int TotalItems)> GetOutgoingListAsync(int page, int pageSize);
-
-    Task<(IEnumerable<InternalDocument> Documents, int TotalItems)> GetInternalListAsync(int page, int pageSize);
-
     // ================= CREATE =================
+
     Task<int> CreateIncomingAsync(
         IncomingDocument model,
         IFormFile? file,
         List<int>? accessUserIds,
         string? scanSessionKey,
-        int userId);
+        int userId,
+        string userName,
+        CancellationToken cancellationToken = default);
 
     Task<int> CreateOutgoingAsync(
         OutgoingDocument model,
         IFormFile? file,
         List<int>? accessUserIds,
         string? scanSessionKey,
-        int userId);
+        int userId,
+        string userName,
+        CancellationToken cancellationToken = default);
 
     Task<int> CreateInternalAsync(
         InternalDocument model,
         IFormFile? file,
         List<int>? accessUserIds,
         string? scanSessionKey,
-        int userId);
+        int userId,
+        string userName,
+        CancellationToken cancellationToken = default);
 
     // ================= DETAILS =================
-    Task<IncomingDocument?> GetIncomingByIdAsync(int id);
 
-    Task<OutgoingDocument?> GetOutgoingByIdAsync(int id);
-
-    Task<InternalDocument?> GetInternalByIdAsync(int id);
+    Task<IncomingDocument?> GetIncomingByIdAsync(int id, CancellationToken cancellationToken = default);
+    Task<OutgoingDocument?> GetOutgoingByIdAsync(int id, CancellationToken cancellationToken = default);
+    Task<InternalDocument?> GetInternalByIdAsync(int id, CancellationToken cancellationToken = default);
 
     // ================= DROPDOWNS =================
+
     Task LoadDropdownsAsync(
         Action<SelectList> setInstitutions,
         Action<List<SelectListItem>> setClassifications,
-        Action<IEnumerable<object>> setUsers,
-        bool isEmployee);
+        Action<IEnumerable<Users>> setUsers,
+        bool isEmployee,
+        CancellationToken cancellationToken = default);
 }

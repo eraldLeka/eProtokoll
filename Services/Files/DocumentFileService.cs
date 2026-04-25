@@ -60,7 +60,8 @@ namespace eProtokoll.Services.Files
             // 2. HASH
             var hash = ComputeHash(fileBytes);
             var extension = Path.GetExtension(originalName);
-            var storedFileName = $"{hash}{extension}";
+            var filePrefix = isSecret ? "s_" : string.Empty;
+            var storedFileName = $"{filePrefix}{hash}{extension}";
             var originalSize = fileBytes.Length;
 
             // 3. ENCRYPT IF NEEDED
@@ -69,6 +70,11 @@ namespace eProtokoll.Services.Files
 
             // 4. NORMALIZE FOLDER
             documentTypeFolder = documentTypeFolder.Trim('/').Trim('\\');
+            while (documentTypeFolder.StartsWith("uploads/", StringComparison.OrdinalIgnoreCase) ||
+                   documentTypeFolder.StartsWith("uploads\\", StringComparison.OrdinalIgnoreCase))
+            {
+                documentTypeFolder = documentTypeFolder.Substring("uploads".Length).TrimStart('/', '\\');
+            }
 
             // 5. SAVE FILE (returns relative path)
             var relativePath = Path.Combine(documentTypeFolder, storedFileName)

@@ -31,4 +31,9 @@
     </PackageReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\uploads\internal\" />
+    <Folder Include="wwwroot\uploads\outgoing\" />
+  </ItemGroup>
+
 </Project>

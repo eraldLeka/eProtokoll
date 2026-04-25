@@ -7,6 +7,7 @@ using eProtokoll.Repositories.Institutions;
 using eProtokoll.Repositories.User;
 using eProtokoll.Services.Files;
 using eProtokoll.Services.ProtocolNumber;
+using eProtokoll.Services.Report;
 using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -41,6 +42,7 @@ builder.Services.AddScoped<IFileStorageService, FileStorageService>();
 builder.Services.AddScoped<IFileSecurityService, FileSecurityService>();
 builder.Services.AddScoped<IDocumentFileService, DocumentFileService>();
 builder.Services.AddScoped<IDocumentService, DocumentService>();
+builder.Services.AddScoped<ReportService>();
 
 // ==================== CACHE & SESSION ====================
 builder.Services.AddMemoryCache();

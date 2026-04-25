@@ -16,7 +16,7 @@
     <nav aria-label="breadcrumb" class="mb-3">
         <ol class="breadcrumb">
             <li class="breadcrumb-item">
-                <a asp-area="@area" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
+                <a asp-controller="Dashboard" asp-action="Index">Dashboard</a>
             </li>
             <li class="breadcrumb-item active">Libri i Protokollit</li>
         </ol>
@@ -28,7 +28,7 @@
         <p class="text-muted">Regjistri i plotë i të gjitha dokumenteve</p>
     </div>
     <div class="col-md-4 d-flex align-items-center justify-content-end">
-        <a asp-area="@area" asp-controller="ProtocolBook" asp-action="Print"
+        <a asp-controller="ProtocolBook" asp-action="Print"
            target="_blank" class="btn btn-outline-secondary btn-sm">
             <i class="bi bi-printer"></i> Printo Librin
         </a>
@@ -61,6 +61,7 @@
                         <tbody>
                             @foreach (var doc in Model)
                             {
+                                var attachment = doc.Attachments?.FirstOrDefault();
                                 <tr>
                                     <td>
                                         <strong class="
@@ -116,14 +117,32 @@
                                     </td>
                                     <td><small>@doc.Creator?.FullName</small></td>
                                     <td>
-                                        <a asp-area="@area"
-                                           asp-action="Details"
-                                           asp-controller="ProtocolBook"
-                                           asp-route-id="@doc.DocumentId"
-                                           asp-route-type="@doc.DocumentType.ToString()"
-                                           class="btn btn-sm btn-outline-primary" title="Detajet">
-                                            <i class="bi bi-eye"></i>
-                                        </a>
+                                        <div class="btn-group btn-group-sm">
+                                            @if (attachment != null)
+                                            {
+                                                <a asp-controller="DocumentFile" asp-action="View"
+                                                   asp-route-id="@attachment.AttachmentId"
+                                                   asp-route-fileName="@attachment.OriginalFileName"
+                                                   target="_blank" class="btn btn-outline-primary" title="Shiko">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                <a asp-controller="DocumentFile" asp-action="Download"
+                                                   asp-route-id="@attachment.AttachmentId"
+                                                   asp-route-fileName="@attachment.OriginalFileName"
+                                                   class="btn btn-outline-success" title="Shkarko">
+                                                    <i class="bi bi-download"></i>
+                                                </a>
+                                            }
+                                            else
+                                            {
+                                                <button type="button" class="btn btn-outline-secondary" disabled title="Nuk ka skedar">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-outline-secondary" disabled title="Nuk ka skedar">
+                                                    <i class="bi bi-download"></i>
+                                                </button>
+                                            }
+                                        </div>
                                     </td>
                                 </tr>
                             }

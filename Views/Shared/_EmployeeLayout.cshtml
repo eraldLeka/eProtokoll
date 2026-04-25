@@ -1,4 +1,51 @@
-﻿<!DOCTYPE html>
+﻿@using System.Security.Claims
+@inject eProtokoll.Repositories.ITrackingRepository TrackingRepository
+@inject eProtokoll.Repositories.Documents.IDocumentRepository DocumentRepository
+@{
+    var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    var role = User.FindFirstValue(ClaimTypes.Role) ?? "Employee";
+    var userId = int.TryParse(userIdClaim, out var parsedUserId) ? parsedUserId : 0;
+
+    var overdueCount = userId > 0
+        ? await TrackingRepository.GetOverdueCountAsync(userId)
+        : 0;
+
+    var totalNotifications = overdueCount;
+
+    var newDocumentsCount = userId > 0
+        ? await DocumentRepository.GetNewVisibleDocumentsCountAsync(userId, role)
+        : 0;
+
+    var notificationItems = userId > 0
+        ? await TrackingRepository.GetNotificationItemsAsync(userId, 10)
+        : new List<eProtokoll.Models.DocumentTracking>();
+
+    var overdueNotificationItems = notificationItems
+        .Where(n => n.DueDate.HasValue && n.DueDate.Value < DateTime.Now)
+        .ToList();
+
+    var newDocuments = userId > 0
+        ? await DocumentRepository.GetNewVisibleDocumentsAsync(userId, role, 10)
+        : new List<eProtokoll.Models.Document>();
+
+    totalNotifications += newDocumentsCount;
+
+    var notificationSignatureParts = new List<string>();
+
+    foreach (var n in overdueNotificationItems)
+    {
+        notificationSignatureParts.Add($"T-{n.TrackingId}-{n.AssignedDate.Ticks}");
+    }
+
+    foreach (var d in newDocuments)
+    {
+        notificationSignatureParts.Add($"D-{d.DocumentId}-{d.CreatedDate.Ticks}");
+    }
+
+    var notificationSignature = string.Join("|", notificationSignatureParts);
+}
+
+<!DOCTYPE html>
 <html lang="sq">
 <head>
     <meta charset="utf-8" />
@@ -83,6 +130,45 @@
             animation: alertFadeOut 0.6s ease 4.4s forwards;
         }
 
+        .notification-menu {
+            min-width: 320px;
+            max-width: 380px;
+            max-height: 380px;
+            overflow-y: auto;
+        }
+
+        .notification-item {
+            white-space: normal;
+            padding: 0.6rem 0.9rem;
+            border-bottom: 1px solid #f1f1f1;
+            text-decoration: none;
+            display: block;
+            color: #212529;
+        }
+
+        .notification-item:hover {
+            background-color: #f8f9fa;
+            color: #212529;
+        }
+
+        .notification-item.notification-unread {
+            background-color: #e9ecef;
+        }
+
+        .notification-item.notification-unread:hover {
+            background-color: #dee2e6;
+        }
+
+        .notification-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .notification-meta {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+
         @@keyframes alertFadeOut {
             to {
                 opacity: 0;
@@ -109,6 +195,88 @@
             </a>
 
             <ul class="navbar-nav ms-auto align-items-center">
+
+                <!-- Notifications -->
+                <li class="nav-item dropdown me-3" id="employeeNotificationsDropdown">
+                    <a class="nav-link position-relative"
+                       href="#"
+                       id="employeeNotifications"
+                       data-user-id="@userId"
+                       data-notification-signature="@notificationSignature"
+                       role="button"
+                       data-bs-toggle="dropdown"
+                       aria-expanded="false"
+                       title="Njoftimet">
+                        <i class="bi bi-bell-fill"></i>
+                        @if (totalNotifications > 0)
+                        {
+                            <span id="employeeNotificationBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                @totalNotifications
+                            </span>
+                        }
+                    </a>
+
+                    <div class="dropdown-menu dropdown-menu-end notification-menu" aria-labelledby="employeeNotifications">
+                        <div class="px-3 py-2 border-bottom">
+                            <div class="fw-semibold">Njoftimet</div>
+                            <small class="text-muted">Vonesa: @overdueCount • Shkresa të reja: @newDocumentsCount</small>
+                        </div>
+
+                        @if (overdueNotificationItems.Any())
+                        {
+                            @foreach (var n in overdueNotificationItems)
+                            {
+                                var overdueNotificationKey = $"T-{n.TrackingId}";
+                                <a class="notification-item"
+                                   data-notification-key="@overdueNotificationKey"
+                                   asp-area="Employee"
+                                   asp-controller="Tracking"
+                                   asp-action="Index">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="notification-title">@n.DocumentProtocolNumber</span>
+                                        <span class="badge bg-danger">Vonuar</span>
+                                    </div>
+                                    <div class="notification-meta">@(n.DocumentSubject ?? "Pa subjekt")</div>
+                                </a>
+                            }
+                        }
+                        else if (!newDocuments.Any())
+                        {
+                            <div class="px-3 py-3 text-muted">Nuk ka njoftime.</div>
+                        }
+
+                        @if (newDocuments.Any())
+                        {
+                            <div class="px-3 py-2 border-top border-bottom bg-light">
+                                <small class="fw-semibold text-muted">Shkresa të reja</small>
+                            </div>
+
+                            @foreach (var d in newDocuments)
+                            {
+                                var controller = d.DocumentType switch
+                                {
+                                    eProtokoll.Models.DocumentType.Incoming => "IncomingDocument",
+                                    eProtokoll.Models.DocumentType.Outgoing => "OutgoingDocument",
+                                    eProtokoll.Models.DocumentType.Internal => "InternalDocument",
+                                    _ => "ProtocolBook"
+                                };
+                                var newDocumentNotificationKey = $"D-{d.DocumentId}";
+
+                                <a class="notification-item"
+                                   data-notification-key="@newDocumentNotificationKey"
+                                   asp-area="Employee"
+                                   asp-controller="@controller"
+                                   asp-action="Index">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="notification-title">@d.ProtocolNumber</span>
+                                    </div>
+                                    <div class="notification-meta">@(d.Subject ?? "Pa subjekt")</div>
+                                </a>
+                            }
+                        }
+
+                    </div>
+                </li>
 
                 <!-- User -->
                 <li class="nav-item me-3">
@@ -291,6 +459,78 @@
         </main>
 
     </div>
+
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const dropdown = document.getElementById('employeeNotificationsDropdown');
+            const badge = document.getElementById('employeeNotificationBadge');
+            const bell = document.getElementById('employeeNotifications');
+
+            if (!dropdown || !bell) return;
+
+            const userId = bell.dataset.userId;
+            const itemsStorageKey = `employee_notifications_items_seen_${userId}`;
+            const bellSeenKeysStorageKey = `employee_notifications_bell_seen_keys_${userId}`;
+
+            let seenItemKeys = [];
+            try {
+                const rawSeen = localStorage.getItem(itemsStorageKey);
+                seenItemKeys = rawSeen ? JSON.parse(rawSeen) : [];
+            } catch {
+                seenItemKeys = [];
+            }
+
+            const seenSet = new Set(seenItemKeys);
+            const notificationLinks = document.querySelectorAll('.notification-item[data-notification-key]');
+            const currentKeys = Array.from(notificationLinks)
+                .map(link => link.getAttribute('data-notification-key'))
+                .filter(key => !!key);
+
+            let bellSeenKeys = [];
+            try {
+                const rawBellSeen = localStorage.getItem(bellSeenKeysStorageKey);
+                bellSeenKeys = rawBellSeen ? JSON.parse(rawBellSeen) : [];
+            } catch {
+                bellSeenKeys = [];
+            }
+
+            const bellSeenSet = new Set(bellSeenKeys);
+            const newSinceBellClickCount = currentKeys.filter(key => !bellSeenSet.has(key)).length;
+
+            notificationLinks.forEach(function (link) {
+                const key = link.getAttribute('data-notification-key');
+                if (!key) return;
+
+                if (!seenSet.has(key)) {
+                    link.classList.add('notification-unread');
+                }
+
+                link.addEventListener('click', function () {
+                    seenSet.add(key);
+                    localStorage.setItem(itemsStorageKey, JSON.stringify(Array.from(seenSet)));
+                    link.classList.remove('notification-unread');
+                });
+            });
+
+            if (badge) {
+                if (newSinceBellClickCount > 0) {
+                    badge.textContent = newSinceBellClickCount;
+                    badge.classList.remove('d-none');
+                } else {
+                    badge.classList.add('d-none');
+                }
+            }
+
+            dropdown.addEventListener('shown.bs.dropdown', function () {
+                localStorage.setItem(bellSeenKeysStorageKey, JSON.stringify(currentKeys));
+
+                if (badge) {
+                    badge.classList.add('d-none');
+                }
+            });
+        });
+    </script>
 
 </body>
 </html>

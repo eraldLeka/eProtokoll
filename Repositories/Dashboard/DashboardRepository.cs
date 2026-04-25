@@ -75,7 +75,7 @@ namespace eProtokoll.Repositories.Dashboard
             await connection.OpenAsync();
 
             using var cmd = new SqlCommand($@"
-                SELECT TOP 10
+                SELECT TOP 5
                     d.DocumentId, d.DocumentNumber, d.Year, d.DocumentType,
                     d.Subject, d.Content, d.Classification, d.Priority,
                     d.HasAttachments, d.CreatedBy, d.CreatedDate,

@@ -17,9 +17,13 @@ namespace eProtokoll.Repositories
         // ===== ASSIGN =====
         Task InsertAsync(DocumentTracking model, int assignedByUserId);
 
-        // ===== COMPLETE / CANCEL =====
+        // ===== COMPLETE =====
         Task CompleteAsync(int trackingId);
-        Task CancelAsync(int trackingId, string reason);
+
+        // ===== NOTIFICATIONS (EMPLOYEE) =====
+        Task<int> GetNewAssignedCountAsync(int userId);
+        Task<int> GetOverdueCountAsync(int userId);
+        Task<List<DocumentTracking>> GetNotificationItemsAsync(int userId, int take = 10);
 
         // ===== DROPDOWNS =====
         Task<List<Document>> GetDocumentsForDropdownAsync();

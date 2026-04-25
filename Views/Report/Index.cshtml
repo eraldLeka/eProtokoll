@@ -1,0 +1,210 @@
+﻿@model eProtokoll.Models.ReportDashboardViewModel
+
+@{
+    ViewData["Title"] = "Raportet dhe Statistikat";
+    var role = ViewData["role"]?.ToString();
+}
+
+<div class="container-fluid">
+
+    <!-- HEADER -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="mb-0">
+            <i class="bi bi-bar-chart text-primary"></i> Raportet dhe Statistikat
+        </h3>
+    </div>
+
+    <!-- KPI CARDS -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0" style="border-left: 4px solid #0d6efd !important;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="text-muted mb-1">Total Dokumente</h6>
+                            <h2 class="mb-0 fw-bold">@Model.TotalDocuments</h2>
+                        </div>
+                        <div class="bg-primary bg-opacity-10 rounded p-2">
+                            <i class="bi bi-files text-primary fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0" style="border-left: 4px solid #0dcaf0 !important;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="text-muted mb-1">Hyrëse</h6>
+                            <h2 class="mb-0 fw-bold text-info">@Model.TotalIncomingDocuments</h2>
+                        </div>
+                        <div class="bg-info bg-opacity-10 rounded p-2">
+                            <i class="bi bi-box-arrow-in-down text-info fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0" style="border-left: 4px solid #ffc107 !important;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="text-muted mb-1">Dalëse</h6>
+                            <h2 class="mb-0 fw-bold text-warning">@Model.TotalOutgoingDocuments</h2>
+                        </div>
+                        <div class="bg-warning bg-opacity-10 rounded p-2">
+                            <i class="bi bi-box-arrow-up text-warning fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0" style="border-left: 4px solid #198754 !important;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h6 class="text-muted mb-1">Brendshme</h6>
+                            <h2 class="mb-0 fw-bold text-success">@Model.TotalInternalDocuments</h2>
+                        </div>
+                        <div class="bg-success bg-opacity-10 rounded p-2">
+                            <i class="bi bi-arrow-left-right text-success fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @if (role == "Administrator")
+        {
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card shadow-sm border-0" style="border-left: 4px solid #6f42c1 !important;">
+                        <div class="card-body">
+                            <h6 class="text-muted mb-1">Total Përdorues</h6>
+                            <h2 class="fw-bold">@Model.TotalUsers</h2>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="card shadow-sm border-0" style="border-left: 4px solid #fd7e14 !important;">
+                        <div class="card-body">
+                            <h6 class="text-muted mb-1">Total Institucione</h6>
+                            <h2 class="fw-bold">@Model.TotalInstitutions</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- TIME + PRIORITY -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-bottom">
+                    <strong><i class="bi bi-clock text-secondary me-1"></i> Koha</strong>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                        <span class="text-muted">Sot</span>
+                        <span class="badge bg-secondary fs-6">@Model.TodayDocuments</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                        <span class="text-muted">Këtë javë</span>
+                        <span class="badge bg-primary fs-6">@Model.CurrentWeekDocuments</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center py-2">
+                        <span class="text-muted">Këtë muaj</span>
+                        <span class="badge bg-info fs-6">@Model.CurrentMonthDocuments</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-bottom">
+                    <strong><i class="bi bi-flag text-secondary me-1"></i> Prioritetet</strong>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                        <span><span class="badge bg-danger me-2">I Lartë</span></span>
+                        <strong>@Model.HighPriority</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                        <span><span class="badge bg-primary me-2">Normal</span></span>
+                        <strong>@Model.NormalPriority</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center py-2">
+                        <span><span class="badge bg-secondary me-2">I Ulët</span></span>
+                        <strong>@Model.LowPriority</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOP SECTION -->
+    @if (role == "Administrator" || role == "Manager")
+    {
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-bottom">
+                        <strong>Top Institucione</strong>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (!Model.TopInstitutions.Any())
+                        {
+                            <p class="text-muted p-3">Nuk ka të dhëna.</p>
+                        }
+                        else
+                        {
+                            <table class="table table-hover table-sm mb-0">
+                                @foreach (var i in Model.TopInstitutions)
+                                {
+                                    <tr>
+                                        <td class="ps-3">@i.Name</td>
+                                        <td class="text-end pe-3">
+                                            <span class="badge bg-primary">@i.TotalDocuments</span>
+                                        </td>
+                                    </tr>
+                                }
+                            </table>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-bottom">
+                        <strong>Top Përdorues</strong>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (!Model.TopUsers.Any())
+                        {
+                            <p class="text-muted p-3">Nuk ka të dhëna.</p>
+                        }
+                        else
+                        {
+                            <table class="table table-hover table-sm mb-0">
+                                @foreach (var u in Model.TopUsers)
+                                {
+                                    <tr>
+                                        <td class="ps-3">@u.FullName</td>
+                                        <td class="text-end pe-3">
+                                            <span class="badge bg-success">@u.TotalDocuments</span>
+                                        </td>
+                                    </tr>
+                                }
+                            </table>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>

@@ -132,7 +132,7 @@
                                             id="classificationSelect"
                                             name="Classification"
                                             class="form-select"
-                                            asp-items="Html.GetEnumSelectList<Classification>()"
+                                            asp-items="ViewBag.Classifications"
                                             onchange="toggleAccessUsers(this.value)">
                                         <option value="">-- Zgjidh Klasifikimin --</option>
                                     </select>

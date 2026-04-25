@@ -1,6 +1,11 @@
 ﻿using eProtokoll.Models;
 using eProtokoll.Services.Mappers;
 using Microsoft.Data.SqlClient;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace eProtokoll.Repositories.Documents
 {
@@ -13,203 +18,70 @@ namespace eProtokoll.Repositories.Documents
             _connectionString = configuration.GetConnectionString("DefaultConnection")!;
         }
 
-        // ==================== INCOMING ====================
+        // ================= GENERIC QUERY ENGINE =================
 
-        public async Task<(List<IncomingDocument> Documents, int TotalCount)> GetIncomingAsync(
-            int page, int pageSize, int? createdBy = null, int? accessUserId = null)
+        public async Task<(List<T> Documents, int TotalCount)> GetDocumentsAsync<T>(
+            string baseQuery,
+            string countQuery,
+            SqlParameter[] parameters,
+            Func<SqlDataReader, T> mapper)
         {
-            var documents = new List<IncomingDocument>();
-            int totalCount = 0;
-
-            string whereClause;
-
-            if (accessUserId.HasValue)
-            {
-                whereClause = @"WHERE d.DocumentType = @DocumentType
-                    AND (
-                        d.Classification = 1
-                        OR d.CreatedBy = @AccessUserId
-                        OR (d.Classification = 2 AND EXISTS (
-                            SELECT 1 FROM DocumentPermissions dp
-                            WHERE dp.DocumentId = d.DocumentId AND dp.UserId = @AccessUserId
-                        ))
-                    )";
-            }
-            else if (createdBy.HasValue)
-            {
-                whereClause = "WHERE d.DocumentType = @DocumentType AND d.CreatedBy = @CreatedBy";
-            }
-            else
-            {
-                whereClause = "WHERE d.DocumentType = @DocumentType";
-            }
+            var list = new List<T>();
 
             using var connection = new SqlConnection(_connectionString);
             await connection.OpenAsync();
 
-            using (var cmd = new SqlCommand(
-                $"SELECT COUNT(*) FROM Documents d {whereClause}", connection))
+            int totalCount;
+
+            using (var countCmd = new SqlCommand(countQuery, connection))
             {
-                cmd.Parameters.AddWithValue("@DocumentType", (int)DocumentType.Incoming);
-                if (accessUserId.HasValue)
-                    cmd.Parameters.AddWithValue("@AccessUserId", accessUserId.Value);
-                else if (createdBy.HasValue)
-                    cmd.Parameters.AddWithValue("@CreatedBy", createdBy.Value);
-                totalCount = Convert.ToInt32(await cmd.ExecuteScalarAsync());
+                countCmd.Parameters.AddRange(CloneParameters(parameters));
+                totalCount = Convert.ToInt32(await countCmd.ExecuteScalarAsync());
             }
 
-            var query = $@"
-                SELECT d.*,
-                    i.Name as InstitutionName, i.ShortName as InstitutionShortName,
-                    u.UserName as CreatorUserName,
-                    u.FirstName as CreatorFirstName,
-                    u.LastName as CreatorLastName
-                FROM Documents d
-                LEFT JOIN Institutions i ON d.InstitutionId = i.InstitutionId
-                LEFT JOIN Users u ON d.CreatedBy = u.Id
-                {whereClause}
-                ORDER BY d.CreatedDate DESC
-                OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY";
-
-            using (var cmd = new SqlCommand(query, connection))
+            using (var cmd = new SqlCommand(baseQuery, connection))
             {
-                cmd.Parameters.AddWithValue("@DocumentType", (int)DocumentType.Incoming);
-                if (accessUserId.HasValue)
-                    cmd.Parameters.AddWithValue("@AccessUserId", accessUserId.Value);
-                else if (createdBy.HasValue)
-                    cmd.Parameters.AddWithValue("@CreatedBy", createdBy.Value);
-                cmd.Parameters.AddWithValue("@Offset", (page - 1) * pageSize);
-                cmd.Parameters.AddWithValue("@PageSize", pageSize);
+                cmd.Parameters.AddRange(CloneParameters(parameters));
 
                 using var reader = await cmd.ExecuteReaderAsync();
+
                 while (await reader.ReadAsync())
                 {
-                    var document = DocumentMapper.MapToIncomingDocument(reader);
-
-                    if (!reader.IsDBNull(reader.GetOrdinal("InstitutionName")))
-                    {
-                        document.Institution = new Institution
-                        {
-                            InstitutionId = document.InstitutionId,
-                            Name = reader.GetString(reader.GetOrdinal("InstitutionName")),
-                            ShortName = reader.IsDBNull(reader.GetOrdinal("InstitutionShortName"))
-                                ? null : reader.GetString(reader.GetOrdinal("InstitutionShortName"))
-                        };
-                    }
-
-                    if (!reader.IsDBNull(reader.GetOrdinal("CreatorUserName")))
-                    {
-                        document.Creator = new Users
-                        {
-                            UserName = reader.GetString(reader.GetOrdinal("CreatorUserName")),
-                            FirstName = reader.GetString(reader.GetOrdinal("CreatorFirstName")),
-                            LastName = reader.GetString(reader.GetOrdinal("CreatorLastName"))
-                        };
-                    }
-
-                    documents.Add(document);
+                    list.Add(mapper(reader));
                 }
             }
 
-            return (documents, totalCount);
+            return (list, totalCount);
         }
 
-        public async Task<IncomingDocument?> GetIncomingByIdAsync(int id)
+        private static SqlParameter[] CloneParameters(SqlParameter[] parameters)
+            => parameters
+                .Select(p => (SqlParameter)((ICloneable)p).Clone())
+                .ToArray();
+
+        private static bool IsPrivilegedRole(string role)
+            => role == "Admin" || role == "Manager" || role == "Administrator";
+
+        // ================= INSERT =================
+
+        public async Task<int> InsertAsync(
+            string query,
+            SqlParameter[] parameters)
         {
             using var connection = new SqlConnection(_connectionString);
             await connection.OpenAsync();
 
-            var query = @"
-                SELECT d.*,
-                    i.Name as InstitutionName, i.ShortName as InstitutionShortName,
-                    i.Adress as InstitutionAdress,
-                    u.UserName as CreatorUserName,
-                    u.FirstName as CreatorFirstName,
-                    u.LastName as CreatorLastName
-                FROM Documents d
-                LEFT JOIN Institutions i ON d.InstitutionId = i.InstitutionId
-                LEFT JOIN Users u ON d.CreatedBy = u.Id
-                WHERE d.DocumentId = @DocumentId AND d.DocumentType = @DocumentType";
-
-            using var cmd = new SqlCommand(query, connection);
-            cmd.Parameters.AddWithValue("@DocumentId", id);
-            cmd.Parameters.AddWithValue("@DocumentType", (int)DocumentType.Incoming);
-
-            using var reader = await cmd.ExecuteReaderAsync();
-            if (!await reader.ReadAsync()) return null;
-
-            var document = DocumentMapper.MapToIncomingDocument(reader);
-
-            if (!reader.IsDBNull(reader.GetOrdinal("InstitutionName")))
-            {
-                document.Institution = new Institution
-                {
-                    InstitutionId = document.InstitutionId,
-                    Name = reader.GetString(reader.GetOrdinal("InstitutionName")),
-                    ShortName = reader.IsDBNull(reader.GetOrdinal("InstitutionShortName"))
-                        ? null : reader.GetString(reader.GetOrdinal("InstitutionShortName")),
-                    Adress = reader.IsDBNull(reader.GetOrdinal("InstitutionAdress"))
-                        ? null : reader.GetString(reader.GetOrdinal("InstitutionAdress"))
-                };
-            }
-
-            if (!reader.IsDBNull(reader.GetOrdinal("CreatorUserName")))
-            {
-                document.Creator = new Users
-                {
-                    UserName = reader.GetString(reader.GetOrdinal("CreatorUserName")),
-                    FirstName = reader.GetString(reader.GetOrdinal("CreatorFirstName")),
-                    LastName = reader.GetString(reader.GetOrdinal("CreatorLastName"))
-                };
-            }
-
-            return document;
-        }
-
-        public async Task<int> InsertIncomingAsync(IncomingDocument model)
-        {
-            using var connection = new SqlConnection(_connectionString);
-            await connection.OpenAsync();
             using var transaction = connection.BeginTransaction();
 
             try
             {
-                var query = @"
-                    INSERT INTO Documents (
-                        DocumentNumber, Year, DocumentType, Subject, Content,
-                        Classification, Priority, RequiresResponse, HasAttachments,
-                        CreatedDate, CreatedBy, InstitutionId, SenderName, ReceivedDate,
-                        OriginalDocumentNumber, OriginalDocumentDate
-                    ) OUTPUT INSERTED.DocumentId VALUES (
-                        @DocumentNumber, @Year, @DocumentType, @Subject, @Content,
-                        @Classification, @Priority, @RequiresResponse, @HasAttachments,
-                        @CreatedDate, @CreatedBy, @InstitutionId, @SenderName, @ReceivedDate,
-                        @OriginalDocumentNumber, @OriginalDocumentDate
-                    )";
-
                 using var cmd = new SqlCommand(query, connection, transaction);
-                cmd.Parameters.AddWithValue("@DocumentNumber", model.DocumentNumber);
-                cmd.Parameters.AddWithValue("@Year", model.Year);
-                cmd.Parameters.AddWithValue("@DocumentType", (int)DocumentType.Incoming);
-                cmd.Parameters.AddWithValue("@Subject", model.Subject);
-                cmd.Parameters.AddWithValue("@Content", (object?)model.Content ?? DBNull.Value);
-                cmd.Parameters.AddWithValue("@Classification", (int)model.Classification);
-                cmd.Parameters.AddWithValue("@Priority", (int)model.Priority);
-                cmd.Parameters.AddWithValue("@RequiresResponse", model.RequiresResponse);
-                cmd.Parameters.AddWithValue("@HasAttachments", false);
-                cmd.Parameters.AddWithValue("@CreatedDate", model.CreatedDate);
-                cmd.Parameters.AddWithValue("@CreatedBy", model.CreatedBy);
-                cmd.Parameters.AddWithValue("@InstitutionId", model.InstitutionId);
-                cmd.Parameters.AddWithValue("@SenderName", model.SenderName);
-                cmd.Parameters.AddWithValue("@ReceivedDate", model.ReceivedDate);
-                cmd.Parameters.AddWithValue("@OriginalDocumentNumber",
-                    (object?)model.OriginalDocumentNumber ?? DBNull.Value);
-                cmd.Parameters.AddWithValue("@OriginalDocumentDate",
-                    (object?)model.OriginalDocumentDate ?? DBNull.Value);
+                cmd.Parameters.AddRange(parameters);
 
-                var documentId = Convert.ToInt32(await cmd.ExecuteScalarAsync());
+                var result = await cmd.ExecuteScalarAsync();
+
                 transaction.Commit();
-                return documentId;
+                return Convert.ToInt32(result);
             }
             catch
             {
@@ -218,423 +90,364 @@ namespace eProtokoll.Repositories.Documents
             }
         }
 
-        // ==================== OUTGOING ====================
+        // ================= SINGLE OBJECT =================
 
-        public async Task<(List<OutgoingDocument> Documents, int TotalCount)> GetOutgoingAsync(
-            int page, int pageSize, int? createdBy = null, int? accessUserId = null)
+        public async Task<T?> GetSingleAsync<T>(
+            string query,
+            SqlParameter[] parameters,
+            Func<SqlDataReader, T> mapper)
         {
-            var documents = new List<OutgoingDocument>();
-            int totalCount = 0;
-
-            string whereClause;
-
-            if (accessUserId.HasValue)
-            {
-                whereClause = @"WHERE d.DocumentType = @DocumentType
-                    AND (
-                        d.Classification = 1
-                        OR d.CreatedBy = @AccessUserId
-                        OR (d.Classification = 2 AND EXISTS (
-                            SELECT 1 FROM DocumentPermissions dp
-                            WHERE dp.DocumentId = d.DocumentId AND dp.UserId = @AccessUserId
-                        ))
-                    )";
-            }
-            else if (createdBy.HasValue)
-            {
-                whereClause = "WHERE d.DocumentType = @DocumentType AND d.CreatedBy = @CreatedBy";
-            }
-            else
-            {
-                whereClause = "WHERE d.DocumentType = @DocumentType";
-            }
-
             using var connection = new SqlConnection(_connectionString);
             await connection.OpenAsync();
 
-            using (var cmd = new SqlCommand(
-                $"SELECT COUNT(*) FROM Documents d {whereClause}", connection))
-            {
-                cmd.Parameters.AddWithValue("@DocumentType", (int)DocumentType.Outgoing);
-                if (accessUserId.HasValue)
-                    cmd.Parameters.AddWithValue("@AccessUserId", accessUserId.Value);
-                else if (createdBy.HasValue)
-                    cmd.Parameters.AddWithValue("@CreatedBy", createdBy.Value);
-                totalCount = Convert.ToInt32(await cmd.ExecuteScalarAsync());
-            }
+            using var cmd = new SqlCommand(query, connection);
+            cmd.Parameters.AddRange(parameters);
 
-            var query = $@"
-                SELECT d.*,
-                    i.Name as InstitutionName, i.ShortName as InstitutionShortName,
-                    u.UserName as CreatorUserName,
-                    u.FirstName as CreatorFirstName,
-                    u.LastName as CreatorLastName
-                FROM Documents d
-                LEFT JOIN Institutions i ON d.InstitutionId = i.InstitutionId
-                LEFT JOIN Users u ON d.CreatedBy = u.Id
-                {whereClause}
-                ORDER BY d.CreatedDate DESC
-                OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY";
+            using var reader = await cmd.ExecuteReaderAsync();
 
-            using (var cmd = new SqlCommand(query, connection))
-            {
-                cmd.Parameters.AddWithValue("@DocumentType", (int)DocumentType.Outgoing);
-                if (accessUserId.HasValue)
-                    cmd.Parameters.AddWithValue("@AccessUserId", accessUserId.Value);
-                else if (createdBy.HasValue)
-                    cmd.Parameters.AddWithValue("@CreatedBy", createdBy.Value);
-                cmd.Parameters.AddWithValue("@Offset", (page - 1) * pageSize);
-                cmd.Parameters.AddWithValue("@PageSize", pageSize);
+            if (await reader.ReadAsync())
+                return mapper(reader);
 
-                using var reader = await cmd.ExecuteReaderAsync();
-                while (await reader.ReadAsync())
+            return default;
+        }
+
+        // ================= DETAILS BY ID =================
+
+        public Task<(List<IncomingDocument> Documents, int TotalCount)> GetIncomingAsync(int page, int pageSize, int userId, string role)
+            => GetDocumentsAsync(
+                @"SELECT d.*,
+                         u.FirstName AS CreatorFirstName,
+                         u.LastName AS CreatorLastName,
+                         u.UserName AS CreatorUserName,
+                         i.Name AS InstitutionName,
+                         i.Adress AS InstitutionAdress,
+                         la.AttachmentId AS LatestAttachmentId,
+                         la.OriginalFileName AS LatestAttachmentName,
+                         la.FilePath AS LatestAttachmentPath,
+                         la.FileExtension AS LatestAttachmentExtension,
+                         la.FileSize AS LatestAttachmentSize,
+                         la.UploadedDate AS LatestAttachmentUploadedDate,
+                         la.UploadedBy AS LatestAttachmentUploadedBy,
+                         la.Category AS LatestAttachmentCategory,
+                         CASE WHEN da.DocumentId IS NOT NULL THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END AS HasAttachments
+                  FROM Documents d
+                  LEFT JOIN Users u ON u.Id = d.CreatedBy
+                  LEFT JOIN Institutions i ON i.InstitutionId = d.InstitutionId
+                  OUTER APPLY (
+                      SELECT TOP 1 a.AttachmentId, a.OriginalFileName, a.FilePath, a.FileExtension,
+                                   a.FileSize, a.UploadedDate, a.UploadedBy, a.Category
+                      FROM DocumentAttachments a
+                      WHERE a.DocumentId = d.DocumentId
+                      ORDER BY a.UploadedDate DESC
+                  ) la
+                  LEFT JOIN (SELECT DISTINCT DocumentId FROM DocumentAttachments) da ON da.DocumentId = d.DocumentId
+                  WHERE d.DocumentType = @DocumentType
+                    AND (
+                        @IsPrivileged = 1
+                        OR d.Classification = @PublicClassification
+                        OR d.CreatedBy = @UserId
+                        OR (
+                            d.Classification = @ConfidentialClassification
+                            AND EXISTS (
+                                SELECT 1
+                                FROM DocumentPermissions dp
+                                WHERE dp.DocumentId = d.DocumentId
+                                  AND dp.UserId = @UserId
+                            )
+                        )
+                    )
+                  ORDER BY d.Year DESC, d.DocumentNumber DESC
+                  OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY",
+                @"SELECT COUNT(*)
+                  FROM Documents d
+                  WHERE d.DocumentType = @DocumentType
+                    AND (
+                        @IsPrivileged = 1
+                        OR d.Classification = @PublicClassification
+                        OR d.CreatedBy = @UserId
+                        OR (
+                            d.Classification = @ConfidentialClassification
+                            AND EXISTS (
+                                SELECT 1
+                                FROM DocumentPermissions dp
+                                WHERE dp.DocumentId = d.DocumentId
+                                  AND dp.UserId = @UserId
+                            )
+                        )
+                    )",
+                new[]
                 {
-                    var document = DocumentMapper.MapToOutgoingDocument(reader);
+                    new SqlParameter("@DocumentType", (int)DocumentType.Incoming),
+                    new SqlParameter("@IsPrivileged", IsPrivilegedRole(role) ? 1 : 0),
+                    new SqlParameter("@PublicClassification", (int)Classification.Public),
+                    new SqlParameter("@ConfidentialClassification", (int)Classification.Confidential),
+                    new SqlParameter("@UserId", userId),
+                    new SqlParameter("@Offset", (page - 1) * pageSize),
+                    new SqlParameter("@PageSize", pageSize)
+                },
+                DocumentMapper.MapToIncomingDocument);
 
-                    if (!reader.IsDBNull(reader.GetOrdinal("InstitutionName")))
-                    {
-                        document.Institution = new Institution
-                        {
-                            InstitutionId = document.InstitutionId,
-                            Name = reader.GetString(reader.GetOrdinal("InstitutionName")),
-                            ShortName = reader.IsDBNull(reader.GetOrdinal("InstitutionShortName"))
-                                ? null : reader.GetString(reader.GetOrdinal("InstitutionShortName"))
-                        };
-                    }
+        public Task<(List<OutgoingDocument> Documents, int TotalCount)> GetOutgoingAsync(int page, int pageSize, int userId, string role)
+            => GetDocumentsAsync(
+                @"SELECT d.*,
+                         u.FirstName AS CreatorFirstName,
+                         u.LastName AS CreatorLastName,
+                         u.UserName AS CreatorUserName,
+                         i.Name AS InstitutionName,
+                         i.Adress AS InstitutionAdress,
+                         la.AttachmentId AS LatestAttachmentId,
+                         la.OriginalFileName AS LatestAttachmentName,
+                         la.FilePath AS LatestAttachmentPath,
+                         la.FileExtension AS LatestAttachmentExtension,
+                         la.FileSize AS LatestAttachmentSize,
+                         la.UploadedDate AS LatestAttachmentUploadedDate,
+                         la.UploadedBy AS LatestAttachmentUploadedBy,
+                         la.Category AS LatestAttachmentCategory,
+                         CASE WHEN da.DocumentId IS NOT NULL THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END AS HasAttachments
+                  FROM Documents d
+                  LEFT JOIN Users u ON u.Id = d.CreatedBy
+                  LEFT JOIN Institutions i ON i.InstitutionId = d.InstitutionId
+                  OUTER APPLY (
+                      SELECT TOP 1 a.AttachmentId, a.OriginalFileName, a.FilePath, a.FileExtension,
+                                   a.FileSize, a.UploadedDate, a.UploadedBy, a.Category
+                      FROM DocumentAttachments a
+                      WHERE a.DocumentId = d.DocumentId
+                      ORDER BY a.UploadedDate DESC
+                  ) la
+                  LEFT JOIN (SELECT DISTINCT DocumentId FROM DocumentAttachments) da ON da.DocumentId = d.DocumentId
+                  WHERE d.DocumentType = @DocumentType
+                    AND (
+                        @IsPrivileged = 1
+                        OR d.Classification = @PublicClassification
+                        OR d.CreatedBy = @UserId
+                        OR (
+                            d.Classification = @ConfidentialClassification
+                            AND EXISTS (
+                                SELECT 1
+                                FROM DocumentPermissions dp
+                                WHERE dp.DocumentId = d.DocumentId
+                                  AND dp.UserId = @UserId
+                            )
+                        )
+                    )
+                  ORDER BY d.Year DESC, d.DocumentNumber DESC
+                  OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY",
+                @"SELECT COUNT(*)
+                  FROM Documents d
+                  WHERE d.DocumentType = @DocumentType
+                    AND (
+                        @IsPrivileged = 1
+                        OR d.Classification = @PublicClassification
+                        OR d.CreatedBy = @UserId
+                        OR (
+                            d.Classification = @ConfidentialClassification
+                            AND EXISTS (
+                                SELECT 1
+                                FROM DocumentPermissions dp
+                                WHERE dp.DocumentId = d.DocumentId
+                                  AND dp.UserId = @UserId
+                            )
+                        )
+                    )",
+                new[]
+                {
+                    new SqlParameter("@DocumentType", (int)DocumentType.Outgoing),
+                    new SqlParameter("@IsPrivileged", IsPrivilegedRole(role) ? 1 : 0),
+                    new SqlParameter("@PublicClassification", (int)Classification.Public),
+                    new SqlParameter("@ConfidentialClassification", (int)Classification.Confidential),
+                    new SqlParameter("@UserId", userId),
+                    new SqlParameter("@Offset", (page - 1) * pageSize),
+                    new SqlParameter("@PageSize", pageSize)
+                },
+                DocumentMapper.MapToOutgoingDocument);
 
-                    if (!reader.IsDBNull(reader.GetOrdinal("CreatorUserName")))
-                    {
-                        document.Creator = new Users
-                        {
-                            UserName = reader.GetString(reader.GetOrdinal("CreatorUserName")),
-                            FirstName = reader.GetString(reader.GetOrdinal("CreatorFirstName")),
-                            LastName = reader.GetString(reader.GetOrdinal("CreatorLastName"))
-                        };
-                    }
+        public Task<(List<InternalDocument> Documents, int TotalCount)> GetInternalAsync(int page, int pageSize, int userId, string role)
+            => GetDocumentsAsync(
+                @"SELECT d.*,
+                         u.FirstName AS CreatorFirstName,
+                         u.LastName AS CreatorLastName,
+                         u.UserName AS CreatorUserName,
+                         la.AttachmentId AS LatestAttachmentId,
+                         la.OriginalFileName AS LatestAttachmentName,
+                         la.FilePath AS LatestAttachmentPath,
+                         la.FileExtension AS LatestAttachmentExtension,
+                         la.FileSize AS LatestAttachmentSize,
+                         la.UploadedDate AS LatestAttachmentUploadedDate,
+                         la.UploadedBy AS LatestAttachmentUploadedBy,
+                         la.Category AS LatestAttachmentCategory,
+                         CASE WHEN da.DocumentId IS NOT NULL THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END AS HasAttachments
+                  FROM Documents d
+                  LEFT JOIN Users u ON u.Id = d.CreatedBy
+                  OUTER APPLY (
+                      SELECT TOP 1 a.AttachmentId, a.OriginalFileName, a.FilePath, a.FileExtension,
+                                   a.FileSize, a.UploadedDate, a.UploadedBy, a.Category
+                      FROM DocumentAttachments a
+                      WHERE a.DocumentId = d.DocumentId
+                      ORDER BY a.UploadedDate DESC
+                  ) la
+                  LEFT JOIN (SELECT DISTINCT DocumentId FROM DocumentAttachments) da ON da.DocumentId = d.DocumentId
+                  WHERE d.DocumentType = @DocumentType
+                    AND (
+                        @IsPrivileged = 1
+                        OR d.Classification = @PublicClassification
+                        OR d.CreatedBy = @UserId
+                        OR (
+                            d.Classification = @ConfidentialClassification
+                            AND EXISTS (
+                                SELECT 1
+                                FROM DocumentPermissions dp
+                                WHERE dp.DocumentId = d.DocumentId
+                                  AND dp.UserId = @UserId
+                            )
+                        )
+                    )
+                  ORDER BY d.Year DESC, d.DocumentNumber DESC
+                  OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY",
+                @"SELECT COUNT(*)
+                  FROM Documents d
+                  WHERE d.DocumentType = @DocumentType
+                    AND (
+                        @IsPrivileged = 1
+                        OR d.Classification = @PublicClassification
+                        OR d.CreatedBy = @UserId
+                        OR (
+                            d.Classification = @ConfidentialClassification
+                            AND EXISTS (
+                                SELECT 1
+                                FROM DocumentPermissions dp
+                                WHERE dp.DocumentId = d.DocumentId
+                                  AND dp.UserId = @UserId
+                            )
+                        )
+                    )",
+                new[]
+                {
+                    new SqlParameter("@DocumentType", (int)DocumentType.Internal),
+                    new SqlParameter("@IsPrivileged", IsPrivilegedRole(role) ? 1 : 0),
+                    new SqlParameter("@PublicClassification", (int)Classification.Public),
+                    new SqlParameter("@ConfidentialClassification", (int)Classification.Confidential),
+                    new SqlParameter("@UserId", userId),
+                    new SqlParameter("@Offset", (page - 1) * pageSize),
+                    new SqlParameter("@PageSize", pageSize)
+                },
+                DocumentMapper.MapToInternalDocument);
 
-                    documents.Add(document);
-                }
-            }
+        public async Task<IncomingDocument?> GetIncomingByIdAsync(int id)
+        {
+            var document = await GetSingleAsync(
+                @"SELECT d.*,
+                         u.FirstName AS CreatorFirstName,
+                         u.LastName AS CreatorLastName,
+                         u.UserName AS CreatorUserName,
+                         i.Name AS InstitutionName,
+                         i.Adress AS InstitutionAdress,
+                         CASE WHEN da.DocumentId IS NOT NULL THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END AS HasAttachments
+                  FROM Documents d
+                  LEFT JOIN Users u ON u.Id = d.CreatedBy
+                  LEFT JOIN Institutions i ON i.InstitutionId = d.InstitutionId
+                  LEFT JOIN (SELECT DISTINCT DocumentId FROM DocumentAttachments) da ON da.DocumentId = d.DocumentId
+                  WHERE d.DocumentId = @Id
+                    AND d.DocumentType = @DocumentType",
+                new[]
+                {
+                    new SqlParameter("@Id", id),
+                    new SqlParameter("@DocumentType", (int)DocumentType.Incoming)
+                },
+                DocumentMapper.MapToIncomingDocument);
 
-            return (documents, totalCount);
+            if (document == null) return null;
+
+            document.Attachments = await GetDocumentAttachmentsAsync(id);
+            document.HasAttachments = document.Attachments.Any();
+
+            return document;
         }
 
         public async Task<OutgoingDocument?> GetOutgoingByIdAsync(int id)
         {
-            using var connection = new SqlConnection(_connectionString);
-            await connection.OpenAsync();
-
-            var query = @"
-                SELECT d.*,
-                    i.Name as InstitutionName, i.ShortName as InstitutionShortName,
-                    i.Adress as InstitutionAdress,
-                    u.UserName as CreatorUserName,
-                    u.FirstName as CreatorFirstName,
-                    u.LastName as CreatorLastName
-                FROM Documents d
-                LEFT JOIN Institutions i ON d.InstitutionId = i.InstitutionId
-                LEFT JOIN Users u ON d.CreatedBy = u.Id
-                WHERE d.DocumentId = @DocumentId AND d.DocumentType = @DocumentType";
-
-            using var cmd = new SqlCommand(query, connection);
-            cmd.Parameters.AddWithValue("@DocumentId", id);
-            cmd.Parameters.AddWithValue("@DocumentType", (int)DocumentType.Outgoing);
-
-            using var reader = await cmd.ExecuteReaderAsync();
-            if (!await reader.ReadAsync()) return null;
-
-            var document = DocumentMapper.MapToOutgoingDocument(reader);
-
-            if (!reader.IsDBNull(reader.GetOrdinal("InstitutionName")))
-            {
-                document.Institution = new Institution
+            var document = await GetSingleAsync(
+                @"SELECT d.*,
+                         u.FirstName AS CreatorFirstName,
+                         u.LastName AS CreatorLastName,
+                         u.UserName AS CreatorUserName,
+                         i.Name AS InstitutionName,
+                         i.Adress AS InstitutionAdress,
+                         CASE WHEN da.DocumentId IS NOT NULL THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END AS HasAttachments
+                  FROM Documents d
+                  LEFT JOIN Users u ON u.Id = d.CreatedBy
+                  LEFT JOIN Institutions i ON i.InstitutionId = d.InstitutionId
+                  LEFT JOIN (SELECT DISTINCT DocumentId FROM DocumentAttachments) da ON da.DocumentId = d.DocumentId
+                  WHERE d.DocumentId = @Id
+                    AND d.DocumentType = @DocumentType",
+                new[]
                 {
-                    InstitutionId = document.InstitutionId,
-                    Name = reader.GetString(reader.GetOrdinal("InstitutionName")),
-                    ShortName = reader.IsDBNull(reader.GetOrdinal("InstitutionShortName"))
-                        ? null : reader.GetString(reader.GetOrdinal("InstitutionShortName")),
-                    Adress = reader.IsDBNull(reader.GetOrdinal("InstitutionAdress"))
-                        ? null : reader.GetString(reader.GetOrdinal("InstitutionAdress"))
-                };
-            }
+                    new SqlParameter("@Id", id),
+                    new SqlParameter("@DocumentType", (int)DocumentType.Outgoing)
+                },
+                DocumentMapper.MapToOutgoingDocument);
 
-            if (!reader.IsDBNull(reader.GetOrdinal("CreatorUserName")))
-            {
-                document.Creator = new Users
-                {
-                    UserName = reader.GetString(reader.GetOrdinal("CreatorUserName")),
-                    FirstName = reader.GetString(reader.GetOrdinal("CreatorFirstName")),
-                    LastName = reader.GetString(reader.GetOrdinal("CreatorLastName"))
-                };
-            }
+            if (document == null) return null;
+
+            document.Attachments = await GetDocumentAttachmentsAsync(id);
+            document.HasAttachments = document.Attachments.Any();
 
             return document;
-        }
-
-        public async Task<int> InsertOutgoingAsync(OutgoingDocument model)
-        {
-            using var connection = new SqlConnection(_connectionString);
-            await connection.OpenAsync();
-            using var transaction = connection.BeginTransaction();
-
-            try
-            {
-                var query = @"
-                    INSERT INTO Documents (
-                        DocumentNumber, Year, DocumentType, Subject, Content,
-                        Classification, Priority, RequiresResponse,HasAttachments,
-                        CreatedDate, CreatedBy, InstitutionId, RecipientName, IsResponse,
-                        OriginalIncomingDocumentId, ArchiveLocation
-                    ) OUTPUT INSERTED.DocumentId VALUES (
-                        @DocumentNumber, @Year, @DocumentType, @Subject, @Content,
-                        @Classification, @Priority, @RequiresResponse,@HasAttachments,
-                        @CreatedDate, @CreatedBy, @InstitutionId, @RecipientName, @IsResponse,
-                        @OriginalIncomingDocumentId, @ArchiveLocation
-                    )";
-
-                using var cmd = new SqlCommand(query, connection, transaction);
-                cmd.Parameters.AddWithValue("@DocumentNumber", model.DocumentNumber);
-                cmd.Parameters.AddWithValue("@Year", model.Year);
-                cmd.Parameters.AddWithValue("@DocumentType", (int)DocumentType.Outgoing);
-                cmd.Parameters.AddWithValue("@Subject", model.Subject);
-                cmd.Parameters.AddWithValue("@Content", (object?)model.Content ?? DBNull.Value);
-                cmd.Parameters.AddWithValue("@Classification", (int)model.Classification);
-                cmd.Parameters.AddWithValue("@Priority", (int)model.Priority);
-                cmd.Parameters.AddWithValue("@RequiresResponse", model.RequiresResponse);
-                cmd.Parameters.AddWithValue("@HasAttachments", false);
-                cmd.Parameters.AddWithValue("@CreatedDate", model.CreatedDate);
-                cmd.Parameters.AddWithValue("@CreatedBy", model.CreatedBy);
-                cmd.Parameters.AddWithValue("@InstitutionId", model.InstitutionId);
-                cmd.Parameters.AddWithValue("@RecipientName", model.RecipientName);
-                cmd.Parameters.AddWithValue("@IsResponse", model.IsResponse);
-                cmd.Parameters.AddWithValue("@OriginalIncomingDocumentId",
-                    (object?)model.OriginalIncomingDocumentId ?? DBNull.Value);
-                cmd.Parameters.AddWithValue("@ArchiveLocation",
-                    (object?)model.ArchiveLocation ?? DBNull.Value);
-
-                var documentId = Convert.ToInt32(await cmd.ExecuteScalarAsync());
-                transaction.Commit();
-                return documentId;
-            }
-            catch
-            {
-                transaction.Rollback();
-                throw;
-            }
-        }
-
-        // ==================== INTERNAL ====================
-
-        public async Task<(List<InternalDocument> Documents, int TotalCount)> GetInternalAsync(
-            int page, int pageSize, int? createdBy = null, int? accessUserId = null)
-        {
-            var documents = new List<InternalDocument>();
-            int totalCount = 0;
-
-            string whereClause;
-
-            if (accessUserId.HasValue)
-            {
-                whereClause = @"WHERE d.DocumentType = @DocumentType
-                    AND (
-                        d.Classification = 1
-                        OR d.CreatedBy = @AccessUserId
-                        OR (d.Classification = 2 AND EXISTS (
-                            SELECT 1 FROM DocumentPermissions dp
-                            WHERE dp.DocumentId = d.DocumentId AND dp.UserId = @AccessUserId
-                        ))
-                    )";
-            }
-            else if (createdBy.HasValue)
-            {
-                whereClause = "WHERE d.DocumentType = @DocumentType AND d.CreatedBy = @CreatedBy";
-            }
-            else
-            {
-                whereClause = "WHERE d.DocumentType = @DocumentType";
-            }
-
-            using var connection = new SqlConnection(_connectionString);
-            await connection.OpenAsync();
-
-            using (var cmd = new SqlCommand(
-                $"SELECT COUNT(*) FROM Documents d {whereClause}", connection))
-            {
-                cmd.Parameters.AddWithValue("@DocumentType", (int)DocumentType.Internal);
-                if (accessUserId.HasValue)
-                    cmd.Parameters.AddWithValue("@AccessUserId", accessUserId.Value);
-                else if (createdBy.HasValue)
-                    cmd.Parameters.AddWithValue("@CreatedBy", createdBy.Value);
-                totalCount = Convert.ToInt32(await cmd.ExecuteScalarAsync());
-            }
-
-            var query = $@"
-                SELECT d.*,
-                    u.UserName as CreatorUserName,
-                    u.FirstName as CreatorFirstName,
-                    u.LastName as CreatorLastName
-                FROM Documents d
-                LEFT JOIN Users u ON d.CreatedBy = u.Id
-                {whereClause}
-                ORDER BY d.CreatedDate DESC
-                OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY";
-
-            using (var cmd = new SqlCommand(query, connection))
-            {
-                cmd.Parameters.AddWithValue("@DocumentType", (int)DocumentType.Internal);
-                if (accessUserId.HasValue)
-                    cmd.Parameters.AddWithValue("@AccessUserId", accessUserId.Value);
-                else if (createdBy.HasValue)
-                    cmd.Parameters.AddWithValue("@CreatedBy", createdBy.Value);
-                cmd.Parameters.AddWithValue("@Offset", (page - 1) * pageSize);
-                cmd.Parameters.AddWithValue("@PageSize", pageSize);
-
-                using var reader = await cmd.ExecuteReaderAsync();
-                while (await reader.ReadAsync())
-                {
-                    var document = DocumentMapper.MapToInternalDocument(reader);
-
-                    if (!reader.IsDBNull(reader.GetOrdinal("CreatorUserName")))
-                    {
-                        document.Creator = new Users
-                        {
-                            UserName = reader.GetString(reader.GetOrdinal("CreatorUserName")),
-                            FirstName = reader.GetString(reader.GetOrdinal("CreatorFirstName")),
-                            LastName = reader.GetString(reader.GetOrdinal("CreatorLastName"))
-                        };
-                    }
-
-                    documents.Add(document);
-                }
-            }
-
-            return (documents, totalCount);
         }
 
         public async Task<InternalDocument?> GetInternalByIdAsync(int id)
         {
-            using var connection = new SqlConnection(_connectionString);
-            await connection.OpenAsync();
-
-            var query = @"
-                SELECT d.*,
-                    u.UserName as CreatorUserName,
-                    u.FirstName as CreatorFirstName,
-                    u.LastName as CreatorLastName
-                FROM Documents d
-                LEFT JOIN Users u ON d.CreatedBy = u.Id
-                WHERE d.DocumentId = @DocumentId AND d.DocumentType = @DocumentType";
-
-            using var cmd = new SqlCommand(query, connection);
-            cmd.Parameters.AddWithValue("@DocumentId", id);
-            cmd.Parameters.AddWithValue("@DocumentType", (int)DocumentType.Internal);
-
-            using var reader = await cmd.ExecuteReaderAsync();
-            if (!await reader.ReadAsync()) return null;
-
-            var document = DocumentMapper.MapToInternalDocument(reader);
-
-            if (!reader.IsDBNull(reader.GetOrdinal("CreatorUserName")))
-            {
-                document.Creator = new Users
+            var document = await GetSingleAsync(
+                @"SELECT d.*,
+                         u.FirstName AS CreatorFirstName,
+                         u.LastName AS CreatorLastName,
+                         u.UserName AS CreatorUserName,
+                         CASE WHEN da.DocumentId IS NOT NULL THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END AS HasAttachments
+                  FROM Documents d
+                  LEFT JOIN Users u ON u.Id = d.CreatedBy
+                  LEFT JOIN (SELECT DISTINCT DocumentId FROM DocumentAttachments) da ON da.DocumentId = d.DocumentId
+                  WHERE d.DocumentId = @Id
+                    AND d.DocumentType = @DocumentType",
+                new[]
                 {
-                    UserName = reader.GetString(reader.GetOrdinal("CreatorUserName")),
-                    FirstName = reader.GetString(reader.GetOrdinal("CreatorFirstName")),
-                    LastName = reader.GetString(reader.GetOrdinal("CreatorLastName"))
-                };
-            }
+                    new SqlParameter("@Id", id),
+                    new SqlParameter("@DocumentType", (int)DocumentType.Internal)
+                },
+                DocumentMapper.MapToInternalDocument);
+
+            if (document == null) return null;
+
+            document.Attachments = await GetDocumentAttachmentsAsync(id);
+            document.HasAttachments = document.Attachments.Any();
 
             return document;
         }
 
-        public async Task<int> InsertInternalAsync(InternalDocument model)
+        private Task<List<DocumentAttachment>> GetDocumentAttachmentsAsync(int documentId)
+            => GetAttachmentsAsync(
+                @"SELECT AttachmentId, DocumentId, OriginalFileName, FilePath, FileSize,
+                         FileExtension, UploadedDate, UploadedBy, Category, Description
+                  FROM DocumentAttachments
+                  WHERE DocumentId = @DocumentId
+                  ORDER BY UploadedDate DESC",
+                new[] { new SqlParameter("@DocumentId", documentId) });
+
+        // ================= ATTACHMENTS =================
+
+        public async Task InsertAttachmentAsync(
+            string query,
+            SqlParameter[] parameters)
         {
             using var connection = new SqlConnection(_connectionString);
             await connection.OpenAsync();
+
             using var transaction = connection.BeginTransaction();
 
             try
             {
-                var query = @"
-                    INSERT INTO Documents (
-                        DocumentNumber, Year, DocumentType, Subject, Content,
-                        Classification, Priority, RequiresResponse,HasAttachments,
-                        CreatedDate, CreatedBy, FromDepartment, ToDepartment
-                    ) OUTPUT INSERTED.DocumentId VALUES (
-                        @DocumentNumber, @Year, @DocumentType, @Subject, @Content,
-                        @Classification, @Priority, @RequiresResponse,@HasAttachments,
-                        @CreatedDate, @CreatedBy, @FromDepartment, @ToDepartment
-                    )";
-
                 using var cmd = new SqlCommand(query, connection, transaction);
-                cmd.Parameters.AddWithValue("@DocumentNumber", model.DocumentNumber);
-                cmd.Parameters.AddWithValue("@Year", model.Year);
-                cmd.Parameters.AddWithValue("@DocumentType", (int)DocumentType.Internal);
-                cmd.Parameters.AddWithValue("@Subject", model.Subject);
-                cmd.Parameters.AddWithValue("@Content", (object?)model.Content ?? DBNull.Value);
-                cmd.Parameters.AddWithValue("@Classification", (int)model.Classification);
-                cmd.Parameters.AddWithValue("@Priority", (int)model.Priority);
-                cmd.Parameters.AddWithValue("@RequiresResponse", model.RequiresResponse);
-                cmd.Parameters.AddWithValue("@HasAttachments", false);
-                cmd.Parameters.AddWithValue("@CreatedDate", model.CreatedDate);
-                cmd.Parameters.AddWithValue("@CreatedBy", model.CreatedBy);
-                cmd.Parameters.AddWithValue("@FromDepartment",
-                    (object?)model.FromDepartment ?? DBNull.Value);
-                cmd.Parameters.AddWithValue("@ToDepartment",
-                    (object?)model.ToDepartment ?? DBNull.Value);
+                cmd.Parameters.AddRange(parameters);
 
-                var documentId = Convert.ToInt32(await cmd.ExecuteScalarAsync());
-                transaction.Commit();
-                return documentId;
-            }
-            catch
-            {
-                transaction.Rollback();
-                throw;
-            }
-        }
-
-
-        // ==================== ATTACHMENTS ====================
-
-        public async Task InsertAttachmentAsync(DocumentAttachment attachment)
-        {
-            using var connection = new SqlConnection(_connectionString);
-            await connection.OpenAsync();
-            using var transaction = connection.BeginTransaction();
-
-            try
-            {
-                var query = @"
-                    INSERT INTO DocumentAttachments (
-                        DocumentId, OriginalFileName, FilePath, FileSize, FileExtension,
-                        UploadedDate, UploadedBy, Category, FileHash
-                    ) VALUES (
-                        @DocumentId, @OriginalFileName, @FilePath, @FileSize, @FileExtension,
-                        @UploadedDate, @UploadedBy, @Category, @FileHash
-                    )";
-
-                using (var cmd = new SqlCommand(query, connection, transaction))
-                {
-                    cmd.Parameters.AddWithValue("@DocumentId", attachment.DocumentId);
-                    cmd.Parameters.AddWithValue("@OriginalFileName", attachment.OriginalFileName);
-                    cmd.Parameters.AddWithValue("@FilePath", attachment.FilePath);
-                    cmd.Parameters.AddWithValue("@FileSize", attachment.FileSize);
-                    cmd.Parameters.AddWithValue("@FileExtension", (object?)attachment.FileExtension ?? DBNull.Value);
-                    cmd.Parameters.AddWithValue("@UploadedDate", attachment.UploadedDate);
-                    cmd.Parameters.AddWithValue("@UploadedBy", attachment.UploadedBy);
-                    cmd.Parameters.AddWithValue("@Category", (int)attachment.Category);
-                    cmd.Parameters.AddWithValue("@FileHash", (object?)attachment.FileHash ?? DBNull.Value);
-                    await cmd.ExecuteNonQueryAsync();
-                }
-
-                using (var cmd = new SqlCommand(
-                    "UPDATE Documents SET HasAttachments = 1 WHERE DocumentId = @DocumentId",
-                    connection, transaction))
-                {
-                    cmd.Parameters.AddWithValue("@DocumentId", attachment.DocumentId);
-                    await cmd.ExecuteNonQueryAsync();
-                }
+                await cmd.ExecuteNonQueryAsync();
 
                 transaction.Commit();
             }
@@ -645,86 +458,47 @@ namespace eProtokoll.Repositories.Documents
             }
         }
 
-        public async Task<List<DocumentAttachment>> GetAttachmentsByDocumentIdAsync(int documentId)
+        public async Task<List<DocumentAttachment>> GetAttachmentsAsync(
+            string query,
+            SqlParameter[] parameters)
         {
-            var attachments = new List<DocumentAttachment>();
+            var list = new List<DocumentAttachment>();
 
             using var connection = new SqlConnection(_connectionString);
             await connection.OpenAsync();
 
-            using var cmd = new SqlCommand(
-                "SELECT * FROM DocumentAttachments WHERE DocumentId = @DocumentId",
-                connection);
-            cmd.Parameters.AddWithValue("@DocumentId", documentId);
+            using var cmd = new SqlCommand(query, connection);
+            cmd.Parameters.AddRange(parameters);
 
             using var reader = await cmd.ExecuteReaderAsync();
-            while (await reader.ReadAsync())
-                attachments.Add(AttachmentMapper.Map(reader));
-            return attachments;
-        }
 
-        // ==================== DROPDOWN ====================
-
-        public async Task<List<Institution>> GetInstitutionsAsync()
-        {
-            var institutions = new List<Institution>();
-
-            using var connection = new SqlConnection(_connectionString);
-            await connection.OpenAsync();
-
-            using var cmd = new SqlCommand(
-                "SELECT InstitutionId, Name, ShortName FROM Institutions WHERE IsActive = 1 ORDER BY Name",
-                connection);
-
-            using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
-                institutions.Add(new Institution
-                {
-                    InstitutionId = reader.GetInt32(reader.GetOrdinal("InstitutionId")),
-                    Name = reader.GetString(reader.GetOrdinal("Name")),
-                    ShortName = reader.IsDBNull(reader.GetOrdinal("ShortName"))
-                        ? null : reader.GetString(reader.GetOrdinal("ShortName"))
-                });
+                list.Add(AttachmentMapper.Map(reader));
             }
 
-            return institutions;
+            return list;
         }
 
-        // ==================== USERS ====================
-
-        public async Task<List<Users>> GetActiveUsersAsync()
+        public async Task<DocumentAttachment?> GetAttachmentByIdAsync(int attachmentId)
         {
-            var users = new List<Users>();
+            var attachments = await GetAttachmentsAsync(
+                @"SELECT TOP 1 AttachmentId, DocumentId, OriginalFileName, FilePath, FileSize,
+                         FileExtension, UploadedDate, UploadedBy, Category, Description
+                  FROM DocumentAttachments
+                  WHERE AttachmentId = @AttachmentId",
+                new[] { new SqlParameter("@AttachmentId", attachmentId) });
 
-            using var connection = new SqlConnection(_connectionString);
-            await connection.OpenAsync();
-
-            using var cmd = new SqlCommand(
-                "SELECT Id, FirstName, LastName, UserName FROM Users WHERE IsActive = 1 AND Role = 3 ORDER BY FirstName, LastName",
-                connection);
-
-            using var reader = await cmd.ExecuteReaderAsync();
-            while (await reader.ReadAsync())
-            {
-                users.Add(new Users
-                {
-                    Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                    FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
-                    LastName = reader.GetString(reader.GetOrdinal("LastName")),
-                    UserName = reader.GetString(reader.GetOrdinal("UserName"))
-                });
-            }
-
-            return users;
+            return attachments.FirstOrDefault();
         }
 
-        // ==================== PERMISSIONS ====================
+        // ================= PERMISSIONS =================
 
         public async Task InsertDocumentPermissionsAsync(int documentId, List<int> userIds)
         {
             using var connection = new SqlConnection(_connectionString);
             await connection.OpenAsync();
+
             using var transaction = connection.BeginTransaction();
 
             try
@@ -732,10 +506,12 @@ namespace eProtokoll.Repositories.Documents
                 foreach (var userId in userIds)
                 {
                     using var cmd = new SqlCommand(
-                        "INSERT INTO DocumentPermissions (DocumentId, UserId) VALUES (@DocumentId, @UserId)",
-                        connection, transaction);
+                        @"INSERT INTO DocumentPermissions (DocumentId, UserId)
+                          VALUES (@DocumentId, @UserId)", connection, transaction);
+
                     cmd.Parameters.AddWithValue("@DocumentId", documentId);
                     cmd.Parameters.AddWithValue("@UserId", userId);
+
                     await cmd.ExecuteNonQueryAsync();
                 }
 
@@ -746,6 +522,156 @@ namespace eProtokoll.Repositories.Documents
                 transaction.Rollback();
                 throw;
             }
+        }
+
+        // ================= NOTIFICATIONS =================
+
+        public async Task<int> GetNewVisibleDocumentsCountAsync(int userId, string role)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            await connection.OpenAsync();
+
+            using var cmd = new SqlCommand(@"
+                SELECT COUNT(*)
+                FROM Documents d
+                WHERE d.CreatedBy <> @UserId
+                  AND CAST(d.CreatedDate AS DATE) = CAST(GETDATE() AS DATE)
+                  AND (
+                        @IsPrivileged = 1
+                        OR d.Classification = @PublicClassification
+                        OR (
+                            d.Classification = @ConfidentialClassification
+                            AND EXISTS (
+                                SELECT 1
+                                FROM DocumentPermissions dp
+                                WHERE dp.DocumentId = d.DocumentId
+                                  AND dp.UserId = @UserId
+                            )
+                        )
+                  )", connection);
+
+            cmd.Parameters.AddWithValue("@UserId", userId);
+            cmd.Parameters.AddWithValue("@IsPrivileged", IsPrivilegedRole(role) ? 1 : 0);
+            cmd.Parameters.AddWithValue("@PublicClassification", (int)Classification.Public);
+            cmd.Parameters.AddWithValue("@ConfidentialClassification", (int)Classification.Confidential);
+
+            return Convert.ToInt32(await cmd.ExecuteScalarAsync());
+        }
+
+        public async Task<List<Document>> GetNewVisibleDocumentsAsync(int userId, string role, int take = 10)
+        {
+            var documents = new List<Document>();
+
+            using var connection = new SqlConnection(_connectionString);
+            await connection.OpenAsync();
+
+            using var cmd = new SqlCommand(@"
+                SELECT TOP (@Take)
+                    d.DocumentId, d.DocumentNumber, d.Year,
+                    d.DocumentType, d.Subject, d.CreatedDate
+                FROM Documents d
+                WHERE d.CreatedBy <> @UserId
+                  AND CAST(d.CreatedDate AS DATE) = CAST(GETDATE() AS DATE)
+                  AND (
+                        @IsPrivileged = 1
+                        OR d.Classification = @PublicClassification
+                        OR (
+                            d.Classification = @ConfidentialClassification
+                            AND EXISTS (
+                                SELECT 1
+                                FROM DocumentPermissions dp
+                                WHERE dp.DocumentId = d.DocumentId
+                                  AND dp.UserId = @UserId
+                            )
+                        )
+                  )
+                ORDER BY d.CreatedDate DESC", connection);
+
+            cmd.Parameters.AddWithValue("@Take", take);
+            cmd.Parameters.AddWithValue("@UserId", userId);
+            cmd.Parameters.AddWithValue("@IsPrivileged", IsPrivilegedRole(role) ? 1 : 0);
+            cmd.Parameters.AddWithValue("@PublicClassification", (int)Classification.Public);
+            cmd.Parameters.AddWithValue("@ConfidentialClassification", (int)Classification.Confidential);
+
+            using var reader = await cmd.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                documents.Add(new Document
+                {
+                    DocumentId = reader.GetInt32(reader.GetOrdinal("DocumentId")),
+                    DocumentNumber = reader.GetInt32(reader.GetOrdinal("DocumentNumber")),
+                    Year = reader.GetInt32(reader.GetOrdinal("Year")),
+                    DocumentType = (DocumentType)reader.GetInt32(reader.GetOrdinal("DocumentType")),
+                    Subject = reader.IsDBNull(reader.GetOrdinal("Subject"))
+                        ? string.Empty
+                        : reader.GetString(reader.GetOrdinal("Subject")),
+                    CreatedDate = reader.GetDateTime(reader.GetOrdinal("CreatedDate"))
+                });
+            }
+
+            return documents;
+        }
+
+        // ================= DROPDOWNS =================
+
+        public async Task<List<Institution>> GetInstitutionsAsync()
+        {
+            var list = new List<Institution>();
+
+            using var connection = new SqlConnection(_connectionString);
+            await connection.OpenAsync();
+
+            using var cmd = new SqlCommand(
+                @"SELECT InstitutionId, Name, ShortName 
+                  FROM Institutions 
+                  WHERE IsActive = 1 
+                  ORDER BY Name",
+                connection);
+
+            using var reader = await cmd.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                list.Add(new Institution
+                {
+                    InstitutionId = reader.GetInt32(0),
+                    Name = reader.GetString(1),
+                    ShortName = reader.IsDBNull(2) ? null : reader.GetString(2)
+                });
+            }
+
+            return list;
+        }
+
+        public async Task<List<Users>> GetActiveUsersAsync()
+        {
+            var list = new List<Users>();
+
+            using var connection = new SqlConnection(_connectionString);
+            await connection.OpenAsync();
+
+            using var cmd = new SqlCommand(
+                @"SELECT Id, FirstName, LastName, UserName
+                  FROM Users
+                  WHERE IsActive = 1 AND Role = 3
+                  ORDER BY FirstName, LastName",
+                connection);
+
+            using var reader = await cmd.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                list.Add(new Users
+                {
+                    Id = reader.GetInt32(0),
+                    FirstName = reader.GetString(1),
+                    LastName = reader.GetString(2),
+                    UserName = reader.GetString(3)
+                });
+            }
+
+            return list;
         }
     }
 }

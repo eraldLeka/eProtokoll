@@ -37,8 +37,6 @@ namespace eProtokoll.Models
         [Display(Name = "Klasifikimi")]
         public Classification Classification { get; set; }
 
-        [Display(Name = "Statusi")]
-        public DocumentStatus Status { get; set; } = DocumentStatus.Registered;
 
         [Display(Name = "Prioriteti")]
         public Priority Priority { get; set; } = Priority.Normal;

@@ -1,9 +1,12 @@
 @model IEnumerable<eProtokoll.Models.InternalDocument>
 
 @{
-    var area = ViewData["area"]?.ToString() ?? "Manager";
-    var showDelete = (bool)(ViewData["showDelete"] ?? true);
-    Layout = area == "Employee" ? "~/Views/Shared/_EmployeeLayout.cshtml" : "~/Views/Shared/_ManagerLayout.cshtml";
+    var isEmployee = User.IsInRole("Employee");
+
+    Layout = isEmployee
+        ? "~/Views/Shared/_EmployeeLayout.cshtml"
+        : "~/Views/Shared/_ManagerLayout.cshtml";
+
     ViewData["Title"] = "Dokumente Brendshme";
 }
 
@@ -12,9 +15,11 @@
     <nav aria-label="breadcrumb" class="mb-4">
         <ol class="breadcrumb">
             <li class="breadcrumb-item">
-                <a asp-area="@area" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
+                <a asp-controller="Dashboard" asp-action="Index">Dashboard</a>
             </li>
-            <li class="breadcrumb-item active" aria-current="page">Dokumente Brendshme</li>
+            <li class="breadcrumb-item active" aria-current="page">
+                Dokumente Brendshme
+            </li>
         </ol>
     </nav>
 
@@ -25,10 +30,15 @@
                 <i class="bi bi-arrow-left-right me-2 text-warning"></i>
                 Dokumente Brendshme
             </h2>
-            <p class="text-muted mt-2">Menaxho dokumentet që qarkullojnë brenda institucionit</p>
+            <p class="text-muted mt-2">
+                Menaxho dokumentet që qarkullojnë brenda institucionit
+            </p>
         </div>
+
         <div class="col-md-4 text-end">
-            <a asp-area="@area" asp-controller="InternalDocument" asp-action="Create" class="btn btn-warning">
+            <a asp-controller="InternalDocument"
+               asp-action="Create"
+               class="btn btn-warning">
                 <i class="bi bi-plus-circle me-1"></i>
                 Regjistro Dokument të Ri
             </a>
@@ -47,6 +57,7 @@
                 </div>
             </div>
         </div>
+
         <div class="card-body p-0">
             @if (Model != null && Model.Any())
             {
@@ -55,91 +66,127 @@
                         <thead class="table-light">
                             <tr>
                                 <th style="width: 12%;">Nr. Protokolli</th>
-                                <th style="width: 35%;">Subjekti</th>
-                                <th style="width: 18%;">Nga → Për</th>
+                                <th style="width: 30%;">Subjekti</th>
+                                <th style="width: 16%;">Nga → Për</th>
                                 <th style="width: 12%;">Data</th>
-                                <th style="width: 12%;">Prioriteti</th>
+                                <th style="width: 14%;">Krijuar nga</th>
+                                <th style="width: 10%;">Prioriteti</th>
                                 <th style="width: 8%;" class="text-end">Veprime</th>
                             </tr>
                         </thead>
+
                         <tbody>
-                            @foreach (var doc in Model)
-                            {
-                                <tr>
-                                    <td>
-                                        <strong class="text-warning">@doc.ProtocolNumber</strong>
-                                    </td>
-                                    <td>
-                                        <div class="text-truncate" style="max-width: 350px;" title="@doc.Subject">
-                                            <strong>@doc.Subject</strong>
-                                        </div>
-                                        @if (!string.IsNullOrEmpty(doc.Content))
-                                        {
-                                            <small class="text-muted d-block text-truncate" style="max-width: 350px;">
-                                                @doc.Content
-                                            </small>
-                                        }
-                                    </td>
-                                   <td>
-    <small>
-        @if (!string.IsNullOrEmpty(doc.FromDepartment))
-        {
-            <span class="d-block mb-1">
-                <i class="bi bi-box-arrow-right text-danger"></i>
-                @doc.FromDepartment
-            </span>
-        }
+                        @foreach (var doc in Model)
+                        {
+                            var attachment = doc.Attachments?.FirstOrDefault();
+                            <tr>
+                                <td>
+                                    <strong class="text-warning">@doc.ProtocolNumber</strong>
+                                </td>
 
-        @if (!string.IsNullOrEmpty(doc.ToDepartment))
-        {
-            <span class="d-block">
-                <i class="bi bi-box-arrow-in-left text-success"></i>
-                @doc.ToDepartment
-            </span>
-        }
+                                <td>
+                                    <div class="text-truncate" style="max-width: 350px;" title="@doc.Subject">
+                                        <strong>@doc.Subject</strong>
+                                    </div>
 
-        @if (string.IsNullOrEmpty(doc.FromDepartment) && string.IsNullOrEmpty(doc.ToDepartment))
-        {
-            <span class="text-muted">-</span>
-        }
-    </small>
-</td>
-                                    <td>
-                                        <small>
-                                            <i class="bi bi-calendar-event"></i> @doc.CreatedDate.ToString("dd/MM/yyyy HH:mm")
+                                    @if (!string.IsNullOrEmpty(doc.Content))
+                                    {
+                                        <small class="text-muted d-block text-truncate" style="max-width: 350px;">
+                                            @doc.Content
                                         </small>
-                                    </td>
-                                    <td>
-                                        @switch (doc.Priority)
+                                    }
+                                </td>
+
+                                <td>
+                                    <small>
+                                        @if (!string.IsNullOrEmpty(doc.FromDepartment))
                                         {
-                                            case Priority.High:
-                                                <span class="badge bg-warning text-dark">
-                                                    <i class="bi bi-exclamation-triangle"></i> I Lartë
-                                                </span>
-                                                break;
-                                            case Priority.Normal:
-                                                <span class="badge bg-info">
-                                                    <i class="bi bi-info-circle"></i> Normal
-                                                </span>
-                                                break;
-                                            case Priority.Low:
-                                                <span class="badge bg-secondary">
-                                                    <i class="bi bi-arrow-down"></i> I Ulët
-                                                </span>
-                                                break;
+                                            <span class="d-block mb-1">
+                                                <i class="bi bi-box-arrow-right text-danger"></i>
+                                                @doc.FromDepartment
+                                            </span>
                                         }
-                                    </td>
-                                    <td class="text-end">
-                                        <div class="btn-group btn-group-sm" role="group">
-                                            <a asp-area="@area" asp-controller="InternalDocument" asp-action="Details" asp-route-id="@doc.DocumentId"
-                                               class="btn btn-outline-info"
-                                               title="Detajet">
+
+                                        @if (!string.IsNullOrEmpty(doc.ToDepartment))
+                                        {
+                                            <span class="d-block">
+                                                <i class="bi bi-box-arrow-in-left text-success"></i>
+                                                @doc.ToDepartment
+                                            </span>
+                                        }
+
+                                        @if (string.IsNullOrEmpty(doc.FromDepartment) &&
+                                             string.IsNullOrEmpty(doc.ToDepartment))
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </small>
+                                </td>
+
+                                <td>
+                                    <small>
+                                        <i class="bi bi-calendar-event"></i>
+                                        @doc.CreatedDate.ToString("dd/MM/yyyy HH:mm")
+                                    </small>
+                                </td>
+
+                                <td>
+                                    <small>@(doc.Creator?.FullName ?? "-")</small>
+                                </td>
+
+                                <td>
+                                    @switch (doc.Priority)
+                                    {
+                                        case Priority.High:
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="bi bi-exclamation-triangle"></i> I Lartë
+                                            </span>
+                                            break;
+
+                                        case Priority.Normal:
+                                            <span class="badge bg-info">
+                                                <i class="bi bi-info-circle"></i> Normal
+                                            </span>
+                                            break;
+
+                                        case Priority.Low:
+                                            <span class="badge bg-secondary">
+                                                <i class="bi bi-arrow-down"></i> I Ulët
+                                            </span>
+                                            break;
+                                    }
+                                </td>
+
+                                <td class="text-end">
+                                    <div class="btn-group btn-group-sm">
+                                        @if (attachment != null)
+                                        {
+                                            <a asp-controller="DocumentFile" asp-action="View"
+                                               asp-route-id="@attachment.AttachmentId"
+                                               asp-route-fileName="@attachment.OriginalFileName"
+                                               target="_blank" class="btn btn-outline-primary" title="Shiko">
                                                 <i class="bi bi-eye-fill"></i>
                                             </a>
-                                        </div>
-                                    </td>
-                                </tr>
-                            }
+                                            <a asp-controller="DocumentFile" asp-action="Download"
+                                               asp-route-id="@attachment.AttachmentId"
+                                               asp-route-fileName="@attachment.OriginalFileName"
+                                               class="btn btn-outline-success" title="Shkarko">
+                                                <i class="bi bi-download"></i>
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <button type="button" class="btn btn-outline-secondary" disabled title="Nuk ka skedar">
+                                                <i class="bi bi-eye-fill"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-outline-secondary" disabled title="Nuk ka skedar">
+                                                <i class="bi bi-download"></i>
+                                            </button>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
                         </tbody>
                     </table>
                 </div>
@@ -148,38 +195,39 @@
                 @if (ViewBag.TotalPages > 1)
                 {
                     <div class="card-footer bg-white">
-                        <nav aria-label="Pagination">
+                        <nav>
                             <ul class="pagination pagination-sm mb-0 justify-content-center">
+
                                 <li class="page-item @(ViewBag.CurrentPage == 1 ? "disabled" : "")">
-                                    <a class="page-link" href="@Url.Action("Index", new {
-                                        searchTerm = ViewBag.SearchTerm,
-                                        page = ViewBag.CurrentPage - 1
-                                    })">
-                                        <i class="bi bi-chevron-left"></i> Mbrapa
+                                    <a class="page-link"
+                                       href="@Url.Action("Index", new { page = ViewBag.CurrentPage - 1 })">
+                                        Mbrapa
                                     </a>
                                 </li>
+
                                 @for (int i = 1; i <= ViewBag.TotalPages; i++)
                                 {
                                     <li class="page-item @(ViewBag.CurrentPage == i ? "active" : "")">
-                                        <a class="page-link" href="@Url.Action("Index", new {
-                                            searchTerm = ViewBag.SearchTerm,
-                                            page = i
-                                        })">@i</a>
+                                        <a class="page-link"
+                                           href="@Url.Action("Index", new { page = i })">
+                                            @i
+                                        </a>
                                     </li>
                                 }
+
                                 <li class="page-item @(ViewBag.CurrentPage == ViewBag.TotalPages ? "disabled" : "")">
-                                    <a class="page-link" href="@Url.Action("Index", new {
-                                        searchTerm = ViewBag.SearchTerm,
-                                        page = ViewBag.CurrentPage + 1
-                                    })">
-                                        Përpara <i class="bi bi-chevron-right"></i>
+                                    <a class="page-link"
+                                       href="@Url.Action("Index", new { page = ViewBag.CurrentPage + 1 })">
+                                        Përpara
                                     </a>
                                 </li>
+
                             </ul>
                         </nav>
+
                         <div class="text-center mt-2">
                             <small class="text-muted">
-                                Faqja @ViewBag.CurrentPage nga @ViewBag.TotalPages (@ViewBag.TotalItems dokumente gjithsej)
+                                Faqja @ViewBag.CurrentPage nga @ViewBag.TotalPages (@ViewBag.TotalItems)
                             </small>
                         </div>
                     </div>
@@ -190,8 +238,13 @@
                 <div class="text-center py-5">
                     <i class="bi bi-inbox text-muted" style="font-size: 4rem;"></i>
                     <h4 class="mt-3 text-muted">Nuk ka dokumente</h4>
-                    <p class="text-muted">Kliko butonin "Regjistro Dokument të Ri" për të filluar</p>
-                    <a asp-area="@area" asp-controller="InternalDocument" asp-action="Create" class="btn btn-warning mt-3">
+                    <p class="text-muted">
+                        Kliko “Regjistro Dokument të Ri” për të filluar
+                    </p>
+
+                    <a asp-controller="InternalDocument"
+                       asp-action="Create"
+                       class="btn btn-warning mt-3">
                         <i class="bi bi-plus-circle me-1"></i>
                         Regjistro Dokument të Ri
                     </a>
@@ -202,45 +255,24 @@
 </div>
 
 @section Styles {
-    <style>
-        .stat-card {
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
-        }
-        .stat-icon {
-            width: 60px;
-            height: 60px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-        }
-        .bg-warning-subtle { 
-                background-color: rgba(255, 193, 7, 0.1) !important;
-        }
-        .bg-primary-subtle {
-
-            background-color: rgba(13, 110, 253, 0.1) !important; }
-        .table-hover tbody tr:hover {
-            background-color: rgba(255, 193, 7, 0.05);
-        }
-        .card { 
-            border-radius: 12px;
-        }
-        .card-header {
-            border-radius: 12px 12px 0 0 !important;
-        }
-        .pagination .page-link {
-            border-radius: 6px; margin: 0 2px;
-        }
-        .pagination .page-item.active .page-link {
-            background-color: #ffc107;
-            border-color: #ffc107;
-            color: #000;
-        }
-    </style>
+<style>
+.table-hover tbody tr:hover {
+    background-color: rgba(255, 193, 7, 0.05);
+}
+.card {
+    border-radius: 12px;
+}
+.card-header {
+    border-radius: 12px 12px 0 0 !important;
+}
+.pagination .page-link {
+    border-radius: 6px;
+    margin: 0 2px;
+}
+.pagination .page-item.active .page-link {
+    background-color: #ffc107;
+    border-color: #ffc107;
+    color: #000;
+}
+</style>
 }
