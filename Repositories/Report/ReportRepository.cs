@@ -6,6 +6,20 @@ namespace eProtokoll.Repositories
     public class ReportRepository : IReportRepository
     {
         private readonly string _connectionString;
+        private const string EmployeeVisibilityClause = @"
+                (
+                    d.Classification = @PublicClassification
+                    OR d.CreatedBy = @UserId
+                    OR (
+                        d.Classification = @ConfidentialClassification
+                        AND EXISTS (
+                            SELECT 1
+                            FROM DocumentPermissions dp
+                            WHERE dp.DocumentId = d.DocumentId
+                              AND dp.UserId = @UserId
+                        )
+                    )
+                )";
 
         public ReportRepository(IConfiguration configuration)
         {
@@ -48,6 +62,46 @@ namespace eProtokoll.Repositories
             return CountAsync(cmd);
         }
 
+        public Task<int> GetVisibleTotalDocumentsAsync(int userId)
+        {
+            var cmd = new SqlCommand($@"
+                SELECT COUNT(*)
+                FROM Documents d
+                WHERE {EmployeeVisibilityClause}");
+
+            AddEmployeeVisibilityParameters(cmd, userId);
+
+            return CountAsync(cmd);
+        }
+
+        public Task<int> GetVisibleTotalByTypeAsync(DocumentType type, int userId)
+        {
+            var cmd = new SqlCommand($@"
+                SELECT COUNT(*)
+                FROM Documents d
+                WHERE d.DocumentType = @Type
+                  AND {EmployeeVisibilityClause}");
+
+            cmd.Parameters.AddWithValue("@Type", (int)type);
+            AddEmployeeVisibilityParameters(cmd, userId);
+
+            return CountAsync(cmd);
+        }
+
+        public Task<int> GetVisibleTotalByPriorityAsync(Priority priority, int userId)
+        {
+            var cmd = new SqlCommand($@"
+                SELECT COUNT(*)
+                FROM Documents d
+                WHERE d.Priority = @Priority
+                  AND {EmployeeVisibilityClause}");
+
+            cmd.Parameters.AddWithValue("@Priority", (int)priority);
+            AddEmployeeVisibilityParameters(cmd, userId);
+
+            return CountAsync(cmd);
+        }
+
         public Task<int> GetTotalByPriorityAsync(Priority priority)
         {
             var cmd = new SqlCommand(@"
@@ -56,6 +110,50 @@ namespace eProtokoll.Repositories
                 WHERE Priority = @Priority");
 
             cmd.Parameters.AddWithValue("@Priority", (int)priority);
+
+            return CountAsync(cmd);
+        }
+
+        public Task<int> GetVisibleTodayDocumentsAsync(int userId)
+        {
+            var cmd = new SqlCommand($@"
+                SELECT COUNT(*)
+                FROM Documents d
+                WHERE CAST(d.CreatedDate AS DATE) = @Today
+                  AND {EmployeeVisibilityClause}");
+
+            cmd.Parameters.AddWithValue("@Today", DateTime.Now.Date);
+            AddEmployeeVisibilityParameters(cmd, userId);
+
+            return CountAsync(cmd);
+        }
+
+        public Task<int> GetVisibleCurrentWeekDocumentsAsync(int userId)
+        {
+            var cmd = new SqlCommand($@"
+                SELECT COUNT(*)
+                FROM Documents d
+                WHERE d.CreatedDate >= @WeekAgo
+                  AND {EmployeeVisibilityClause}");
+
+            cmd.Parameters.AddWithValue("@WeekAgo", DateTime.Now.AddDays(-7));
+            AddEmployeeVisibilityParameters(cmd, userId);
+
+            return CountAsync(cmd);
+        }
+
+        public Task<int> GetVisibleCurrentMonthDocumentsAsync(int userId)
+        {
+            var cmd = new SqlCommand($@"
+                SELECT COUNT(*)
+                FROM Documents d
+                WHERE MONTH(d.CreatedDate) = @Month
+                  AND YEAR(d.CreatedDate) = @Year
+                  AND {EmployeeVisibilityClause}");
+
+            cmd.Parameters.AddWithValue("@Month", DateTime.Now.Month);
+            cmd.Parameters.AddWithValue("@Year", DateTime.Now.Year);
+            AddEmployeeVisibilityParameters(cmd, userId);
 
             return CountAsync(cmd);
         }
@@ -97,6 +195,69 @@ namespace eProtokoll.Repositories
             cmd.Parameters.AddWithValue("@Month", DateTime.Now.Month);
             cmd.Parameters.AddWithValue("@Year", DateTime.Now.Year);
 
+            return CountAsync(cmd);
+        }
+
+        // ================= TRACKING =================
+
+        public Task<int> GetTrackingActiveCountAsync()
+            => CountAsync(new SqlCommand(@"
+                SELECT COUNT(*)
+                FROM DocumentTrackings dt
+                WHERE dt.CompletedDate IS NULL"));
+
+        public Task<int> GetTrackingOverdueCountAsync()
+            => CountAsync(new SqlCommand(@"
+                SELECT COUNT(*)
+                FROM DocumentTrackings dt
+                WHERE dt.CompletedDate IS NULL
+                  AND dt.DueDate IS NOT NULL
+                  AND dt.DueDate < GETDATE()"));
+
+        public Task<int> GetTrackingCompletedCountAsync()
+            => CountAsync(new SqlCommand(@"
+                SELECT COUNT(*)
+                FROM DocumentTrackings dt
+                WHERE dt.CompletedDate IS NOT NULL"));
+
+        public Task<int> GetVisibleTrackingActiveCountAsync(int userId)
+        {
+            var cmd = new SqlCommand($@"
+                SELECT COUNT(*)
+                FROM DocumentTrackings dt
+                INNER JOIN Documents d ON d.DocumentId = dt.DocumentId
+                WHERE dt.CompletedDate IS NULL
+                  AND {EmployeeVisibilityClause}");
+
+            AddEmployeeVisibilityParameters(cmd, userId);
+            return CountAsync(cmd);
+        }
+
+        public Task<int> GetVisibleTrackingOverdueCountAsync(int userId)
+        {
+            var cmd = new SqlCommand($@"
+                SELECT COUNT(*)
+                FROM DocumentTrackings dt
+                INNER JOIN Documents d ON d.DocumentId = dt.DocumentId
+                WHERE dt.CompletedDate IS NULL
+                  AND dt.DueDate IS NOT NULL
+                  AND dt.DueDate < GETDATE()
+                  AND {EmployeeVisibilityClause}");
+
+            AddEmployeeVisibilityParameters(cmd, userId);
+            return CountAsync(cmd);
+        }
+
+        public Task<int> GetVisibleTrackingCompletedCountAsync(int userId)
+        {
+            var cmd = new SqlCommand($@"
+                SELECT COUNT(*)
+                FROM DocumentTrackings dt
+                INNER JOIN Documents d ON d.DocumentId = dt.DocumentId
+                WHERE dt.CompletedDate IS NOT NULL
+                  AND {EmployeeVisibilityClause}");
+
+            AddEmployeeVisibilityParameters(cmd, userId);
             return CountAsync(cmd);
         }
 
@@ -184,6 +345,13 @@ namespace eProtokoll.Repositories
             }
 
             return list;
+        }
+
+        private static void AddEmployeeVisibilityParameters(SqlCommand cmd, int userId)
+        {
+            cmd.Parameters.AddWithValue("@PublicClassification", (int)Classification.Public);
+            cmd.Parameters.AddWithValue("@ConfidentialClassification", (int)Classification.Confidential);
+            cmd.Parameters.AddWithValue("@UserId", userId);
         }
     }
 }

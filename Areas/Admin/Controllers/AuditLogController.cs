@@ -15,9 +15,16 @@ namespace eProtokoll.Areas.Admin.Controllers
             _auditLogRepository = auditLogRepository;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int page = 1)
         {
-            var logs = await _auditLogRepository.GetAllAsync();
+            const int pageSize = 35;
+
+            var totalCount = await _auditLogRepository.CountAsync();
+            var logs = await _auditLogRepository.GetPagedAsync(page, pageSize);
+
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
             return View("AuditLog", logs);
         }
     }

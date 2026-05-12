@@ -1,6 +1,5 @@
 ﻿@using System.Security.Claims
 @inject eProtokoll.Repositories.ITrackingRepository TrackingRepository
-@inject eProtokoll.Repositories.Documents.IDocumentRepository DocumentRepository
 @{
     var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
     var role = User.FindFirstValue(ClaimTypes.Role) ?? "Employee";
@@ -12,10 +11,6 @@
 
     var totalNotifications = overdueCount;
 
-    var newDocumentsCount = userId > 0
-        ? await DocumentRepository.GetNewVisibleDocumentsCountAsync(userId, role)
-        : 0;
-
     var notificationItems = userId > 0
         ? await TrackingRepository.GetNotificationItemsAsync(userId, 10)
         : new List<eProtokoll.Models.DocumentTracking>();
@@ -24,22 +19,11 @@
         .Where(n => n.DueDate.HasValue && n.DueDate.Value < DateTime.Now)
         .ToList();
 
-    var newDocuments = userId > 0
-        ? await DocumentRepository.GetNewVisibleDocumentsAsync(userId, role, 10)
-        : new List<eProtokoll.Models.Document>();
-
-    totalNotifications += newDocumentsCount;
-
     var notificationSignatureParts = new List<string>();
 
     foreach (var n in overdueNotificationItems)
     {
         notificationSignatureParts.Add($"T-{n.TrackingId}-{n.AssignedDate.Ticks}");
-    }
-
-    foreach (var d in newDocuments)
-    {
-        notificationSignatureParts.Add($"D-{d.DocumentId}-{d.CreatedDate.Ticks}");
     }
 
     var notificationSignature = string.Join("|", notificationSignatureParts);
@@ -219,7 +203,7 @@
                     <div class="dropdown-menu dropdown-menu-end notification-menu" aria-labelledby="employeeNotifications">
                         <div class="px-3 py-2 border-bottom">
                             <div class="fw-semibold">Njoftimet</div>
-                            <small class="text-muted">Vonesa: @overdueCount • Shkresa të reja: @newDocumentsCount</small>
+                            <small class="text-muted">Vonesa: @overdueCount</small>
                         </div>
 
                         @if (overdueNotificationItems.Any())
@@ -240,41 +224,10 @@
                                 </a>
                             }
                         }
-                        else if (!newDocuments.Any())
+                        else
                         {
                             <div class="px-3 py-3 text-muted">Nuk ka njoftime.</div>
                         }
-
-                        @if (newDocuments.Any())
-                        {
-                            <div class="px-3 py-2 border-top border-bottom bg-light">
-                                <small class="fw-semibold text-muted">Shkresa të reja</small>
-                            </div>
-
-                            @foreach (var d in newDocuments)
-                            {
-                                var controller = d.DocumentType switch
-                                {
-                                    eProtokoll.Models.DocumentType.Incoming => "IncomingDocument",
-                                    eProtokoll.Models.DocumentType.Outgoing => "OutgoingDocument",
-                                    eProtokoll.Models.DocumentType.Internal => "InternalDocument",
-                                    _ => "ProtocolBook"
-                                };
-                                var newDocumentNotificationKey = $"D-{d.DocumentId}";
-
-                                <a class="notification-item"
-                                   data-notification-key="@newDocumentNotificationKey"
-                                   asp-area="Employee"
-                                   asp-controller="@controller"
-                                   asp-action="Index">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <span class="notification-title">@d.ProtocolNumber</span>
-                                    </div>
-                                    <div class="notification-meta">@(d.Subject ?? "Pa subjekt")</div>
-                                </a>
-                            }
-                        }
-
                     </div>
                 </li>
 
@@ -418,10 +371,6 @@
         <!-- MAIN CONTENT -->
         <main class="main-content">
 
-            <div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
-                <h1 class="h2">@ViewData["Title"]</h1>
-            </div>
-
             @if (TempData["SuccessMessage"] != null)
             {
                 <div class="alert alert-success alert-auto">
@@ -456,81 +405,80 @@
 
             @RenderBody()
 
-        </main>
+</main>
 
-    </div>
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const dropdown = document.getElementById('employeeNotificationsDropdown');
+        const badge = document.getElementById('employeeNotificationBadge');
+        const bell = document.getElementById('employeeNotifications');
 
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const dropdown = document.getElementById('employeeNotificationsDropdown');
-            const badge = document.getElementById('employeeNotificationBadge');
-            const bell = document.getElementById('employeeNotifications');
+        if (!dropdown || !bell) return;
 
-            if (!dropdown || !bell) return;
+        const userId = bell.dataset.userId;
+        const itemsStorageKey = `employee_notifications_items_seen_${userId}`;
+        const bellSeenKeysStorageKey = `employee_notifications_bell_seen_keys_${userId}`;
 
-            const userId = bell.dataset.userId;
-            const itemsStorageKey = `employee_notifications_items_seen_${userId}`;
-            const bellSeenKeysStorageKey = `employee_notifications_bell_seen_keys_${userId}`;
+        let seenItemKeys = [];
+        try {
+            const rawSeen = localStorage.getItem(itemsStorageKey);
+            seenItemKeys = rawSeen ? JSON.parse(rawSeen) : [];
+        } catch {
+            seenItemKeys = [];
+        }
 
-            let seenItemKeys = [];
-            try {
-                const rawSeen = localStorage.getItem(itemsStorageKey);
-                seenItemKeys = rawSeen ? JSON.parse(rawSeen) : [];
-            } catch {
-                seenItemKeys = [];
+        const seenSet = new Set(seenItemKeys);
+        const notificationLinks = document.querySelectorAll('.notification-item[data-notification-key]');
+        const currentKeys = Array.from(notificationLinks)
+            .map(link => link.getAttribute('data-notification-key'))
+            .filter(key => !!key);
+
+        let bellSeenKeys = [];
+        try {
+            const rawBellSeen = localStorage.getItem(bellSeenKeysStorageKey);
+            bellSeenKeys = rawBellSeen ? JSON.parse(rawBellSeen) : [];
+        } catch {
+            bellSeenKeys = [];
+        }
+
+        const bellSeenSet = new Set(bellSeenKeys);
+        const newSinceBellClickCount = currentKeys.filter(key => !bellSeenSet.has(key)).length;
+
+        notificationLinks.forEach(function (link) {
+            const key = link.getAttribute('data-notification-key');
+            if (!key) return;
+
+            if (!seenSet.has(key)) {
+                link.classList.add('notification-unread');
             }
 
-            const seenSet = new Set(seenItemKeys);
-            const notificationLinks = document.querySelectorAll('.notification-item[data-notification-key]');
-            const currentKeys = Array.from(notificationLinks)
-                .map(link => link.getAttribute('data-notification-key'))
-                .filter(key => !!key);
-
-            let bellSeenKeys = [];
-            try {
-                const rawBellSeen = localStorage.getItem(bellSeenKeysStorageKey);
-                bellSeenKeys = rawBellSeen ? JSON.parse(rawBellSeen) : [];
-            } catch {
-                bellSeenKeys = [];
-            }
-
-            const bellSeenSet = new Set(bellSeenKeys);
-            const newSinceBellClickCount = currentKeys.filter(key => !bellSeenSet.has(key)).length;
-
-            notificationLinks.forEach(function (link) {
-                const key = link.getAttribute('data-notification-key');
-                if (!key) return;
-
-                if (!seenSet.has(key)) {
-                    link.classList.add('notification-unread');
-                }
-
-                link.addEventListener('click', function () {
-                    seenSet.add(key);
-                    localStorage.setItem(itemsStorageKey, JSON.stringify(Array.from(seenSet)));
-                    link.classList.remove('notification-unread');
-                });
-            });
-
-            if (badge) {
-                if (newSinceBellClickCount > 0) {
-                    badge.textContent = newSinceBellClickCount;
-                    badge.classList.remove('d-none');
-                } else {
-                    badge.classList.add('d-none');
-                }
-            }
-
-            dropdown.addEventListener('shown.bs.dropdown', function () {
-                localStorage.setItem(bellSeenKeysStorageKey, JSON.stringify(currentKeys));
-
-                if (badge) {
-                    badge.classList.add('d-none');
-                }
+            link.addEventListener('click', function () {
+                seenSet.add(key);
+                localStorage.setItem(itemsStorageKey, JSON.stringify(Array.from(seenSet)));
+                link.classList.remove('notification-unread');
             });
         });
-    </script>
 
+        if (badge) {
+            if (newSinceBellClickCount > 0) {
+                badge.textContent = newSinceBellClickCount;
+                badge.classList.remove('d-none');
+            } else {
+                badge.classList.add('d-none');
+            }
+        }
+
+        dropdown.addEventListener('shown.bs.dropdown', function () {
+            localStorage.setItem(bellSeenKeysStorageKey, JSON.stringify(currentKeys));
+
+            if (badge) {
+                badge.classList.add('d-none');
+            }
+        });
+    });
+</script>
+
+@RenderSection("Scripts", required: false)
 </body>
 </html>

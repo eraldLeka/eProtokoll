@@ -1,4 +1,4 @@
-﻿using eProtokoll.Models;
+﻿    using eProtokoll.Models;
 
 namespace eProtokoll.Repositories.AuditLogs
 {
@@ -6,5 +6,7 @@ namespace eProtokoll.Repositories.AuditLogs
     {
         Task LogAsync(AuditLog log);
         Task<List<AuditLog>> GetAllAsync();
+        Task<List<AuditLog>> GetPagedAsync(int page, int pageSize);
+        Task<int> CountAsync();
     }
 }

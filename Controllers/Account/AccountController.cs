@@ -38,6 +38,7 @@ namespace eProtokoll.Controllers.Account
         public async Task<IActionResult> Login(
             string username,
             string password,
+            bool rememberMe = false,
             string? returnUrl = null)
         {
             ViewData["ReturnUrl"] = returnUrl;
@@ -63,7 +64,7 @@ namespace eProtokoll.Controllers.Account
                 return View();
             }
 
-            // Role mapping (stable)
+            // Role 
             string role = user.Role switch
             {
                 Users.UserRole.Administrator => "Administrator",
@@ -90,8 +91,13 @@ namespace eProtokoll.Controllers.Account
 
             var authProperties = new AuthenticationProperties
             {
-                IsPersistent = true
+                IsPersistent = rememberMe
             };
+
+            if (rememberMe)
+            {
+                authProperties.ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8);
+            }
 
             await HttpContext.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme,
@@ -112,7 +118,6 @@ namespace eProtokoll.Controllers.Account
             if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                 return Redirect(returnUrl);
 
-            // 🔥 FIX KRYESOR: Dashboard GLOBAL (pa area)
             return RedirectToAction("Index", "Dashboard");
         }
 

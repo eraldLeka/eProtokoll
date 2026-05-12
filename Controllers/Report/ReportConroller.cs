@@ -19,21 +19,27 @@ namespace eProtokoll.Controllers
         public async Task<IActionResult> Index()
         {
             var role = GetRole();
+            var userId = GetUserId();
+            ViewData["role"] = role;
 
             var vm = new ReportDashboardViewModel
             {
-                TotalDocuments = await _service.GetTotalDocumentsAsync(role),
-                TotalIncomingDocuments = await _service.GetTotalByTypeAsync(DocumentType.Incoming, role),
-                TotalOutgoingDocuments = await _service.GetTotalByTypeAsync(DocumentType.Outgoing, role),
-                TotalInternalDocuments = await _service.GetTotalByTypeAsync(DocumentType.Internal, role),
+                TotalDocuments = await _service.GetTotalDocumentsAsync(role, userId),
+                TotalIncomingDocuments = await _service.GetTotalByTypeAsync(DocumentType.Incoming, role, userId),
+                TotalOutgoingDocuments = await _service.GetTotalByTypeAsync(DocumentType.Outgoing, role, userId),
+                TotalInternalDocuments = await _service.GetTotalByTypeAsync(DocumentType.Internal, role, userId),
 
-                TodayDocuments = await _service.GetTodayAsync(role),
-                CurrentWeekDocuments = await _service.GetWeekAsync(role),
-                CurrentMonthDocuments = await _service.GetMonthAsync(role),
+                TodayDocuments = await _service.GetTodayAsync(role, userId),
+                CurrentWeekDocuments = await _service.GetWeekAsync(role, userId),
+                CurrentMonthDocuments = await _service.GetMonthAsync(role, userId),
 
-                HighPriority = await _service.GetTotalByPriorityAsync(Priority.High, role),
-                NormalPriority = await _service.GetTotalByPriorityAsync(Priority.Normal, role),
-                LowPriority = await _service.GetTotalByPriorityAsync(Priority.Low, role),
+                HighPriority = await _service.GetTotalByPriorityAsync(Priority.High, role, userId),
+                NormalPriority = await _service.GetTotalByPriorityAsync(Priority.Normal, role, userId),
+                LowPriority = await _service.GetTotalByPriorityAsync(Priority.Low, role, userId),
+
+                TrackingActive = await _service.GetTrackingActiveAsync(role, userId),
+                TrackingOverdue = await _service.GetTrackingOverdueAsync(role, userId),
+                TrackingCompleted = await _service.GetTrackingCompletedAsync(role, userId),
 
                 TopUsers = role != "Employee"
                     ? await _service.GetTopUsersAsync(role)
@@ -46,6 +52,9 @@ namespace eProtokoll.Controllers
 
             return View(vm);
         }
+
+        private int GetUserId()
+            => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
         private string GetRole()
         {

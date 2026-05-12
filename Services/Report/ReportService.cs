@@ -14,14 +14,23 @@ namespace eProtokoll.Services.Report
 
         // ================= TOTALS =================
 
-        public Task<int> GetTotalDocumentsAsync(string role)
-            => _repo.GetTotalDocumentsAsync();
+        private static bool IsPrivilegedRole(string role)
+            => role == "Administrator" || role == "Manager";
 
-        public Task<int> GetTotalByTypeAsync(DocumentType type, string role)
-            => _repo.GetTotalByTypeAsync(type);
+        public Task<int> GetTotalDocumentsAsync(string role, int userId)
+            => IsPrivilegedRole(role)
+                ? _repo.GetTotalDocumentsAsync()
+                : _repo.GetVisibleTotalDocumentsAsync(userId);
 
-        public Task<int> GetTotalByPriorityAsync(Priority priority, string role)
-            => _repo.GetTotalByPriorityAsync(priority);
+        public Task<int> GetTotalByTypeAsync(DocumentType type, string role, int userId)
+            => IsPrivilegedRole(role)
+                ? _repo.GetTotalByTypeAsync(type)
+                : _repo.GetVisibleTotalByTypeAsync(type, userId);
+
+        public Task<int> GetTotalByPriorityAsync(Priority priority, string role, int userId)
+            => IsPrivilegedRole(role)
+                ? _repo.GetTotalByPriorityAsync(priority)
+                : _repo.GetVisibleTotalByPriorityAsync(priority, userId);
 
         public Task<int> GetUsersAsync()
             => _repo.GetTotalUsersAsync();
@@ -31,14 +40,37 @@ namespace eProtokoll.Services.Report
 
         // ================= TIME =================
 
-        public Task<int> GetTodayAsync(string role)
-            => _repo.GetTodayDocumentsAsync();
+        public Task<int> GetTodayAsync(string role, int userId)
+            => IsPrivilegedRole(role)
+                ? _repo.GetTodayDocumentsAsync()
+                : _repo.GetVisibleTodayDocumentsAsync(userId);
 
-        public Task<int> GetWeekAsync(string role)
-            => _repo.GetCurrentWeekDocumentsAsync();
+        public Task<int> GetWeekAsync(string role, int userId)
+            => IsPrivilegedRole(role)
+                ? _repo.GetCurrentWeekDocumentsAsync()
+                : _repo.GetVisibleCurrentWeekDocumentsAsync(userId);
 
-        public Task<int> GetMonthAsync(string role)
-            => _repo.GetCurrentMonthDocumentsAsync();
+        public Task<int> GetMonthAsync(string role, int userId)
+            => IsPrivilegedRole(role)
+                ? _repo.GetCurrentMonthDocumentsAsync()
+                : _repo.GetVisibleCurrentMonthDocumentsAsync(userId);
+
+        // ================= TRACKING =================
+
+        public Task<int> GetTrackingActiveAsync(string role, int userId)
+            => IsPrivilegedRole(role)
+                ? _repo.GetTrackingActiveCountAsync()
+                : _repo.GetVisibleTrackingActiveCountAsync(userId);
+
+        public Task<int> GetTrackingOverdueAsync(string role, int userId)
+            => IsPrivilegedRole(role)
+                ? _repo.GetTrackingOverdueCountAsync()
+                : _repo.GetVisibleTrackingOverdueCountAsync(userId);
+
+        public Task<int> GetTrackingCompletedAsync(string role, int userId)
+            => IsPrivilegedRole(role)
+                ? _repo.GetTrackingCompletedCountAsync()
+                : _repo.GetVisibleTrackingCompletedCountAsync(userId);
 
         // ================= TOP =================
 

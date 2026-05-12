@@ -24,20 +24,8 @@
         </ol>
     </nav>
 
-    <div class="row mb-4">
-        <div class="col-12">
-            <h2 class="mb-0">
-                <i class="bi bi-arrow-left-right me-2 text-success"></i>
-                Regjistro Dokument Brendshëm të Ri
-            </h2>
-            <p class="text-muted mt-2">
-                Plotëso të dhënat e dokumentit që qarkullon brenda institucionit
-            </p>
-        </div>
-    </div>
-
     <div class="row">
-        <div class="col-lg-9">
+        <div class="col-12">
 
             <form asp-controller="InternalDocument"
                   asp-action="Create"
@@ -50,82 +38,65 @@
                     <input type="hidden" name="trackingId" value="@ViewBag.TrackingId" />
                 }
 
-                @if (!ViewData.ModelState.IsValid)
-                {
-                    <div asp-validation-summary="All" class="alert alert-danger"></div>
-                }
-
-                <!-- Departments -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-info text-white">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-success text-white">
                         <h5 class="mb-0">
-                            <i class="bi bi-building me-2"></i>
-                            Informacioni i Qarkullimit
+                            <i class="bi bi-arrow-left-right me-2"></i>
+                            Regjistro Dokument Brendshëm të Ri
                         </h5>
                     </div>
+
                     <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
+
+                        @if (!ViewData.ModelState.IsValid)
+                        {
+                            <div class="alert alert-danger mb-3" asp-validation-summary="All"></div>
+                        }
+
+                        <div class="mb-3">
+                            <h6 class="text-success mb-3">
+                                <i class="bi bi-building me-2"></i> Informacioni i Qarkullimit
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
                                     <label asp-for="FromDepartment" class="form-label"></label>
-                                    <input asp-for="FromDepartment"
-                                           class="form-control"
-                                           placeholder="Departamenti dërgues" />
+                                    <input asp-for="FromDepartment" class="form-control" placeholder="Departamenti dërgues" />
                                     <span asp-validation-for="FromDepartment" class="text-danger"></span>
                                 </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
+                                <div class="col-md-6">
                                     <label asp-for="ToDepartment" class="form-label"></label>
-                                    <input asp-for="ToDepartment"
-                                           class="form-control"
-                                           placeholder="Departamenti marrës" />
+                                    <input asp-for="ToDepartment" class="form-control" placeholder="Departamenti marrës" />
                                     <span asp-validation-for="ToDepartment" class="text-danger"></span>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
 
-                <!-- Content -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">
-                            <i class="bi bi-file-earmark-text me-2"></i>
-                            Përmbajtja e Dokumentit
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label asp-for="Subject" class="form-label"></label>
-                            <input asp-for="Subject"
-                                   class="form-control"
-                                   placeholder="Subjekti i dokumentit" />
-                            <span asp-validation-for="Subject" class="text-danger"></span>
-                        </div>
-                        <div class="mb-3">
-                            <label asp-for="Content" class="form-label"></label>
-                            <textarea asp-for="Content"
-                                      rows="5"
-                                      class="form-control"
-                                      placeholder="Përshkrimi i dokumentit..."></textarea>
-                            <span asp-validation-for="Content" class="text-danger"></span>
-                        </div>
-                    </div>
-                </div>
+                        <hr />
 
-                <!-- Classification -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-secondary text-white">
-                        <h5 class="mb-0">
-                            <i class="bi bi-shield-lock me-2"></i>
-                            Klasifikimi dhe Detajet
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="mb-3">
+                        <div class="mb-3">
+                            <h6 class="text-secondary mb-3">
+                                <i class="bi bi-file-earmark-text me-2"></i> Përmbajtja e Dokumentit
+                            </h6>
+                            <div class="mb-3">
+                                <label asp-for="Subject" class="form-label"></label>
+                                <input asp-for="Subject" class="form-control" placeholder="Subjekti i dokumentit" />
+                                <span asp-validation-for="Subject" class="text-danger"></span>
+                            </div>
+                            <div class="mb-0">
+                                <label asp-for="Content" class="form-label"></label>
+                                <textarea asp-for="Content" rows="5" class="form-control" placeholder="Përshkrimi i dokumentit..."></textarea>
+                                <span asp-validation-for="Content" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <hr />
+
+                        <div class="mb-3">
+                            <h6 class="text-primary mb-3">
+                                <i class="bi bi-shield-lock me-2"></i> Klasifikimi dhe Detajet
+                            </h6>
+                            <div class="row g-3 align-items-end">
+                                <div class="col-md-4">
                                     <label asp-for="Classification" class="form-label">Klasifikimi</label>
                                     <select asp-for="Classification"
                                             id="classificationSelect"
@@ -136,121 +107,120 @@
                                     </select>
                                     <span asp-validation-for="Classification" class="text-danger"></span>
                                 </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="mb-3">
+                                <div class="col-md-3">
                                     <label asp-for="Priority" class="form-label">Prioriteti</label>
-                                    <select asp-for="Priority"
-                                            class="form-select"
-                                            asp-items="Html.GetEnumSelectList<Priority>()">
-                                    </select>
+                                    <select asp-for="Priority" class="form-select" asp-items="Html.GetEnumSelectList<Priority>()"></select>
                                     <span asp-validation-for="Priority" class="text-danger"></span>
                                 </div>
-                            </div>
-                            <div class="col-md-3 d-flex align-items-center mt-2">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox"
-                                           asp-for="RequiresResponse" id="requiresResponse" />
-                                    <label class="form-check-label fw-semibold" for="requiresResponse">
-                                        <i class="bi bi-reply-fill me-1 text-warning"></i>
-                                        Kërkon Përgjigje
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Seksioni i Access Users -->
-                        <div id="accessUsersSection" style="display: @(isConfidential ? "block" : "none")">
-                            <hr />
-                            <div class="alert alert-warning d-flex align-items-center gap-2 mb-3">
-                                <i class="bi bi-lock-fill fs-5"></i>
-                                <span>
-                                    Dokumenti është <strong>I Kufizuar</strong>.
-                                    Zgjidh përdoruesit që do kenë qasje.
-                                </span>
-                            </div>
-
-                            @if (!string.IsNullOrEmpty(ViewData.ModelState["accessUserIds"]?.Errors.FirstOrDefault()?.ErrorMessage))
-                            {
-                                <div class="text-danger mb-2">
-                                    @ViewData.ModelState["accessUserIds"]!.Errors.First().ErrorMessage
-                                </div>
-                            }
-
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">
-                                    <i class="bi bi-people-fill me-1"></i>
-                                    Përdoruesit me Qasje
-                                </label>
-
-                                @if (!accessUsers.Any())
-                                {
-                                    <p class="text-muted fst-italic">Nuk ka përdorues aktiv.</p>
-                                }
-                                else
-                                {
-                                    <div class="border rounded p-3" style="max-height: 220px; overflow-y: auto;">
-                                        @foreach (var user in accessUsers)
-                                        {
-                                            var isChecked = selectedIds.Contains(user.Id);
-                                            <div class="form-check mb-2">
-                                                <input class="form-check-input"
-                                                       type="checkbox"
-                                                       name="accessUserIds"
-                                                       value="@user.Id"
-                                                       id="user_@user.Id"
-                                                @(isChecked ? "checked" : "") />
-                                                <label class="form-check-label" for="user_@user.Id">
-                                                    @user.FirstName @user.LastName
-                                                    <span class="text-muted small">(@user.UserName)</span>
-                                                </label>
-                                            </div>
-                                        }
+                                <div class="col-md-3">
+                                    <div class="form-check mt-1">
+                                        <input class="form-check-input" type="checkbox" asp-for="RequiresResponse" id="requiresResponse" />
+                                        <label class="form-check-label fw-semibold" for="requiresResponse">
+                                            <i class="bi bi-reply-fill me-1 text-warning"></i> Kërkon Përgjigje
+                                        </label>
                                     </div>
-                                    <div class="form-text">Zgjidh një ose më shumë përdorues.</div>
+                                </div>
+                            </div>
+
+                            <div id="accessUsersSection" style="display: @(isConfidential ? "block" : "none")">
+                                <hr class="my-3" />
+                                <div class="alert alert-warning d-flex align-items-center gap-2 mb-3">
+                                    <i class="bi bi-lock-fill fs-5"></i>
+                                    <span>Dokumenti është <strong>I Kufizuar</strong>. Zgjidh përdoruesit që do kenë qasje.</span>
+                                </div>
+
+                                @if (!string.IsNullOrEmpty(ViewData.ModelState["accessUserIds"]?.Errors.FirstOrDefault()?.ErrorMessage))
+                                {
+                                    <div class="text-danger mb-2">
+                                        @ViewData.ModelState["accessUserIds"]!.Errors.First().ErrorMessage
+                                    </div>
                                 }
+
+                                <div class="mb-0">
+                                    <label class="form-label fw-semibold">
+                                        <i class="bi bi-people-fill me-1"></i> Përdoruesit me Qasje
+                                    </label>
+
+                                    @if (!accessUsers.Any())
+                                    {
+                                        <p class="text-muted fst-italic">Nuk ka përdorues aktiv.</p>
+                                    }
+                                    else
+                                    {
+                                        <div class="border rounded p-3" style="max-height: 220px; overflow-y: auto;">
+                                            @foreach (var user in accessUsers)
+                                            {
+                                                var isChecked = selectedIds.Contains(user.Id);
+                                                <div class="form-check mb-2">
+                                                    <input class="form-check-input"
+                                                           type="checkbox"
+                                                           name="accessUserIds"
+                                                           value="@user.Id"
+                                                           id="user_@user.Id"
+                                                    @(isChecked ? "checked" : "") />
+                                                    <label class="form-check-label" for="user_@user.Id">
+                                                        @user.FirstName @user.LastName
+                                                        <span class="text-muted small">(@user.UserName)</span>
+                                                    </label>
+                                                </div>
+                                            }
+                                        </div>
+                                        <div class="form-text">Zgjidh një ose më shumë përdorues.</div>
+                                    }
+                                </div>
                             </div>
                         </div>
 
-                    </div>
-                </div>
+                        <hr />
 
-                <!-- Upload -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-dark text-white">
-                        <h5 class="mb-0">
-                            <i class="bi bi-paperclip me-2"></i>
-                            Bashkëngjit Dokument
-                        </h5>
-                    </div>
-                    <div class="card-body">
                         <div class="mb-3">
-                            <input type="file"
-                                   name="attachmentFile"
-                                   class="form-control"
-                                   accept=".pdf" />
+                            <h6 class="text-secondary mb-3">
+                                <i class="bi bi-paperclip me-2"></i> Bashkëngjit Dokument
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-5">
+                                    <label class="form-label">Ngarko Skedarin (PDF)</label>
+                                    <input type="file" name="attachmentFile" class="form-control" accept=".pdf" />
+                                </div>
+                                <div class="col-md-7">
+                                    <label class="form-label">Ose Merr nga Skaneri</label>
+                                    <div class="d-flex gap-2">
+                                        <select id="scannerSelect" class="form-select" disabled>
+                                            <option value="">-- Duke kërkuar skanerët... --</option>
+                                        </select>
+                                        <button type="button" class="btn btn-outline-secondary" onclick="loadScanners()">
+                                            <i class="bi bi-arrow-clockwise"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-primary" id="scanBtn" onclick="startScan()" disabled>
+                                            <i class="bi bi-scanner me-1"></i> Skano
+                                        </button>
+                                    </div>
+                                    <div id="scanStatus" class="form-text mt-1"></div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
-                <!-- Buttons -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-body d-flex justify-content-between">
-                        <a asp-controller="InternalDocument"
-                               asp-action="Index"
-                               class="btn btn-outline-secondary">
-                            Kthehu
-                        </a>
-                        <button type="submit" class="btn btn-success px-5">
-                            Ruaj Dokumentin
-                        </button>
-                    </div>
-                </div>
 
+                        <hr />
+
+                        <div class="d-flex justify-content-between">
+                            <a asp-controller="InternalDocument" asp-action="Index" class="btn btn-outline-secondary">
+                                Kthehu
+                            </a>
+                            <input type="hidden" id="scanSessionKey" name="scanSessionKey" />
+                            <button type="submit" class="btn btn-success px-5">
+                                Ruaj Dokumentin
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
             </form>
         </div>
     </div>
 </div>
 
+                        <hr />
+                        <hr />
 <script>
     var confidentialValue = '@confidentialValue';
 

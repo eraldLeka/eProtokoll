@@ -12,62 +12,6 @@
     </ol>
 </nav>
 
-<!-- Statistika të shpejta -->
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="text-muted mb-1">Total Veprime</h6>
-                        <h3 class="mb-0">@Model.Count</h3>
-                    </div>
-                    <i class="bi bi-activity text-primary" style="font-size:2rem;"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="text-muted mb-1">Hyrje</h6>
-                        <h3 class="mb-0 text-success">@Model.Count(l => l.Action == "Login")</h3>
-                    </div>
-                    <i class="bi bi-box-arrow-in-right text-success" style="font-size:2rem;"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="text-muted mb-1">Krijime</h6>
-                        <h3 class="mb-0 text-info">@Model.Count(l => l.Action == "Create")</h3>
-                    </div>
-                    <i class="bi bi-file-earmark-plus text-info" style="font-size:2rem;"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="text-muted mb-1">Delegime</h6>
-                        <h3 class="mb-0 text-warning">@Model.Count(l => l.Action == "Delegate")</h3>
-                    </div>
-                    <i class="bi bi-person-check text-warning" style="font-size:2rem;"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 <!-- Tabela -->
 <div class="card border-0 shadow-sm">
     <div class="card-header bg-white">
@@ -138,3 +82,33 @@
         }
     </div>
 </div>
+
+@if (ViewBag.TotalPages > 1)
+{
+    <div class="card-footer bg-white">
+        <nav>
+            <ul class="pagination pagination-sm mb-0 justify-content-center">
+                <li class="page-item @(ViewBag.CurrentPage == 1 ? "disabled" : "")">
+                    <a class="page-link"
+                       href="@Url.Action("Index", new { page = ViewBag.CurrentPage - 1 })">
+                        Mbrapa
+                    </a>
+                </li>
+
+                @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                {
+                    <li class="page-item @(ViewBag.CurrentPage == i ? "active" : "")">
+                        <a class="page-link" href="@Url.Action("Index", new { page = i })">@i</a>
+                    </li>
+                }
+
+                <li class="page-item @(ViewBag.CurrentPage == ViewBag.TotalPages ? "disabled" : "")">
+                    <a class="page-link"
+                       href="@Url.Action("Index", new { page = ViewBag.CurrentPage + 1 })">
+                        Para
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+}

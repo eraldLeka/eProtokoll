@@ -26,21 +26,8 @@
         </ol>
     </nav>
 
-    <!-- HEADER -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <h2 class="mb-0">
-                <i class="bi bi-file-earmark-plus me-2 text-info"></i>
-                Regjistro Dokument Dalës të Ri
-            </h2>
-            <p class="text-muted mt-2">
-                Plotëso të dhënat e dokumentit që del nga institucioni
-            </p>
-        </div>
-    </div>
-
     <div class="row">
-        <div class="col-lg-9">
+        <div class="col-12">
 
             <form asp-controller="OutgoingDocument"
                   asp-action="Create"
@@ -53,313 +40,185 @@
                     <input type="hidden" name="trackingId" value="@ViewBag.TrackingId" />
                 }
 
-                @if (!ViewData.ModelState.IsValid)
-                {
-                    <div asp-validation-summary="All" class="alert alert-danger"></div>
-                }
-
-                <!-- RECIPIENT -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-primary text-white">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-info text-white">
                         <h5 class="mb-0">
-                            <i class="bi bi-building me-2"></i>
-                            Informacioni i Marrësit
+                            <i class="bi bi-file-earmark-plus me-2"></i>
+                            Regjistro Dokument Dalës të Ri
                         </h5>
                     </div>
 
                     <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <label asp-for="InstitutionId" class="form-label">Institucioni Marrës</label>
-                                <select asp-for="InstitutionId"
-                                        class="form-select"
-                                        asp-items="ViewBag.Institutions">
-                                    <option value="">-- Zgjidh Institucionin --</option>
-                                </select>
-                                <span asp-validation-for="InstitutionId" class="text-danger"></span>
-                            </div>
 
-                            <div class="col-md-6">
-                                <label asp-for="RecipientName" class="form-label">Emri i Marrësit</label>
-                                <input asp-for="RecipientName" class="form-control" />
-                                <span asp-validation-for="RecipientName" class="text-danger"></span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- CONTENT -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-success text-white">
-                        <h5 class="mb-0">Përmbajtja e Dokumentit</h5>
-                    </div>
-
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label asp-for="Subject" class="form-label">Subjekti</label>
-                            <input asp-for="Subject" class="form-control" />
-                        </div>
+                        @if (!ViewData.ModelState.IsValid)
+                        {
+                            <div class="alert alert-danger mb-3" asp-validation-summary="All"></div>
+                        }
 
                         <div class="mb-3">
-                            <label asp-for="Content" class="form-label">Përshkrimi</label>
-                            <textarea asp-for="Content" class="form-control" rows="5"></textarea>
-                        </div>
-                    </div>
-                </div>
+                            <h6 class="text-info mb-3">
+                                <i class="bi bi-building me-2"></i> Informacioni i Marrësit
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label asp-for="InstitutionId" class="form-label">Institucioni Marrës</label>
+                                    <select asp-for="InstitutionId" class="form-select" asp-items="ViewBag.Institutions">
+                                        <option value="">-- Zgjidh Institucionin --</option>
+                                    </select>
+                                    <span asp-validation-for="InstitutionId" class="text-danger"></span>
+                                </div>
 
-                <!-- RESPONSE -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-warning">
-                        <h5 class="mb-0">Lidhje me Dokument Hyrës</h5>
-                    </div>
-
-                    <div class="card-body">
-
-                        <div class="form-check mb-2">
-                            <input asp-for="IsResponse"
-                                   class="form-check-input"
-                                   type="checkbox"
-                                   onchange="toggleIncoming(this.checked)" />
-                            <label class="form-check-label">
-                                Është përgjigje
-                            </label>
-                        </div>
-                        <div id="incomingSection"
-                             style="display:@(Model != null && Model.IsResponse ? "block" : "none")">
-
-                            <select asp-for="OriginalIncomingDocumentId"
-                                    class="form-select"
-                                    asp-items="ViewBag.IncomingDocuments">
-                                <option value="">-- Zgjidh Dokument Hyrës --</option>
-                            </select>
-
-                        </div>
-                    </div>
-                </div>
-
-                <!-- CLASSIFICATION -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-warning">
-                        <h5 class="mb-0">Klasifikimi dhe Detajet</h5>
-                    </div>
-
-                    <div class="card-body">
-
-                        <div class="row">
-                            <div class="col-md-4">
-                                <label asp-for="Classification" class="form-label">Klasifikimi</label>
-                                <select asp-for="Classification"
-                                        class="form-select"
-                                        asp-items="ViewBag.Classifications"
-                                        onchange="toggleAccess(this.value)">
-                                    <option value="">-- Zgjidh --</option>
-                                </select>
+                                <div class="col-md-6">
+                                    <label asp-for="RecipientName" class="form-label">Emri i Marrësit</label>
+                                    <input asp-for="RecipientName" class="form-control" />
+                                    <span asp-validation-for="RecipientName" class="text-danger"></span>
+                                </div>
                             </div>
-
-                            <div class="col-md-4">
-                                <label asp-for="Priority" class="form-label">Prioriteti</label>
-                                <select asp-for="Priority"
-                                        class="form-select"
-                                        asp-items="Html.GetEnumSelectList<Priority>()">
-                                </select>
-                            </div>
-                        </div>
-
-                        <!-- ACCESS -->
-                        <div id="accessSection" style="display:@(isConfidential ? "block" : "none")" class="mt-3">
-
-                            <div class="alert alert-warning d-flex align-items-center gap-2">
-                                <i class="bi bi-lock-fill fs-5"></i>
-                                <span>Dokument i kufizuar</span>
-                            </div>
-
-                            <div class="border rounded p-3" style="max-height:220px; overflow-y:auto;">
-                                @foreach (var u in accessUsers)
-                                {
-                                    var checkedUser = selectedIds.Contains(u.Id);
-
-                                    <div class="form-check mb-2">
-                                        <input class="form-check-input"
-                                               type="checkbox"
-                                               name="accessUserIds"
-                                               value="@u.Id"
-                                        @(checkedUser ? "checked" : "") />
-
-                                        <label class="form-check-label">
-                                            @u.FirstName @u.LastName
-                                        </label>
-                                    </div>
-                                }
-                            </div>
-
-                        </div>
-
-                    </div>
-                </div>
-
-                <!-- FILE + SCANNER (IDENTICAL LOGIC) -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-dark text-white">
-                        <h5 class="mb-0">Bashkëngjitja e Dokumentit</h5>
-                    </div>
-
-                    <div class="card-body">
-
-                        <div class="mb-3">
-                            <label class="form-label">Ngarko Skedarin</label>
-                            <input type="file"
-                                   name="attachmentFile"
-                                   class="form-control"
-                                   accept=".pdf" />
                         </div>
 
                         <hr />
 
-                        <div class="mb-2">
-                            <label class="form-label">Ose Merr nga Skaneri</label>
-
-                            <div class="d-flex gap-2 align-items-center">
-
-                                <select id="scannerSelect" class="form-select" disabled>
-                                    <option value="">-- Duke kërkuar skanerët... --</option>
-                                </select>
-
-                                <button type="button"
-                                        class="btn btn-outline-secondary"
-                                        onclick="loadScanners()">
-                                    <i class="bi bi-arrow-clockwise"></i>
-                                </button>
-
-                                <button type="button"
-                                        class="btn btn-primary"
-                                        id="scanBtn"
-                                        onclick="startScan()"
-                                        disabled>
-                                    <i class="bi bi-scanner me-1"></i>
-                                    Skano
-                                </button>
-
+                        <div class="mb-3">
+                            <h6 class="text-secondary mb-3">
+                                <i class="bi bi-file-text me-2"></i> Përmbajtja e Dokumentit
+                            </h6>
+                            <div class="mb-3">
+                                <label asp-for="Subject" class="form-label">Subjekti</label>
+                                <input asp-for="Subject" class="form-control" />
                             </div>
-
-                            <div id="scanStatus" class="form-text mt-1"></div>
+                            <div class="mb-0">
+                                <label asp-for="Content" class="form-label">Përshkrimi</label>
+                                <textarea asp-for="Content" class="form-control" rows="5"></textarea>
+                            </div>
                         </div>
 
+                        <hr />
+
+                        <div class="mb-3">
+                            <h6 class="text-primary mb-3">
+                                <i class="bi bi-link-45deg me-2"></i> Lidhje me Dokument Hyrës
+                            </h6>
+                            <div class="form-check mb-2">
+                                <input asp-for="IsResponse" class="form-check-input" type="checkbox" onchange="toggleIncoming(this.checked)" />
+                                <label class="form-check-label">Është përgjigje</label>
+                            </div>
+                            <div id="incomingSection" style="display:@(Model != null && Model.IsResponse ? "block" : "none")">
+                                <select asp-for="OriginalIncomingDocumentId" class="form-select" asp-items="ViewBag.IncomingDocuments">
+                                    <option value="">-- Zgjidh Dokument Hyrës --</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <hr />
+
+                        <div class="mb-3">
+                            <h6 class="text-primary mb-3">
+                                <i class="bi bi-tags me-2"></i> Klasifikimi dhe Detajet
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label asp-for="Classification" class="form-label">Klasifikimi</label>
+                                    <select asp-for="Classification" class="form-select" asp-items="ViewBag.Classifications" onchange="toggleAccess(this.value)">
+                                        <option value="">-- Zgjidh --</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label asp-for="Priority" class="form-label">Prioriteti</label>
+                                    <select asp-for="Priority" class="form-select" asp-items="Html.GetEnumSelectList<Priority>()"></select>
+                                </div>
+                            </div>
+
+                            <div id="accessSection" style="display:@(isConfidential ? "block" : "none")" class="mt-3">
+                                <div class="alert alert-warning d-flex align-items-center gap-2">
+                                    <i class="bi bi-lock-fill fs-5"></i>
+                                    <span>Dokument i kufizuar</span>
+                                </div>
+
+                                <div class="border rounded p-3" style="max-height:220px; overflow-y:auto;">
+                                    @foreach (var u in accessUsers)
+                                    {
+                                        var checkedUser = selectedIds.Contains(u.Id);
+
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input"
+                                                   type="checkbox"
+                                                   name="accessUserIds"
+                                                   value="@u.Id"
+                                            @(checkedUser ? "checked" : "") />
+
+                                            <label class="form-check-label">
+                                                @u.FirstName @u.LastName
+                                            </label>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr />
+
+                        <div class="mb-3">
+                            <h6 class="text-secondary mb-3">
+                                <i class="bi bi-paperclip me-2"></i> Bashkëngjitja e Dokumentit
+                            </h6>
+
+                            <div class="mb-3">
+                                <label class="form-label">Ngarko Skedarin</label>
+                                <input type="file" name="attachmentFile" class="form-control" accept=".pdf" />
+                            </div>
+
+                            <div class="mb-2">
+                                <label class="form-label">Ose Merr nga Skaneri</label>
+
+                                <div class="d-flex gap-2 align-items-center">
+                                    <select id="scannerSelect" class="form-select" disabled>
+                                        <option value="">-- Duke kërkuar skanerët... --</option>
+                                    </select>
+
+                                    <button type="button" class="btn btn-outline-secondary" onclick="loadScanners()">
+                                        <i class="bi bi-arrow-clockwise"></i>
+                                    </button>
+
+                                    <button type="button" class="btn btn-primary" id="scanBtn" onclick="startScan()" disabled>
+                                        <i class="bi bi-scanner me-1"></i>
+                                        Skano
+                                    </button>
+                                </div>
+
+                                <div id="scanStatus" class="form-text mt-1"></div>
+                            </div>
+                        </div>
+
+                        <hr />
+
+                        <div class="d-flex justify-content-between">
+                            <a asp-controller="OutgoingDocument" asp-action="Index" class="btn btn-outline-secondary">
+                                Kthehu
+                            </a>
+
+                            <input type="hidden" id="scanSessionKey" name="scanSessionKey" />
+
+                            <button type="submit" class="btn btn-info px-5">
+                                Ruaj Dokumentin
+                            </button>
+                        </div>
                     </div>
                 </div>
-
-                <!-- BUTTONS -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-body d-flex justify-content-between">
-
-                        <a asp-controller="OutgoingDocument"
-                               asp-action="Index"
-                               class="btn btn-outline-secondary">
-                            Kthehu
-                        </a>
-
-                        <input type="hidden" id="scanSessionKey" name="scanSessionKey" />
-
-                        <button type="submit" class="btn btn-info btn-lg px-5">
-                            Ruaj Dokumentin
-                        </button>
-
-                    </div>
-                </div>
-
             </form>
 
         </div>
     </div>
 </div>
 
-<script>
-    const confidentialValue = '@confidentialValue';
-    let currentScanKey = null;
-
-    function toggleAccess(val) {
-        document.getElementById('accessSection').style.display =
-            parseInt(val) === parseInt(confidentialValue) ? 'block' : 'none';
-    }
-
-        function toggleIncoming(val) {
-        const section = document.getElementById('incomingSection');
-
-        if (!section) return;
-
-        section.style.display = val ? 'block' : 'none';
-    }
-
-    async function loadScanners() {
-        try {
-            const status = document.getElementById('scanStatus');
-            const select = document.getElementById('scannerSelect');
-
-            status.textContent = 'Duke kërkuar skanerët...';
-
-            const res = await fetch('http://localhost:7331/scanners');
-            const data = await res.json();
-
-            select.innerHTML = '';
-
-            data.forEach(s => {
-                const opt = document.createElement('option');
-                opt.value = s;
-                opt.textContent = s;
-                select.appendChild(opt);
-            });
-
-            select.disabled = false;
-            document.getElementById('scanBtn').disabled = false;
-
-            status.textContent = data.length + ' skaner gjetur.';
-        }
-        catch {
-            document.getElementById('scanStatus').textContent =
-                'Shërbimi i skanerit nuk është aktiv.';
-        }
-    }
-
-    async function startScan() {
-        const scanner = document.getElementById('scannerSelect').value;
-
-        const status = document.getElementById('scanStatus');
-        const btn = document.getElementById('scanBtn');
-
-        status.textContent = 'Duke skanuar...';
-        btn.disabled = true;
-
-        try {
-            const res = await fetch(
-                'http://localhost:7331/scan?subfolder=outgoing&scanner=' +
-                encodeURIComponent(scanner),
-                { method: 'POST' }
-            );
-
-            const result = await res.json();
-
-            if (result.success) {
-                currentScanKey = result.sessionKey;
-                document.getElementById('scanSessionKey').value = result.sessionKey;
-
-                status.textContent = 'Skanimi u krye me sukses!';
+@section Scripts {
+    <script>
+            function toggleIncoming(val) {
+                const section = document.getElementById('incomingSection');
+                if (!section) return;
+                section.style.display = val ? 'block' : 'none';
             }
-        }
-        catch {
-            status.textContent = 'Gabim gjatë skanimit.';
-        }
-        finally {
-            btn.disabled = false;
-        }
-    }
-
-    async function cancelScan() {
-        if (currentScanKey) {
-            navigator.sendBeacon('/api/scan/cancel?key=' + currentScanKey);
-            currentScanKey = null;
-        }
-    }
-
-    window.addEventListener('beforeunload', cancelScan);
-
-    loadScanners();
-</script>
+    </script>
+    <script src="~/js/scanner.js" asp-append-version="true"></script>
+    <script>initScanner('outgoing');</script>
+}

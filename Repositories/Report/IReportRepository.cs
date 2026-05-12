@@ -8,6 +8,9 @@ namespace eProtokoll.Repositories
         Task<int> GetTotalDocumentsAsync();
         Task<int> GetTotalByTypeAsync(DocumentType type);
         Task<int> GetTotalByPriorityAsync(Priority priority);
+        Task<int> GetVisibleTotalDocumentsAsync(int userId);
+        Task<int> GetVisibleTotalByTypeAsync(DocumentType type, int userId);
+        Task<int> GetVisibleTotalByPriorityAsync(Priority priority, int userId);
         Task<int> GetTotalUsersAsync();
         Task<int> GetTotalInstitutionsAsync();
 
@@ -15,6 +18,17 @@ namespace eProtokoll.Repositories
         Task<int> GetTodayDocumentsAsync();
         Task<int> GetCurrentWeekDocumentsAsync();
         Task<int> GetCurrentMonthDocumentsAsync();
+        Task<int> GetVisibleTodayDocumentsAsync(int userId);
+        Task<int> GetVisibleCurrentWeekDocumentsAsync(int userId);
+        Task<int> GetVisibleCurrentMonthDocumentsAsync(int userId);
+
+        // ================= TRACKING =================
+        Task<int> GetTrackingActiveCountAsync();
+        Task<int> GetTrackingOverdueCountAsync();
+        Task<int> GetTrackingCompletedCountAsync();
+        Task<int> GetVisibleTrackingActiveCountAsync(int userId);
+        Task<int> GetVisibleTrackingOverdueCountAsync(int userId);
+        Task<int> GetVisibleTrackingCompletedCountAsync(int userId);
 
         // ================= TOP =================
         Task<List<TopUser>> GetTopUsersAsync(int topCount);

@@ -64,5 +64,51 @@ namespace eProtokoll.Repositories.AuditLogs
 
             return logs;
         }
+
+        public async Task<List<AuditLog>> GetPagedAsync(int page, int pageSize)
+        {
+            var logs = new List<AuditLog>();
+            var offset = (page - 1) * pageSize;
+
+            using var connection = new SqlConnection(_connectionString);
+            await connection.OpenAsync();
+
+            using var cmd = new SqlCommand(@"
+                SELECT * FROM AuditLogs
+                ORDER BY Timestamp DESC
+                OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY",
+                connection);
+
+            cmd.Parameters.AddWithValue("@Offset", offset);
+            cmd.Parameters.AddWithValue("@PageSize", pageSize);
+
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                logs.Add(new AuditLog
+                {
+                    Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                    UserId = reader.GetInt32(reader.GetOrdinal("UserId")),
+                    UserName = reader.GetString(reader.GetOrdinal("UserName")),
+                    Action = reader.GetString(reader.GetOrdinal("Action")),
+                    DocumentId = reader.IsDBNull(reader.GetOrdinal("DocumentId"))
+                        ? null : reader.GetInt32(reader.GetOrdinal("DocumentId")),
+                    Description = reader.IsDBNull(reader.GetOrdinal("Description"))
+                        ? null : reader.GetString(reader.GetOrdinal("Description")),
+                    Timestamp = reader.GetDateTime(reader.GetOrdinal("Timestamp"))
+                });
+            }
+
+            return logs;
+        }
+
+        public async Task<int> CountAsync()
+        {
+            using var connection = new SqlConnection(_connectionString);
+            await connection.OpenAsync();
+
+            using var cmd = new SqlCommand("SELECT COUNT(*) FROM AuditLogs", connection);
+            return (int)await cmd.ExecuteScalarAsync();
+        }
     }
 }

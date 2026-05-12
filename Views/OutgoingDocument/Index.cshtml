@@ -6,23 +6,9 @@
     Layout = isEmployee
         ? "~/Views/Shared/_EmployeeLayout.cshtml"
         : "~/Views/Shared/_ManagerLayout.cshtml";
-
-    ViewData["Title"] = "Dokumente Dalëse";
 }
 
-<div class="container-fluid">
-
-    <!-- Breadcrumb -->
-    <nav aria-label="breadcrumb" class="mb-4">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item">
-                <a asp-controller="Dashboard" asp-action="Index">Dashboard</a>
-            </li>
-            <li class="breadcrumb-item active" aria-current="page">
-                Dokumente Dalëse
-            </li>
-        </ol>
-    </nav>
+<div class="container-fluid mt-5">
 
     <!-- Header -->
     <div class="row mb-4">

@@ -22,6 +22,11 @@ namespace eProtokoll.Models
         public int NormalPriority { get; set; }
         public int LowPriority { get; set; }
 
+        // ================= TRACKING =================
+        public int TrackingActive { get; set; }
+        public int TrackingOverdue { get; set; }
+        public int TrackingCompleted { get; set; }
+
         // ================= TOP LISTS =================
         public List<TopInstitution> TopInstitutions { get; set; } = new();
         public List<TopUser> TopUsers { get; set; } = new();
