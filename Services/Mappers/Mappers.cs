@@ -27,9 +27,6 @@ namespace eProtokoll.Services.Mappers
             document.DocumentType = (DocumentType)reader.GetInt32(reader.GetOrdinal("DocumentType"));
             document.Subject = reader.GetString(reader.GetOrdinal("Subject"));
 
-            int iContent = reader.GetOrdinal("Content");
-            document.Content = reader.IsDBNull(iContent) ? null : reader.GetString(iContent);
-
             document.Classification = (Classification)reader.GetInt32(reader.GetOrdinal("Classification"));
             document.Priority = (Priority)reader.GetInt32(reader.GetOrdinal("Priority"));
 
@@ -212,6 +209,18 @@ namespace eProtokoll.Services.Mappers
 
             int iTo = reader.GetOrdinal("ToDepartment");
             document.ToDepartment = reader.IsDBNull(iTo) ? null : reader.GetString(iTo);
+
+            int iIsResp = reader.GetOrdinal("IsResponse");
+            document.IsResponse = !reader.IsDBNull(iIsResp) && reader.GetBoolean(iIsResp);
+
+            int iOrigInt = reader.GetOrdinal("OriginalInternalDocumentId");
+            document.OriginalInternalDocumentId = reader.IsDBNull(iOrigInt) ? null : reader.GetInt32(iOrigInt);
+
+            int iRespDate = reader.GetOrdinal("ResponseDate");
+            document.ResponseDate = reader.IsDBNull(iRespDate) ? null : reader.GetDateTime(iRespDate);
+
+            int iRespDocId = reader.GetOrdinal("ResponseDocumentId");
+            document.ResponseDocumentId = reader.IsDBNull(iRespDocId) ? null : reader.GetInt32(iRespDocId);
 
             return document;
         }

@@ -78,19 +78,19 @@ public class DocumentService : IDocumentService
         // ================= INSERT =================
         var documentId = await _repo.InsertAsync(
             @"INSERT INTO Documents
-              (DocumentNumber, Year, DocumentType, Subject, Content,
+              (DocumentNumber, Year, DocumentType, Subject,
                Classification, Priority, RequiresResponse, HasAttachments, CreatedDate, CreatedBy,
                InstitutionId, SenderName, ReceivedDate, ReceivedBy,
                OriginalDocumentNumber, OriginalDocumentDate, ResponseDeadline, ResponseDate, ResponseDocumentId,
-               RecipientName, IsResponse, OriginalIncomingDocumentId, ArchiveLocation,
+               RecipientName, IsResponse, OriginalIncomingDocumentId, OriginalInternalDocumentId, ArchiveLocation,
                FromDepartment, ToDepartment)
               OUTPUT INSERTED.DocumentId
               VALUES
-              (@DocumentNumber, @Year, @DocumentType, @Subject, @Content,
+              (@DocumentNumber, @Year, @DocumentType, @Subject,
                @Classification, @Priority, @RequiresResponse, @HasAttachments, @CreatedDate, @CreatedBy,
                @InstitutionId, @SenderName, @ReceivedDate, @ReceivedBy,
                @OriginalDocumentNumber, @OriginalDocumentDate, @ResponseDeadline, @ResponseDate, @ResponseDocumentId,
-               @RecipientName, @IsResponse, @OriginalIncomingDocumentId, @ArchiveLocation,
+               @RecipientName, @IsResponse, @OriginalIncomingDocumentId, @OriginalInternalDocumentId, @ArchiveLocation,
                @FromDepartment, @ToDepartment)",
             DocumentToSql(model)
         );
@@ -197,7 +197,6 @@ public class DocumentService : IDocumentService
             new SqlParameter("@Year", model.Year),
             new SqlParameter("@DocumentType", (int)model.DocumentType),
             new SqlParameter("@Subject", model.Subject),
-            new SqlParameter("@Content", (object?)model.Content ?? DBNull.Value),
             new SqlParameter("@Classification", (int)model.Classification),
             new SqlParameter("@Priority", (int)model.Priority),
             new SqlParameter("@RequiresResponse", model.RequiresResponse),
@@ -216,8 +215,9 @@ public class DocumentService : IDocumentService
             new SqlParameter("@ResponseDocumentId", (object?)incoming?.ResponseDocumentId ?? DBNull.Value),
 
             new SqlParameter("@RecipientName", (object?)outgoing?.RecipientName ?? DBNull.Value),
-            new SqlParameter("@IsResponse", (object?)outgoing?.IsResponse ?? DBNull.Value),
+            new SqlParameter("@IsResponse", (object?)outgoing?.IsResponse ?? (object?)internalDoc?.IsResponse ?? DBNull.Value),
             new SqlParameter("@OriginalIncomingDocumentId", (object?)outgoing?.OriginalIncomingDocumentId ?? DBNull.Value),
+            new SqlParameter("@OriginalInternalDocumentId", (object?)internalDoc?.OriginalInternalDocumentId ?? DBNull.Value),
             new SqlParameter("@ArchiveLocation", (object?)outgoing?.ArchiveLocation ?? DBNull.Value),
 
             new SqlParameter("@FromDepartment", (object?)internalDoc?.FromDepartment ?? DBNull.Value),

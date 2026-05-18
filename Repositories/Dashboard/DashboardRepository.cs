@@ -77,7 +77,7 @@ namespace eProtokoll.Repositories.Dashboard
             using var cmd = new SqlCommand($@"
                 SELECT TOP 5
                     d.DocumentId, d.DocumentNumber, d.Year, d.DocumentType,
-                    d.Subject, d.Content, d.Classification, d.Priority,
+                    d.Subject,d.Classification, d.Priority,
                     d.HasAttachments, d.CreatedBy, d.CreatedDate,
                     d.RequiresResponse,
                     u.UserName AS CreatorUserName,

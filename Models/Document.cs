@@ -29,9 +29,6 @@ namespace eProtokoll.Models
         [Display(Name = "Subjekti")]
         public string Subject { get; set; } = null!;
 
-        [Display(Name = "Përmbajtja")]
-        [DataType(DataType.MultilineText)]
-        public string? Content { get; set; }
 
         [Required]
         [Display(Name = "Klasifikimi")]

@@ -13,6 +13,15 @@ namespace eProtokoll.Models
         [Display(Name = "Departamenti Marrës")]
         public string? ToDepartment { get; set; }
 
+        [NotMapped]
+        public bool IsResponse { get; set; }
+
+        [Display(Name = "Dokumenti Origjinal (Brendshëm)")]
+        public int? OriginalInternalDocumentId { get; set; }
+
+        [ForeignKey("OriginalInternalDocumentId")]
+        public virtual InternalDocument? OriginalInternalDocument { get; set; }
+
         public int? ResponseDocumentId { get; set; }
 
         [ForeignKey("ResponseDocumentId")]

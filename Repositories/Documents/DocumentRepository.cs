@@ -12,7 +12,6 @@ namespace eProtokoll.Repositories.Documents
     public class DocumentRepository : IDocumentRepository
     {
         private readonly string _connectionString;
-
         public DocumentRepository(IConfiguration configuration)
         {
             _connectionString = configuration.GetConnectionString("DefaultConnection")!;

@@ -66,15 +66,24 @@ public class OutgoingDocumentController : Controller
 
         await LoadDropdowns(isEmployee, userId, role);
 
+        IncomingDocument? original = null;
+        if (originalIncomingDocumentId.HasValue)
+            original = await _repo.GetIncomingByIdAsync(originalIncomingDocumentId.Value);
+
         var model = new OutgoingDocument
         {
             Priority = Priority.Normal,
             IsResponse = trackingId.HasValue,
-            OriginalIncomingDocumentId = originalIncomingDocumentId
+            OriginalIncomingDocumentId = originalIncomingDocumentId,
+            InstitutionId = original?.InstitutionId ?? 0,
+            RecipientName = original?.SenderName ?? string.Empty,
+            Classification = original?.Classification ?? Classification.Public
         };
 
         ViewBag.TrackingId = trackingId;
-
+        ViewBag.OriginalIncomingDisplay = original == null
+            ? string.Empty
+            : $"{original.DocumentNumber}/{original.Year} - {original.Subject}";
         return View("~/Views/OutgoingDocument/Create.cshtml", model);
     }
 
@@ -104,6 +113,16 @@ public class OutgoingDocumentController : Controller
 
             model.IsResponse = true;
             model.OriginalIncomingDocumentId = tracking.DocumentId;
+
+            var original = await _repo.GetIncomingByIdAsync(tracking.DocumentId);
+            if (original != null)
+            {
+                if (model.InstitutionId == 0)
+                    model.InstitutionId = original.InstitutionId;
+
+                if (string.IsNullOrWhiteSpace(model.RecipientName))
+                    model.RecipientName = original.SenderName;
+            }
         }
 
         // RULE: Employee nuk krijon Secret

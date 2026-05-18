@@ -9,6 +9,7 @@
 
     bool isConfidential = Model != null && Model.Classification == Classification.Confidential;
     int confidentialValue = (int)Classification.Confidential;
+    var isResponse = Model?.IsResponse == true;
 }
 
 <div class="container-fluid">
@@ -56,21 +57,36 @@
                         }
 
                         <div class="mb-3">
+                            <div class="mb-3">
+                                <label asp-for="Subject" class="form-label">Subjekti</label>
+                                <input asp-for="Subject" class="form-control" />
+                            </div>
+                            <hr />
+        
                             <h6 class="text-info mb-3">
                                 <i class="bi bi-building me-2"></i> Informacioni i Marrësit
                             </h6>
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label asp-for="InstitutionId" class="form-label">Institucioni Marrës</label>
-                                    <select asp-for="InstitutionId" class="form-select" asp-items="ViewBag.Institutions">
+                                    <select asp-for="InstitutionId"
+                                            class="form-select"
+                                            asp-items="ViewBag.Institutions"
+                                            disabled="@(isResponse ? "disabled" : null)"> 
                                         <option value="">-- Zgjidh Institucionin --</option>
                                     </select>
+                                    @if (isResponse)
+                                    {
+                                        <input type="hidden" asp-for="InstitutionId" />
+                                    }
                                     <span asp-validation-for="InstitutionId" class="text-danger"></span>
                                 </div>
 
                                 <div class="col-md-6">
                                     <label asp-for="RecipientName" class="form-label">Emri i Marrësit</label>
-                                    <input asp-for="RecipientName" class="form-control" />
+                                    <input asp-for="RecipientName"
+                                           class="form-control"
+                                           readonly="@(isResponse ? "readonly" : null)" />
                                     <span asp-validation-for="RecipientName" class="text-danger"></span>
                                 </div>
                             </div>
@@ -78,36 +94,21 @@
 
                         <hr />
 
-                        <div class="mb-3">
-                            <h6 class="text-secondary mb-3">
-                                <i class="bi bi-file-text me-2"></i> Përmbajtja e Dokumentit
-                            </h6>
+                        @if (isResponse)
+                        {
                             <div class="mb-3">
-                                <label asp-for="Subject" class="form-label">Subjekti</label>
-                                <input asp-for="Subject" class="form-control" />
+                                <h6 class="text-primary mb-3">
+                                    <i class="bi bi-link-45deg me-2"></i> Lidhje me Dokument Hyrës
+                                </h6>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" checked disabled />
+                                    <label class="form-check-label">Është përgjigje</label>
+                                </div>
+                                <input type="text" class="form-control" value="@ViewBag.OriginalIncomingDisplay" readonly />
+                                <input type="hidden" asp-for="OriginalIncomingDocumentId" />
+                                <input type="hidden" asp-for="IsResponse" value="true" />
                             </div>
-                            <div class="mb-0">
-                                <label asp-for="Content" class="form-label">Përshkrimi</label>
-                                <textarea asp-for="Content" class="form-control" rows="5"></textarea>
-                            </div>
-                        </div>
-
-                        <hr />
-
-                        <div class="mb-3">
-                            <h6 class="text-primary mb-3">
-                                <i class="bi bi-link-45deg me-2"></i> Lidhje me Dokument Hyrës
-                            </h6>
-                            <div class="form-check mb-2">
-                                <input asp-for="IsResponse" class="form-check-input" type="checkbox" onchange="toggleIncoming(this.checked)" />
-                                <label class="form-check-label">Është përgjigje</label>
-                            </div>
-                            <div id="incomingSection" style="display:@(Model != null && Model.IsResponse ? "block" : "none")">
-                                <select asp-for="OriginalIncomingDocumentId" class="form-select" asp-items="ViewBag.IncomingDocuments">
-                                    <option value="">-- Zgjidh Dokument Hyrës --</option>
-                                </select>
-                            </div>
-                        </div>
+                        }
 
                         <hr />
 
@@ -118,9 +119,17 @@
                             <div class="row g-3">
                                 <div class="col-md-4">
                                     <label asp-for="Classification" class="form-label">Klasifikimi</label>
-                                    <select asp-for="Classification" class="form-select" asp-items="ViewBag.Classifications" onchange="toggleAccess(this.value)">
+                                    <select asp-for="Classification"
+                                            class="form-select"
+                                            asp-items="ViewBag.Classifications"
+                                            onchange="toggleAccess(this.value)"
+                                            disabled="@(isResponse ? "disabled" : null)">
                                         <option value="">-- Zgjidh --</option>
                                     </select>
+                                    @if (isResponse)
+                                    {
+                                        <input type="hidden" asp-for="Classification" />
+                                    }
                                 </div>
 
                                 <div class="col-md-4">

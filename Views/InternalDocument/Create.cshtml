@@ -8,6 +8,7 @@
     var selectedIds = ViewBag.SelectedAccessUserIds as List<int> ?? new List<int>();
     bool isConfidential = Model.Classification == Classification.Confidential;
     int confidentialValue = (int)Classification.Confidential;
+    var isResponse = Model?.IsResponse == true;
 }
 
 <div class="container-fluid">
@@ -54,43 +55,37 @@
                         }
 
                         <div class="mb-3">
+                            <div class="mb-3">
+                                <label asp-for="Subject" class="form-label"></label>
+                                <input asp-for="Subject" class="form-control" placeholder="Subjekti i dokumentit" />
+                                <span asp-validation-for="Subject" class="text-danger"></span>
+                            </div>
+                            <hr/>
                             <h6 class="text-success mb-3">
                                 <i class="bi bi-building me-2"></i> Informacioni i Qarkullimit
                             </h6>
                             <div class="row g-3">
+
                                 <div class="col-md-6">
                                     <label asp-for="FromDepartment" class="form-label"></label>
-                                    <input asp-for="FromDepartment" class="form-control" placeholder="Departamenti dërgues" />
+                                    <input asp-for="FromDepartment"
+                                           class="form-control"
+                                           placeholder="Departamenti dërgues"
+                                           readonly="@(isResponse ? "readonly" : null)" />
                                     <span asp-validation-for="FromDepartment" class="text-danger"></span>
                                 </div>
                                 <div class="col-md-6">
                                     <label asp-for="ToDepartment" class="form-label"></label>
-                                    <input asp-for="ToDepartment" class="form-control" placeholder="Departamenti marrës" />
+                                    <input asp-for="ToDepartment"
+                                           class="form-control"
+                                           placeholder="Departamenti marrës"
+                                           readonly="@(isResponse ? "readonly" : null)" />
                                     <span asp-validation-for="ToDepartment" class="text-danger"></span>
                                 </div>
                             </div>
                         </div>
 
                         <hr />
-
-                        <div class="mb-3">
-                            <h6 class="text-secondary mb-3">
-                                <i class="bi bi-file-earmark-text me-2"></i> Përmbajtja e Dokumentit
-                            </h6>
-                            <div class="mb-3">
-                                <label asp-for="Subject" class="form-label"></label>
-                                <input asp-for="Subject" class="form-control" placeholder="Subjekti i dokumentit" />
-                                <span asp-validation-for="Subject" class="text-danger"></span>
-                            </div>
-                            <div class="mb-0">
-                                <label asp-for="Content" class="form-label"></label>
-                                <textarea asp-for="Content" rows="5" class="form-control" placeholder="Përshkrimi i dokumentit..."></textarea>
-                                <span asp-validation-for="Content" class="text-danger"></span>
-                            </div>
-                        </div>
-
-                        <hr />
-
                         <div class="mb-3">
                             <h6 class="text-primary mb-3">
                                 <i class="bi bi-shield-lock me-2"></i> Klasifikimi dhe Detajet
@@ -99,12 +94,16 @@
                                 <div class="col-md-4">
                                     <label asp-for="Classification" class="form-label">Klasifikimi</label>
                                     <select asp-for="Classification"
-                                            id="classificationSelect"
                                             class="form-select"
                                             asp-items="ViewBag.Classifications as List<SelectListItem>"
-                                            onchange="toggleAccessUsers(this.value)">
+                                            onchange="toggleAccessUsers(this.value)"
+                                            disabled="@(isResponse ? "disabled" : null)">
                                         <option value="">-- Zgjidh klasifikimin --</option>
                                     </select>
+                                    @if (isResponse)
+                                    {
+                                        <input type="hidden" asp-for="Classification" />
+                                    }
                                     <span asp-validation-for="Classification" class="text-danger"></span>
                                 </div>
                                 <div class="col-md-3">
@@ -113,12 +112,17 @@
                                     <span asp-validation-for="Priority" class="text-danger"></span>
                                 </div>
                                 <div class="col-md-3">
-                                    <div class="form-check mt-1">
-                                        <input class="form-check-input" type="checkbox" asp-for="RequiresResponse" id="requiresResponse" />
-                                        <label class="form-check-label fw-semibold" for="requiresResponse">
-                                            <i class="bi bi-reply-fill me-1 text-warning"></i> Kërkon Përgjigje
-                                        </label>
-                                    </div>
+                                    @if (!isResponse)
+                                    {
+                                        <div class="form-check mt-1">
+                                            <input class="form-check-input" type="checkbox"
+                                                   asp-for="RequiresResponse" id="requiresResponse" />
+                                            <label class="form-check-label fw-semibold" for="requiresResponse">
+                                                <i class="bi bi-reply-fill me-1 text-warning"></i>
+                                                Kërkon Përgjigje
+                                            </label>
+                                        </div>
+                                    }
                                 </div>
                             </div>
 
@@ -202,6 +206,19 @@
 
                         <hr />
 
+                        <div class="mb-3">
+                            @if (isResponse)
+                            {
+                                <div class="mb-3">
+                                    <h6 class="text-primary mb-3">
+                                        <i class="bi bi-link-45deg me-2"></i> Lidhje me Dokument Brendshëm
+                                    </h6>
+                                    <input type="text" class="form-control" value="@ViewBag.OriginalInternalDisplay" readonly />
+                                    <input type="hidden" asp-for="OriginalInternalDocumentId" />
+                                </div>
+                            }
+                        </div>
+
                         <div class="d-flex justify-content-between">
                             <a asp-controller="InternalDocument" asp-action="Index" class="btn btn-outline-secondary">
                                 Kthehu
@@ -219,13 +236,17 @@
     </div>
 </div>
 
-                        <hr />
-                        <hr />
 <script>
     var confidentialValue = '@confidentialValue';
 
     function toggleAccessUsers(val) {
         var section = document.getElementById('accessUsersSection');
         section.style.display = (val === confidentialValue) ? 'block' : 'none';
+    }
+
+    function toggleInternalResponse(val) {
+        const section = document.getElementById('internalResponseSection');
+        if (!section) return;
+        section.style.display = val ? 'block' : 'none';
     }
 </script>
