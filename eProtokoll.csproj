@@ -21,6 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Repositories\AuditLogs\" />
     <Folder Include="wwwroot\uploads\internal\" />
     <Folder Include="wwwroot\uploads\outgoing\" />
   </ItemGroup>

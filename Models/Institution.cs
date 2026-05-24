@@ -58,12 +58,13 @@ namespace eProtokoll.Models
         [Display(Name = "Pozicioni i Kontaktit")]
         public string? ContactPosition { get; set; }
 
-    
         [StringLength(100)]
         [EmailAddress]
         [Display(Name = "Email i Kontaktit")]
         public string? ContactEmail { get; set; }
 
+        [Display(Name = "Aktiv")]
+        public bool IsActive { get; set; } = true;
 
         [Display(Name = "Data e Krijimit")]
         public DateTime CreatedDate { get; set; } = DateTime.Now;
@@ -71,11 +72,11 @@ namespace eProtokoll.Models
         [Display(Name = "Data e Modifikimit")]
         public DateTime? ModifiedDate { get; set; }
 
-        [StringLength(450)] 
+        [StringLength(450)]
         [Display(Name = "Krijuar nga")]
         public string? CreatedBy { get; set; }
 
-        [StringLength(450)] 
+        [StringLength(450)]
         [Display(Name = "Modifikuar nga")]
         public string? ModifiedBy { get; set; }
 

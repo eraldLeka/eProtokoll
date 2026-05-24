@@ -1,21 +1,10 @@
 ﻿@model IEnumerable<eProtokoll.Models.Institution>
 
 @{
-    ViewData["Title"] = "Menaxhimi i Institucioneve";
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
 }
 
 <div class="container-fluid">
-    <!-- Breadcrumb -->
-    <nav aria-label="breadcrumb" class="mb-4">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item">
-                <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
-            </li>
-            <li class="breadcrumb-item active" aria-current="page">Institucionet</li>
-        </ol>
-    </nav>
-
     <!-- Header -->
     <div class="row mb-4">
         <div class="col-md-8">
@@ -56,7 +45,7 @@
                         <tbody>
                             @foreach (var institution in Model)
                             {
-                                <tr>
+                                <tr class="@(institution.IsActive ? string.Empty : "table-secondary")">
                                     <td>
                                         <strong>@institution.Name</strong>
                                         @if (!string.IsNullOrEmpty(institution.ShortName))
@@ -143,27 +132,37 @@
                                     </td>
                                     <td class="text-end">
                                         <div class="btn-group btn-group-sm" role="group">
-                                            <a asp-area="Admin" asp-controller="Institution" asp-action="Details"
-                                               asp-route-id="@institution.InstitutionId"
-                                               class="btn btn-outline-info" title="Detajet">
-                                                <i class="bi bi-eye-fill"></i>
-                                            </a>
                                             <a asp-area="Admin" asp-controller="Institution" asp-action="Edit"
                                                asp-route-id="@institution.InstitutionId"
                                                class="btn btn-outline-primary" title="Modifiko">
                                                 <i class="bi bi-pencil-fill"></i>
                                             </a>
-                                            <form asp-area="Admin" asp-controller="Institution" asp-action="Delete"
-                                                  method="post" class="d-inline">
-                                                @Html.AntiForgeryToken()
-                                                <input type="hidden" name="id" value="@institution.InstitutionId" />
-                                                <button type="submit"
-                                                        class="btn btn-sm btn-outline-danger"
-                                                        title="Fshij"
-                                                        onclick="return confirm('A jeni të sigurt që dëshironi të fshini institucionin \'@institution.Name\'?')">
-                                                    <i class="bi bi-trash-fill"></i>
-                                                </button>
-                                            </form>
+                                            @if (institution.IsActive)
+                                            {
+                                                <form asp-area="Admin" asp-controller="Institution" asp-action="Deactivate" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@institution.InstitutionId" />
+                                                    <button type="submit"
+                                                            class="btn btn-sm btn-outline-warning"
+                                                            title="Caktivizo"
+                                                            onclick="return confirm('A jeni të sigurt që dëshironi të caktivizoni institucionin \'@institution.Name\'?')">
+                                                        <i class="bi bi-slash-circle"></i>
+                                                    </button>
+                                                </form>
+                                            }
+                                            else
+                                            {
+                                                <form asp-area="Admin" asp-controller="Institution" asp-action="Activate" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@institution.InstitutionId" />
+                                                    <button type="submit"
+                                                            class="btn btn-sm btn-outline-success"
+                                                            title="Aktivizo"
+                                                            onclick="return confirm('A jeni të sigurt që dëshironi të aktivizoni institucionin \'@institution.Name\'?')">
+                                                        <i class="bi bi-check-circle"></i>
+                                                    </button>
+                                                </form>
+                                            }
                                         </div>
                                     </td>
                                 </tr>

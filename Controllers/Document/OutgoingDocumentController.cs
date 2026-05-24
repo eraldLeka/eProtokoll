@@ -1,6 +1,5 @@
 ﻿using eProtokoll.Models;
 using eProtokoll.Repositories;
-using eProtokoll.Repositories.AuditLogs;
 using eProtokoll.Repositories.Documents;
 using eProtokoll.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -14,18 +13,14 @@ public class OutgoingDocumentController : Controller
     private readonly IDocumentService _service;
     private readonly IDocumentRepository _repo;
     private readonly ITrackingRepository _trackingRepository;
-    private readonly IAuditLogRepository _auditLogRepository;
-
     public OutgoingDocumentController(
         IDocumentService service,
         IDocumentRepository repo,
-        ITrackingRepository trackingRepository,
-        IAuditLogRepository auditLogRepository)
+        ITrackingRepository trackingRepository)
     {
         _service = service;
         _repo = repo;
         _trackingRepository = trackingRepository;
-        _auditLogRepository = auditLogRepository;
     }
 
     // ================= INDEX =================
@@ -154,15 +149,6 @@ public class OutgoingDocumentController : Controller
         {
             await _trackingRepository.CompleteAsync(trackingId.Value);
 
-            await _auditLogRepository.LogAsync(new AuditLog
-            {
-                UserId = userId,
-                UserName = userName,
-                Action = "Respond",
-                DocumentId = model.OriginalIncomingDocumentId,
-                Description = $"Iu përgjigj delegimit #{trackingId.Value} duke krijuar dokument dalës për dokumentin hyrës #{model.OriginalIncomingDocumentId}",
-                Timestamp = DateTime.Now
-            });
         }
 
         TempData["SuccessMessage"] = "Dokumenti u krijua me sukses.";

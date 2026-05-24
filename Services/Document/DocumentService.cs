@@ -1,5 +1,4 @@
 ﻿using eProtokoll.Models;
-using eProtokoll.Repositories.AuditLogs;
 using eProtokoll.Repositories.Documents;
 using eProtokoll.Services.Files;
 using eProtokoll.Services.ProtocolNumber;
@@ -12,18 +11,14 @@ public class DocumentService : IDocumentService
     private readonly IDocumentRepository _repo;
     private readonly IProtocolNumberService _protocol;
     private readonly IDocumentFileService _file;
-    private readonly IAuditLogRepository _audit;
-
     public DocumentService(
         IDocumentRepository repo,
         IProtocolNumberService protocol,
-        IDocumentFileService file,
-        IAuditLogRepository audit)
+        IDocumentFileService file)
     {
         _repo = repo;
         _protocol = protocol;
         _file = file;
-        _audit = audit;
     }
 
     // ================= CREATE WRAPPERS =================
@@ -126,17 +121,6 @@ public class DocumentService : IDocumentService
         {
             await _repo.InsertDocumentPermissionsAsync(documentId, accessUserIds);
         }
-
-        // ================= AUDIT =================
-        await _audit.LogAsync(new AuditLog
-        {
-            UserId = userId,
-            UserName = userName,
-            Action = "Create",
-            DocumentId = documentId,
-            Description = $"Krijoi dokument {type} '{number}/{year}'",
-            Timestamp = DateTime.UtcNow
-        });
 
         return documentId;
     }

@@ -1,7 +1,4 @@
 ﻿@using eProtokoll.Models
-@{
-    ViewData["Title"] = "Dashboard";
-}
 
 <div class="container-fluid">
 
@@ -22,8 +19,7 @@
     <div class="row mb-4">
 
         <!-- RECENT DOCUMENTS -->
-        <div class="col-lg-8">
-
+<div class=" =col-12">
             <div class="card border-0 shadow-sm">
 
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
@@ -105,67 +101,6 @@
                             </div>
                         }
                     }
-
-                </div>
-
-            </div>
-
-        </div>
-
-        <!-- QUICK ACTIONS -->
-        <div class="col-lg-4">
-
-            <div class="card border-0 shadow-sm">
-
-                <div class="card-header text-white" style="background-color:#0aa2c0;">
-                    <h5 class="mb-0">
-                        <i class="bi bi-lightning-charge me-2"></i>
-                        Veprime të Shpejta
-                    </h5>
-                </div>
-
-                <div class="card-body">
-
-                    <div class="d-grid gap-2">
-
-                        <a asp-controller="IncomingDocument"
-                               asp-action="Create"
-                               class="btn btn-info">
-                            <i class="bi bi-arrow-down-circle me-2"></i>
-                            Dokument Hyrës
-                        </a>
-
-                        <a asp-controller="OutgoingDocument"
-                               asp-action="Create"
-                               class="btn btn-success">
-                            <i class="bi bi-arrow-up-circle me-2"></i>
-                            Dokument Dalës
-                        </a>
-
-                        <a asp-controller="InternalDocument"
-                               asp-action="Create"
-                               class="btn btn-warning">
-                            <i class="bi bi-arrow-left-right me-2"></i>
-                            Dokument Brendshëm
-                        </a>
-
-                        <hr />
-
-                        <a asp-controller="ProtocolBook"
-                               asp-action="Index"
-                               class="btn btn-outline-info">
-                            <i class="bi bi-book me-2"></i>
-                            Libër Protokolli
-                        </a>
-
-                        <a asp-controller="Report"
-                               asp-action="Index"
-                               class="btn btn-outline-secondary">
-                            <i class="bi bi-bar-chart me-2"></i>
-                            Raporte
-                        </a>
-
-                    </div>
 
                 </div>
 

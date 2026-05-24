@@ -39,6 +39,7 @@ namespace eProtokoll.Areas.Admin.Controllers
 
             try
             {
+                institution.IsActive = true;
                 institution.CreatedDate = DateTime.Now;
                 institution.CreatedBy = User.Identity?.Name ?? "System";
 
@@ -92,21 +93,10 @@ namespace eProtokoll.Areas.Admin.Controllers
             }
         }
 
-        // GET: Admin/Institution/Details/5
-        public async Task<IActionResult> Details(int? id)
-        {
-            if (id == null) return NotFound();
-
-            var institution = await _institutionRepository.GetByIdAsync(id.Value);
-            if (institution == null) return NotFound();
-
-            return View(institution);
-        }
-
-        // POST: Admin/Institution/Delete/5
+        // POST: Admin/Institution/Deactivate/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> Deactivate(int id)
         {
             try
             {
@@ -117,24 +107,42 @@ namespace eProtokoll.Areas.Admin.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                int documentCount = await _institutionRepository.GetDocumentCountAsync(id);
-                if (documentCount > 0)
-                {
-                    TempData["ErrorMessage"] = $"Nuk mund të fshihet! Institucioni '{institution.Name}' përdoret nga {documentCount} dokument(e).";
-                    return RedirectToAction(nameof(Index));
-                }
+                await _institutionRepository.DeactivateAsync(id, User.Identity?.Name ?? "System");
 
-                await _institutionRepository.DeleteAsync(id);
-
-                TempData["SuccessMessage"] = $"Institucioni '{institution.Name}' u fshi me sukses!";
+                TempData["SuccessMessage"] = $"Institucioni '{institution.Name}' u caktivizua me sukses!";
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = $"Gabim gjatë fshirjes: {ex.Message}";
+                TempData["ErrorMessage"] = $"Gabim gjatë caktivizimit: {ex.Message}";
             }
 
             return RedirectToAction(nameof(Index));
         }
 
+        // POST: Admin/Institution/Activate/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Activate(int id)
+        {
+            try
+            {
+                var institution = await _institutionRepository.GetByIdAsync(id);
+                if (institution == null)
+                {
+                    TempData["ErrorMessage"] = "Institucioni nuk u gjet!";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                await _institutionRepository.ActivateAsync(id, User.Identity?.Name ?? "System");
+
+                TempData["SuccessMessage"] = $"Institucioni '{institution.Name}' u aktivizua me sukses!";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Gabim gjatë aktivizimit: {ex.Message}";
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
     }
 }

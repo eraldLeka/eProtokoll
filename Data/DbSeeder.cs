@@ -14,7 +14,7 @@ namespace eProtokoll.Data
             var admin = new Users
             {
                 UserName = "admin",
-                PasswordHash = PasswordHelper.Hash("Admin@2025"),
+                PasswordHash = PasswordHelper.Hash("admin123"),
                 Email = "admin@eprotokoll.al",
                 FirstName = "Super",
                 LastName = "Admin",

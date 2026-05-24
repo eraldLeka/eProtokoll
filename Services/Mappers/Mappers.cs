@@ -327,6 +327,7 @@ namespace eProtokoll.Services.Mappers
             int iModDate = reader.GetOrdinal("ModifiedDate");
             int iCreatedBy = reader.GetOrdinal("CreatedBy");
             int iModBy = reader.GetOrdinal("ModifiedBy");
+            int iActive = reader.GetOrdinal("IsActive");
 
             return new Institution
             {
@@ -343,6 +344,7 @@ namespace eProtokoll.Services.Mappers
                 ContactPerson = reader.IsDBNull(iContact) ? null : reader.GetString(iContact),
                 ContactPosition = reader.IsDBNull(iContPos) ? null : reader.GetString(iContPos),
                 ContactEmail = reader.IsDBNull(iContEmail) ? null : reader.GetString(iContEmail),
+                IsActive = !reader.IsDBNull(iActive) && reader.GetBoolean(iActive),
                 CreatedDate = reader.GetDateTime(reader.GetOrdinal("CreatedDate")),
                 ModifiedDate = reader.IsDBNull(iModDate) ? null : reader.GetDateTime(iModDate),
                 CreatedBy = reader.IsDBNull(iCreatedBy) ? null : reader.GetString(iCreatedBy),

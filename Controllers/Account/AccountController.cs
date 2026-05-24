@@ -1,6 +1,5 @@
 ﻿using eProtokoll.Models;
 using eProtokoll.Helpers;
-using eProtokoll.Repositories.AuditLogs;
 using eProtokoll.Repositories.User;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -13,14 +12,11 @@ namespace eProtokoll.Controllers.Account
     public class AccountController : Controller
     {
         private readonly IUserRepository _userRepository;
-        private readonly IAuditLogRepository _auditLogRepository;
 
         public AccountController(
-            IUserRepository userRepository,
-            IAuditLogRepository auditLogRepository)
+            IUserRepository userRepository)
         {
             _userRepository = userRepository;
-            _auditLogRepository = auditLogRepository;
         }
 
         // GET: Login
@@ -104,16 +100,6 @@ namespace eProtokoll.Controllers.Account
                 principal,
                 authProperties);
 
-            // Audit log
-            await _auditLogRepository.LogAsync(new AuditLog
-            {
-                UserId = user.Id,
-                UserName = user.UserName,
-                Action = "Login",
-                Description = $"Hyrje në sistem nga roli {role}",
-                Timestamp = DateTime.Now
-            });
-
             // Safe returnUrl redirect
             if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                 return Redirect(returnUrl);
@@ -126,21 +112,6 @@ namespace eProtokoll.Controllers.Account
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
-            var userId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
-            var userName = User.Identity?.Name ?? "Unknown";
-
-            if (userId > 0)
-            {
-                await _auditLogRepository.LogAsync(new AuditLog
-                {
-                    UserId = userId,
-                    UserName = userName,
-                    Action = "Logout",
-                    Description = "Dalje nga sistemi",
-                    Timestamp = DateTime.Now
-                });
-            }
-
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
             return RedirectToAction("Login", "Account");

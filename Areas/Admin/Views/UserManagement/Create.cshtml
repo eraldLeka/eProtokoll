@@ -25,18 +25,11 @@
     </div>
 
     <div class="row">
-        <div class="col-lg-8">
+        <div class="col-12">
             <form asp-action="Create" method="post">
                 <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
-                <!-- Informacioni i Llogarisë -->
                 <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">
-                            <i class="bi bi-person-circle me-2"></i>
-                            Informacioni i Llogarisë
-                        </h5>
-                    </div>
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-6">
@@ -47,7 +40,6 @@
                                     </label>
                                     <input asp-for="UserName" class="form-control" placeholder="p.sh. erald.hoxha" />
                                     <span asp-validation-for="UserName" class="text-danger"></span>
-                                    <small class="text-muted">Duhet të jetë unik në sistem</small>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -58,7 +50,6 @@
                                     </label>
                                     <input asp-for="Email" class="form-control" type="email" placeholder="erald.hoxha@example.com" />
                                     <span asp-validation-for="Email" class="text-danger"></span>
-                                    <small class="text-muted">Duhet të jetë unik në sistem</small>
                                 </div>
                             </div>
                         </div>
@@ -75,7 +66,6 @@
                                     {
                                         <span class="text-danger d-block mt-1">@TempData["PasswordError"]</span>
                                     }
-                                    <small class="text-muted">Të paktën 6 karaktere</small>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -93,22 +83,8 @@
                             </div>
                         </div>
 
-                        <div class="alert alert-info mb-0">
-                            <i class="bi bi-info-circle-fill me-2"></i>
-                            <strong>Këshillë:</strong> Përdorni fjalëkalim të fortë me shkronja, numra dhe karaktere speciale.
-                        </div>
-                    </div>
-                </div>
+                        <hr />
 
-                <!-- Informacioni Personal -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-success text-white">
-                        <h5 class="mb-0">
-                            <i class="bi bi-person-vcard me-2"></i>
-                            Informacioni Personal
-                        </h5>
-                    </div>
-                    <div class="card-body">
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
@@ -163,18 +139,9 @@
                             <input asp-for="PhoneNumber" class="form-control" type="tel" placeholder="+355 69 123 4567" />
                             <span asp-validation-for="PhoneNumber" class="text-danger"></span>
                         </div>
-                    </div>
-                </div>
 
-                <!-- Roli dhe Lejet -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-warning text-dark">
-                        <h5 class="mb-0">
-                            <i class="bi bi-shield-lock me-2"></i>
-                            Roli dhe Lejet
-                        </h5>
-                    </div>
-                    <div class="card-body">
+                        <hr />
+
                         <div class="mb-3">
                             <label asp-for="Role" class="form-label">
                                 <i class="bi bi-person-badge text-warning"></i>
@@ -194,13 +161,8 @@
                                 Aktiv (përdoruesi mund të hyjë në sistem)
                             </label>
                         </div>
-                    </div>
-                </div>
 
-                <!-- Butonat -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
+                        <div class="d-flex justify-content-between mt-4">
                             <a asp-action="Index" class="btn btn-outline-secondary">
                                 <i class="bi bi-x-circle me-1"></i> Anulo
                             </a>
@@ -211,46 +173,6 @@
                     </div>
                 </div>
             </form>
-        </div>
-
-        <!-- Udhëzime -->
-        <div class="col-lg-4">
-            <div class="card shadow-sm mb-4 border-primary sticky-top" style="top: 20px;">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">
-                        <i class="bi bi-info-circle me-2"></i>
-                        Udhëzime
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <h6 class="text-primary">
-                        <i class="bi bi-lightbulb-fill"></i> Krijimi i Përdoruesit
-                    </h6>
-                    <ul class="small">
-                        <li class="mb-2">Plotëso të gjitha fushat e detyrueshme (*)</li>
-                        <li class="mb-2"><strong>Username</strong> dhe <strong>Email</strong> duhet të jenë unikë</li>
-                        <li class="mb-2">Fjalëkalimi duhet të ketë të paktën 6 karaktere</li>
-                    </ul>
-                    <hr />
-                    <h6 class="text-primary">
-                        <i class="bi bi-shield-check"></i> Rolet
-                    </h6>
-                    <div class="small">
-                        <div class="mb-2">
-                            <strong class="text-danger">Administrator:</strong>
-                            <p class="mb-1 text-muted">Akses i plotë në sistem</p>
-                        </div>
-                        <div class="mb-2">
-                            <strong class="text-warning">Menaxher:</strong>
-                            <p class="mb-1 text-muted">Menaxhon dokumentet dhe detyrat</p>
-                        </div>
-                        <div class="mb-2">
-                            <strong class="text-success">Punonjës:</strong>
-                            <p class="mb-0 text-muted">Akseson dokumentet e caktuara</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 </div>

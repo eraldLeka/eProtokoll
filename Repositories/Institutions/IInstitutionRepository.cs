@@ -8,7 +8,8 @@ namespace eProtokoll.Repositories.Institutions
         Task<Institution?> GetByIdAsync(int id);
         Task CreateAsync(Institution institution);
         Task UpdateAsync(Institution institution);
-        Task DeleteAsync(int id);
+        Task DeactivateAsync(int id, string? modifiedBy);
+        Task ActivateAsync(int id, string? modifiedBy);
         Task<int> GetDocumentCountAsync(int id);
     }
 }

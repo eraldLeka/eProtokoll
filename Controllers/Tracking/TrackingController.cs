@@ -1,6 +1,5 @@
 ﻿using eProtokoll.Models;
 using eProtokoll.Repositories;
-using eProtokoll.Repositories.AuditLogs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -12,14 +11,10 @@ namespace eProtokoll.Controllers
     public class TrackingController : Controller
     {
         private readonly ITrackingRepository _trackingRepository;
-        private readonly IAuditLogRepository _auditLogRepository;
-
         public TrackingController(
-            ITrackingRepository trackingRepository,
-            IAuditLogRepository auditLogRepository)
+            ITrackingRepository trackingRepository)
         {
             _trackingRepository = trackingRepository;
-            _auditLogRepository = auditLogRepository;
         }
 
         // ================= INDEX =================
@@ -79,16 +74,6 @@ namespace eProtokoll.Controllers
             var userId = GetUserId();
 
             await _trackingRepository.InsertAsync(model, userId);
-
-            await _auditLogRepository.LogAsync(new AuditLog
-            {
-                UserId = userId,
-                UserName = User.Identity!.Name!,
-                Action = "Delegate",
-                DocumentId = model.DocumentId,
-                Description = $"Caktoi dokumentin #{model.DocumentId} për përdoruesin #{model.AssignedToUserId}",
-                Timestamp = DateTime.Now
-            });
 
             TempData["SuccessMessage"] = "Dokumenti u caktua me sukses!";
             return RedirectToAction(nameof(Index));

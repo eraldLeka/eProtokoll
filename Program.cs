@@ -1,6 +1,5 @@
 ﻿using eProtokoll.Data;
 using eProtokoll.Repositories;
-using eProtokoll.Repositories.AuditLogs;
 using eProtokoll.Repositories.Dashboard;
 using eProtokoll.Repositories.Documents;
 using eProtokoll.Repositories.Institutions;
@@ -37,7 +36,6 @@ builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
 builder.Services.AddScoped<ITrackingRepository, TrackingRepository>();
 builder.Services.AddScoped<IReportRepository, ReportRepository>();
 builder.Services.AddScoped<IDashboardRepository, DashboardRepository>();
-builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 builder.Services.AddScoped<IInstitutionRepository, InstitutionRepository>();
 
 // ==================== SERVICES ====================

@@ -5,24 +5,14 @@
     var area = ViewData["area"]?.ToString() ?? "Manager";
     Layout = area == "Employee"
         ? "~/Views/Shared/_EmployeeLayout.cshtml"
-        : area == "Admin"
+        : area == "Administrator"
             ? "~/Views/Shared/_AdminLayout.cshtml"
             : "~/Views/Shared/_ManagerLayout.cshtml";
 
-    ViewData["Title"] = "Libri i Protokollit";
 }
 
 <div class="container-fluid">
-    <nav aria-label="breadcrumb" class="mb-3">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item">
-                <a asp-controller="Dashboard" asp-action="Index">Dashboard</a>
-            </li>
-            <li class="breadcrumb-item active">Libri i Protokollit</li>
-        </ol>
-    </nav>
-
-   <div class="row mb-4">
+ <div class="row mb-4">
     <div class="col-md-8">
         <h2><i class="bi bi-book text-primary"></i> Libri i Protokollit</h2>
         <p class="text-muted">Regjistri i plotë i të gjitha dokumenteve</p>
@@ -37,9 +27,6 @@
 
     <!-- Protocol Book Table -->
     <div class="card shadow-sm">
-        <div class="card-header bg-white">
-            <h5 class="mb-0"><i class="bi bi-list"></i> Regjistri (@ViewBag.TotalItems)</h5>
-        </div>
         <div class="card-body p-0">
             @if (Model != null && Model.Any())
             {

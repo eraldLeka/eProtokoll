@@ -18,7 +18,7 @@ namespace eProtokoll.Repositories.Institutions
             var institutions = new List<Institution>();
 
             using var connection = new SqlConnection(_connectionString);
-            using var command = new SqlCommand("SELECT * FROM Institutions ORDER BY Name", connection);
+            using var command = new SqlCommand("SELECT * FROM Institutions ORDER BY CreatedDate", connection);
 
             await connection.OpenAsync();
             using var reader = await command.ExecuteReaderAsync();
@@ -48,10 +48,10 @@ namespace eProtokoll.Repositories.Institutions
             using var command = new SqlCommand(@"
                 INSERT INTO Institutions 
                     (Name, ShortName, Type, Adress, PostalCode, Country, Phone, Email, Website,
-                     ContactPerson, ContactPosition, ContactEmail, CreatedDate, CreatedBy)
+                     ContactPerson, ContactPosition, ContactEmail, IsActive, CreatedDate, CreatedBy)
                 VALUES 
                     (@Name, @ShortName, @Type, @Adress, @PostalCode, @Country, @Phone, @Email, @Website,
-                     @ContactPerson, @ContactPosition, @ContactEmail, @CreatedDate, @CreatedBy)",
+                     @ContactPerson, @ContactPosition, @ContactEmail, @IsActive, @CreatedDate, @CreatedBy)",
                 connection);
 
             command.Parameters.AddWithValue("@Name", institution.Name);
@@ -66,6 +66,7 @@ namespace eProtokoll.Repositories.Institutions
             command.Parameters.AddWithValue("@ContactPerson", (object?)institution.ContactPerson ?? DBNull.Value);
             command.Parameters.AddWithValue("@ContactPosition", (object?)institution.ContactPosition ?? DBNull.Value);
             command.Parameters.AddWithValue("@ContactEmail", (object?)institution.ContactEmail ?? DBNull.Value);
+            command.Parameters.AddWithValue("@IsActive", institution.IsActive);
             command.Parameters.AddWithValue("@CreatedDate", institution.CreatedDate);
             command.Parameters.AddWithValue("@CreatedBy", (object?)institution.CreatedBy ?? DBNull.Value);
 
@@ -90,6 +91,7 @@ namespace eProtokoll.Repositories.Institutions
                     ContactPerson = @ContactPerson,
                     ContactPosition = @ContactPosition,
                     ContactEmail = @ContactEmail,
+                    IsActive = @IsActive,
                     ModifiedDate = @ModifiedDate,
                     ModifiedBy = @ModifiedBy
                 WHERE InstitutionId = @InstitutionId",
@@ -108,6 +110,7 @@ namespace eProtokoll.Repositories.Institutions
             command.Parameters.AddWithValue("@ContactPerson", (object?)institution.ContactPerson ?? DBNull.Value);
             command.Parameters.AddWithValue("@ContactPosition", (object?)institution.ContactPosition ?? DBNull.Value);
             command.Parameters.AddWithValue("@ContactEmail", (object?)institution.ContactEmail ?? DBNull.Value);
+            command.Parameters.AddWithValue("@IsActive", institution.IsActive);
             command.Parameters.AddWithValue("@ModifiedDate", institution.ModifiedDate ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("@ModifiedBy", (object?)institution.ModifiedBy ?? DBNull.Value);
 
@@ -136,6 +139,42 @@ namespace eProtokoll.Repositories.Institutions
 
             await connection.OpenAsync();
             return (int)await command.ExecuteScalarAsync();
+        }
+
+        public async Task DeactivateAsync(int id, string? modifiedBy)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            using var command = new SqlCommand(@"
+                UPDATE Institutions
+                SET IsActive = 0,
+                    ModifiedDate = @ModifiedDate,
+                    ModifiedBy = @ModifiedBy
+                WHERE InstitutionId = @Id", connection);
+
+            command.Parameters.AddWithValue("@Id", id);
+            command.Parameters.AddWithValue("@ModifiedDate", DateTime.Now);
+            command.Parameters.AddWithValue("@ModifiedBy", (object?)modifiedBy ?? DBNull.Value);
+
+            await connection.OpenAsync();
+            await command.ExecuteNonQueryAsync();
+        }
+
+        public async Task ActivateAsync(int id, string? modifiedBy)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            using var command = new SqlCommand(@"
+                UPDATE Institutions
+                SET IsActive = 1,
+                    ModifiedDate = @ModifiedDate,
+                    ModifiedBy = @ModifiedBy
+                WHERE InstitutionId = @Id", connection);
+
+            command.Parameters.AddWithValue("@Id", id);
+            command.Parameters.AddWithValue("@ModifiedDate", DateTime.Now);
+            command.Parameters.AddWithValue("@ModifiedBy", (object?)modifiedBy ?? DBNull.Value);
+
+            await connection.OpenAsync();
+            await command.ExecuteNonQueryAsync();
         }
     }
 }

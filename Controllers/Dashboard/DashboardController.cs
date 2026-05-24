@@ -33,6 +33,7 @@ namespace eProtokoll.Controllers
             // -------- DATA --------
             ViewBag.RecentDocuments = await _dashboardRepository.GetRecentDocumentsAsync(userId);
             ViewBag.DailyStats = await _dashboardRepository.GetDailyStatsAsync(7, userId);
+            ViewData["area"] = role;
 
             return View();
         }

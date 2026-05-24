@@ -15,19 +15,8 @@
         </ol>
     </nav>
 
-    <!-- Header -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <h2 class="mb-0">
-                <i class="bi bi-pencil-square me-2 text-primary"></i>
-                Modifiko Institucion
-            </h2>
-            <p class="text-muted mt-2">Përditëso të dhënat e institucionit <strong>@Model.Name</strong></p>
-        </div>
-    </div>
-
     <div class="row">
-        <div class="col-lg-8">
+        <div class="col-12">
             <form asp-action="Edit" method="post">
                 <input type="hidden" asp-for="InstitutionId" />
                 <input type="hidden" asp-for="CreatedDate" />
@@ -35,232 +24,190 @@
 
                 <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
-                <!-- Informacioni Bazë -->
-                <div class="card shadow-sm mb-4">
+                <div class="card shadow-sm">
                     <div class="card-header bg-primary text-white">
                         <h5 class="mb-0">
-                            <i class="bi bi-info-circle me-2"></i>
-                            Informacioni Bazë
+                            <i class="bi bi-pencil-square me-2"></i>
+                            Modifiko Institucion
                         </h5>
                     </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-8">
-                                <div class="mb-3">
-                                    <label asp-for="Name" class="form-label">
-                                        <i class="bi bi-building text-primary"></i>
-                                        Emri i Institucionit <span class="text-danger">*</span>
-                                    </label>
-                                    <input asp-for="Name" class="form-control" placeholder="p.sh. Ministria e Arsimit dhe Sportit" />
-                                    <span asp-validation-for="Name" class="text-danger"></span>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label asp-for="ShortName" class="form-label">
-                                        <i class="bi bi-tag text-primary"></i>
-                                        Emri i Shkurtuar
-                                    </label>
-                                    <input asp-for="ShortName" class="form-control" placeholder="p.sh. MAS" />
-                                    <span asp-validation-for="ShortName" class="text-danger"></span>
-                                </div>
-                            </div>
-                        </div>
 
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label asp-for="Type" class="form-label">
-                                        <i class="bi bi-diagram-3 text-primary"></i>
-                                        Lloji i Institucionit <span class="text-danger">*</span>
-                                    </label>
-                                    <select asp-for="Type" class="form-select" asp-items="Html.GetEnumSelectList<eProtokoll.Models.InstitutionType>()">
-                                        <option value="">-- Zgjidh Llojin --</option>
-                                    </select>
-                                    <span asp-validation-for="Type" class="text-danger"></span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Adresa dhe Vendndodhja -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-info text-white">
-                        <h5 class="mb-0">
-                            <i class="bi bi-geo-alt me-2"></i>
-                            Adresa dhe Vendndodhja
-                        </h5>
-                    </div>
                     <div class="card-body">
+                        <!-- Informacioni Bazë -->
                         <div class="mb-3">
-                            <label asp-for="Adress" class="form-label">
-                                <i class="bi bi-map text-info"></i>
-                                Adresa
-                            </label>
-                            <input asp-for="Adress" class="form-control" placeholder="p.sh. Rruga Durrësit, Nr. 23" />
-                            <span asp-validation-for="Adress" class="text-danger"></span>
-                        </div>
+                            <h6 class="text-primary mb-3">
+                                <i class="bi bi-info-circle me-2"></i> Informacioni Bazë
+                            </h6>
 
-                        <div class="row">
-                            <div class="col-md-3">
-                                <div class="mb-3">
-                                    <label asp-for="PostalCode" class="form-label">
-                                        <i class="bi bi-mailbox text-info"></i>
-                                        Kodi Postar
-                                    </label>
-                                    <input asp-for="PostalCode" class="form-control" placeholder="p.sh. 1001" />
-                                    <span asp-validation-for="PostalCode" class="text-danger"></span>
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="mb-3">
+                                        <label asp-for="Name" class="form-label">
+                                            <i class="bi bi-building text-primary"></i>
+                                            Emri i Institucionit <span class="text-danger">*</span>
+                                        </label>
+                                        <input asp-for="Name" class="form-control" placeholder="p.sh. Ministria e Arsimit dhe Sportit" />
+                                        <span asp-validation-for="Name" class="text-danger"></span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label asp-for="ShortName" class="form-label">
+                                            <i class="bi bi-tag text-primary"></i>
+                                            Emri i Shkurtuar
+                                        </label>
+                                        <input asp-for="ShortName" class="form-control" placeholder="p.sh. MAS" />
+                                        <span asp-validation-for="ShortName" class="text-danger"></span>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label asp-for="Country" class="form-label">
-                                        <i class="bi bi-flag text-info"></i>
-                                        Shteti
-                                    </label>
-                                    <input asp-for="Country" class="form-control" />
-                                    <span asp-validation-for="Country" class="text-danger"></span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Të Dhënat e Kontaktit -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-success text-white">
-                        <h5 class="mb-0">
-                            <i class="bi bi-telephone me-2"></i>
-                            Të Dhënat e Kontaktit
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label asp-for="Phone" class="form-label">
-                                        <i class="bi bi-telephone-fill text-success"></i>
-                                        Telefoni
-                                    </label>
-                                    <input asp-for="Phone" class="form-control" placeholder="+355 4 123 4567" />
-                                    <span asp-validation-for="Phone" class="text-danger"></span>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label asp-for="Email" class="form-label">
-                                        <i class="bi bi-envelope-fill text-success"></i>
-                                        Email
-                                    </label>
-                                    <input asp-for="Email" class="form-control" type="email" placeholder="info@institucion.gov.al" />
-                                    <span asp-validation-for="Email" class="text-danger"></span>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label asp-for="Type" class="form-label">
+                                            <i class="bi bi-diagram-3 text-primary"></i>
+                                            Lloji i Institucionit <span class="text-danger">*</span>
+                                        </label>
+                                        <select asp-for="Type" class="form-select" asp-items="Html.GetEnumSelectList<eProtokoll.Models.InstitutionType>()">
+                                            <option value="">-- Zgjidh Llojin --</option>
+                                        </select>
+                                        <span asp-validation-for="Type" class="text-danger"></span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
+                        <hr />
+
+                        <!-- Adresa dhe Vendndodhja -->
                         <div class="mb-3">
-                            <label asp-for="Website" class="form-label">
-                                <i class="bi bi-globe text-success"></i>
-                                Website
-                            </label>
-                            <input asp-for="Website" class="form-control" type="url" placeholder="https://www.institucion.gov.al" />
-                            <span asp-validation-for="Website" class="text-danger"></span>
-                        </div>
-                    </div>
-                </div>
+                            <h6 class="text-info mb-3">
+                                <i class="bi bi-geo-alt me-2"></i> Adresa dhe Vendndodhja
+                            </h6>
 
-                <!-- Personi i Kontaktit -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-warning text-dark">
-                        <h5 class="mb-0">
-                            <i class="bi bi-person-circle me-2"></i>
-                            Personi i Kontaktit
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label asp-for="ContactPerson" class="form-label">
-                                        <i class="bi bi-person-badge text-warning"></i>
-                                        Emri dhe Mbiemri
-                                    </label>
-                                    <input asp-for="ContactPerson" class="form-control" placeholder="p.sh. Agron Zeneli" />
-                                    <span asp-validation-for="ContactPerson" class="text-danger"></span>
-                                </div>
+                            <div class="mb-3">
+                                <label asp-for="Adress" class="form-label">
+                                    <i class="bi bi-map text-info"></i>
+                                    Adresa
+                                </label>
+                                <input asp-for="Adress" class="form-control" placeholder="p.sh. Rruga Durrësit, Nr. 23" />
+                                <span asp-validation-for="Adress" class="text-danger"></span>
                             </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label asp-for="ContactPosition" class="form-label">
-                                        <i class="bi bi-briefcase text-warning"></i>
-                                        Pozicioni
-                                    </label>
-                                    <input asp-for="ContactPosition" class="form-control" placeholder="p.sh. Sekretar i Përgjithshëm" />
-                                    <span asp-validation-for="ContactPosition" class="text-danger"></span>
+
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="mb-3">
+                                        <label asp-for="PostalCode" class="form-label">
+                                            <i class="bi bi-mailbox text-info"></i>
+                                            Kodi Postar
+                                        </label>
+                                        <input asp-for="PostalCode" class="form-control" placeholder="p.sh. 1001" />
+                                        <span asp-validation-for="PostalCode" class="text-danger"></span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label asp-for="Country" class="form-label">
+                                            <i class="bi bi-flag text-info"></i>
+                                            Shteti
+                                        </label>
+                                        <input asp-for="Country" class="form-control" />
+                                        <span asp-validation-for="Country" class="text-danger"></span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label asp-for="ContactEmail" class="form-label">
-                                        <i class="bi bi-envelope text-warning"></i>
-                                        Email i Kontaktit
-                                    </label>
-                                    <input asp-for="ContactEmail" class="form-control" type="email" placeholder="agron.zeneli@institucion.gov.al" />
-                                    <span asp-validation-for="ContactEmail" class="text-danger"></span>
+                        <hr />
+
+                        <!-- Të Dhënat e Kontaktit -->
+                        <div class="mb-3">
+                            <h6 class="text-success mb-3">
+                                <i class="bi bi-telephone me-2"></i> Të Dhënat e Kontaktit
+                            </h6>
+
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label asp-for="Phone" class="form-label">
+                                            <i class="bi bi-telephone-fill text-success"></i>
+                                            Telefoni
+                                        </label>
+                                        <input asp-for="Phone" class="form-control" placeholder="+355 4 123 4567" />
+                                        <span asp-validation-for="Phone" class="text-danger"></span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label asp-for="Email" class="form-label">
+                                            <i class="bi bi-envelope-fill text-success"></i>
+                                            Email
+                                        </label>
+                                        <input asp-for="Email" class="form-control" type="email" placeholder="info@institucion.gov.al" />
+                                        <span asp-validation-for="Email" class="text-danger"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="Website" class="form-label">
+                                    <i class="bi bi-globe text-success"></i>
+                                    Website
+                                </label>
+                                <input asp-for="Website" class="form-control" type="url" placeholder="https://www.institucion.gov.al" />
+                                <span asp-validation-for="Website" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <hr />
+
+                        <!-- Personi i Kontaktit -->
+                        <div class="mb-3">
+                            <h6 class="text-warning mb-3">
+                                <i class="bi bi-person-circle me-2"></i> Personi i Kontaktit
+                            </h6>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label asp-for="ContactPerson" class="form-label">
+                                            <i class="bi bi-person-badge text-warning"></i>
+                                            Emri dhe Mbiemri
+                                        </label>
+                                        <input asp-for="ContactPerson" class="form-control" placeholder="p.sh. Agron Zeneli" />
+                                        <span asp-validation-for="ContactPerson" class="text-danger"></span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label asp-for="ContactPosition" class="form-label">
+                                            <i class="bi bi-briefcase text-warning"></i>
+                                            Pozicioni
+                                        </label>
+                                        <input asp-for="ContactPosition" class="form-control" placeholder="p.sh. Sekretar i Përgjithshëm" />
+                                        <span asp-validation-for="ContactPosition" class="text-danger"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label asp-for="ContactEmail" class="form-label">
+                                            <i class="bi bi-envelope text-warning"></i>
+                                            Email i Kontaktit
+                                        </label>
+                                        <input asp-for="ContactEmail" class="form-control" type="email" placeholder="agron.zeneli@institucion.gov.al" />
+                                        <span asp-validation-for="ContactEmail" class="text-danger"></span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
 
-                <!-- Metadata -->
-                <div class="card shadow-sm mb-4 bg-light">
-                    <div class="card-header bg-dark text-white">
-                        <h5 class="mb-0">
-                            <i class="bi bi-info-square me-2"></i>
-                            Të Dhëna të Sistemit
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <p class="mb-2">
-                                    <strong><i class="bi bi-calendar-plus text-success"></i> Krijuar më:</strong><br />
-                                    <span class="text-muted">@Model.CreatedDate.ToString("dd/MM/yyyy HH:mm")</span>
-                                </p>
-                                <p class="mb-0">
-                                    <strong><i class="bi bi-person text-success"></i> Krijuar nga:</strong><br />
-                                    <span class="text-muted">@(Model.CreatedBy ?? "System")</span>
-                                </p>
-                            </div>
-                            <div class="col-md-6">
-                                @if (Model.ModifiedDate.HasValue)
-                                {
-                                    <p class="mb-2">
-                                        <strong><i class="bi bi-calendar-check text-warning"></i> Modifikuar më:</strong><br />
-                                        <span class="text-muted">@Model.ModifiedDate.Value.ToString("dd/MM/yyyy HH:mm")</span>
-                                    </p>
-                                    <p class="mb-0">
-                                        <strong><i class="bi bi-person text-warning"></i> Modifikuar nga:</strong><br />
-                                        <span class="text-muted">@(Model.ModifiedBy ?? "-")</span>
-                                    </p>
-                                }
-                                else
-                                {
-                                    <p class="text-muted"><em>Ende nuk është modifikuar</em></p>
-                                }
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                        <hr />
 
-                <!-- Action Buttons -->
-                <div class="card shadow-sm mb-4">
-                    <div class="card-body">
+                        <!-- Action Buttons -->
                         <div class="d-flex justify-content-between">
                             <a asp-action="Index" class="btn btn-outline-secondary">
                                 <i class="bi bi-x-circle me-1"></i>
