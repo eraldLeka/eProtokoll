@@ -22,15 +22,6 @@ namespace eProtokoll.Controllers
                 ? int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!)
                 : null;
 
-            // -------- STATISTICS --------
-            var stats = await _dashboardRepository.GetDocumentStatsAsync(userId);
-
-            ViewBag.TotalIncoming = stats.TotalIncoming;
-            ViewBag.TotalOutgoing = stats.TotalOutgoing;
-            ViewBag.TotalInternal = stats.TotalInternal;
-            ViewBag.TotalDocuments = stats.TotalDocuments;
-
-            // -------- DATA --------
             ViewBag.RecentDocuments = await _dashboardRepository.GetRecentDocumentsAsync(userId);
             ViewBag.DailyStats = await _dashboardRepository.GetDailyStatsAsync(7, userId);
             ViewData["area"] = role;

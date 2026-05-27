@@ -144,7 +144,6 @@
                             <ul class="pagination pagination-sm mb-0 justify-content-center">
                                 <li class="page-item @(ViewBag.CurrentPage == 1 ? "disabled" : "")">
                                     <a class="page-link" href="@Url.Action("Index", new {
-                                        searchTerm = ViewBag.SearchTerm,
                                         page = ViewBag.CurrentPage - 1
                                     })">Mbrapa</a>
                                 </li>
@@ -152,14 +151,12 @@
                                 {
                                     <li class="page-item @(ViewBag.CurrentPage == i ? "active" : "")">
                                         <a class="page-link" href="@Url.Action("Index", new {
-                                            searchTerm = ViewBag.SearchTerm,
                                             page = i
                                         })">@i</a>
                                     </li>
                                 }
                                 <li class="page-item @(ViewBag.CurrentPage == ViewBag.TotalPages ? "disabled" : "")">
                                     <a class="page-link" href="@Url.Action("Index", new {
-                                        searchTerm = ViewBag.SearchTerm,
                                         page = ViewBag.CurrentPage + 1
                                     })">Përpara</a>
                                 </li>

@@ -6,7 +6,7 @@ namespace eProtokoll.Repositories
     {
         // ===== INDEX =====
         Task<(List<DocumentTracking> Trackings, int TotalCount)> GetAllAsync(
-            int page, int pageSize, string searchTerm = "");
+            int page, int pageSize);
 
         Task<(List<DocumentTracking> Trackings, int TotalCount)> GetByUserAsync(
             int page, int pageSize, int userId);
@@ -21,7 +21,6 @@ namespace eProtokoll.Repositories
         Task CompleteAsync(int trackingId);
 
         // ===== NOTIFICATIONS (EMPLOYEE) =====
-        Task<int> GetNewAssignedCountAsync(int userId);
         Task<int> GetOverdueCountAsync(int userId);
         Task<List<DocumentTracking>> GetNotificationItemsAsync(int userId, int take = 10);
 

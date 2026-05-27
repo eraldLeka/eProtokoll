@@ -251,32 +251,6 @@ namespace eProtokoll.Services.Mappers
         }
     }
 
-    // ================= TRACKING =================
-
-    public static class TrackingMapper
-    {
-        public static DocumentTracking Map(SqlDataReader reader)
-        {
-            int iDueDate = reader.GetOrdinal("DueDate");
-            int iNotes = reader.GetOrdinal("Notes");
-            int iCompDate = reader.GetOrdinal("CompletedDate");
-
-            return new DocumentTracking
-            {
-                TrackingId = reader.GetInt32(reader.GetOrdinal("TrackingId")),
-                DocumentId = reader.GetInt32(reader.GetOrdinal("DocumentId")),
-                AssignedToUserId = reader.GetInt32(reader.GetOrdinal("AssignedToUserId")),
-                AssignedByUserId = reader.GetInt32(reader.GetOrdinal("AssignedByUserId")),
-                AssignedDate = reader.GetDateTime(reader.GetOrdinal("AssignedDate")),
-                Priority = (Priority)reader.GetInt32(reader.GetOrdinal("Priority")),
-                DueDate = reader.IsDBNull(iDueDate) ? null : reader.GetDateTime(iDueDate),
-                Notes = reader.IsDBNull(iNotes) ? null : reader.GetString(iNotes),
-                CompletedDate = reader.IsDBNull(iCompDate) ? null : reader.GetDateTime(iCompDate),
-                CreatedDate = reader.GetDateTime(reader.GetOrdinal("CreatedDate"))
-            };
-        }
-    }
-
     // ================= USER =================
 
     public static class UserMapper

@@ -6,7 +6,6 @@ namespace eProtokoll.Models
     {
         public int Id { get; set; }
 
-        //login fields
         [Required]
         public string UserName { get; set; } = null!;
        

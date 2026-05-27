@@ -3,6 +3,7 @@ using eProtokoll.Repositories;
 using eProtokoll.Repositories.Dashboard;
 using eProtokoll.Repositories.Documents;
 using eProtokoll.Repositories.Institutions;
+using eProtokoll.Repositories.ProtocolBook;
 using eProtokoll.Repositories.User;
 using eProtokoll.Services.Files;
 using eProtokoll.Services.ProtocolNumber;
@@ -37,6 +38,7 @@ builder.Services.AddScoped<ITrackingRepository, TrackingRepository>();
 builder.Services.AddScoped<IReportRepository, ReportRepository>();
 builder.Services.AddScoped<IDashboardRepository, DashboardRepository>();
 builder.Services.AddScoped<IInstitutionRepository, InstitutionRepository>();
+builder.Services.AddScoped<IProtocolBookRepository, ProtocolBookRepository>();
 
 // ==================== SERVICES ====================
 builder.Services.AddScoped<IProtocolNumberService, ProtocolNumberService>();

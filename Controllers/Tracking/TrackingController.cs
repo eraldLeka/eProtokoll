@@ -18,20 +18,18 @@ namespace eProtokoll.Controllers
         }
 
         // ================= INDEX =================
-        public async Task<IActionResult> Index(string searchTerm = "", int page = 1)
+        public async Task<IActionResult> Index(int page = 1)
         {
             const int pageSize = 20;
 
             var userId = GetUserId();
             var role = GetRole();
 
-            // 🔥 scope logic këtu
             var (trackings, totalCount) =
                 role == "Employee"
                     ? await _trackingRepository.GetByUserAsync(page, pageSize, userId)
-                    : await _trackingRepository.GetAllAsync(page, pageSize, searchTerm);
+                    : await _trackingRepository.GetAllAsync(page, pageSize);
 
-            ViewBag.SearchTerm = searchTerm;
             ViewBag.CurrentPage = page;
             ViewBag.TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
             ViewBag.TotalItems = totalCount;

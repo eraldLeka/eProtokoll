@@ -33,49 +33,28 @@ namespace eProtokoll.Repositories
             LEFT JOIN Users uab ON dt.AssignedByUserId = uab.Id";
 
         // ==================== INDEX — MANAGER ====================
-
         public async Task<(List<DocumentTracking> Trackings, int TotalCount)> GetAllAsync(
-            int page, int pageSize, string searchTerm = "")
+            int page, int pageSize)
         {
             var trackings = new List<DocumentTracking>();
             int totalCount = 0;
-
-            var where = new StringBuilder(" WHERE 1=1");
-            var parameters = new List<SqlParameter>();
-
-            if (!string.IsNullOrWhiteSpace(searchTerm))
-            {
-                where.Append(@" AND (
-                    CAST(d.DocumentNumber AS VARCHAR) + '/' + CAST(d.Year AS VARCHAR) LIKE @SearchTerm
-                    OR d.Subject LIKE @SearchTerm
-                    OR dt.Notes LIKE @SearchTerm)");
-
-                parameters.Add(new SqlParameter("@SearchTerm", $"%{searchTerm}%"));
-            }
 
             using var connection = new SqlConnection(_connectionString);
             await connection.OpenAsync();
 
             using (var cmd = new SqlCommand(
-                $"SELECT COUNT(*) FROM DocumentTrackings dt LEFT JOIN Documents d ON dt.DocumentId = d.DocumentId {where}",
+                "SELECT COUNT(*) FROM DocumentTrackings dt LEFT JOIN Documents d ON dt.DocumentId = d.DocumentId",
                 connection))
             {
-                foreach (var p in parameters)
-                    cmd.Parameters.AddWithValue(p.ParameterName, p.Value);
-
                 totalCount = Convert.ToInt32(await cmd.ExecuteScalarAsync());
             }
 
             var query = $@"{SelectColumns}
-                {where}
                 ORDER BY dt.AssignedDate DESC
                 OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY";
 
             using (var cmd = new SqlCommand(query, connection))
             {
-                foreach (var p in parameters)
-                    cmd.Parameters.AddWithValue(p.ParameterName, p.Value);
-
                 cmd.Parameters.AddWithValue("@Offset", (page - 1) * pageSize);
                 cmd.Parameters.AddWithValue("@PageSize", pageSize);
 
@@ -200,22 +179,6 @@ namespace eProtokoll.Repositories
 
         // ==================== NOTIFICATIONS ====================
 
-        public async Task<int> GetNewAssignedCountAsync(int userId)
-        {
-            using var connection = new SqlConnection(_connectionString);
-            await connection.OpenAsync();
-
-            using var cmd = new SqlCommand(@"
-                SELECT COUNT(*)
-                FROM DocumentTrackings dt
-                WHERE dt.AssignedToUserId = @UserId
-                  AND dt.CompletedDate IS NULL
-                  AND CAST(dt.AssignedDate AS DATE) = CAST(GETDATE() AS DATE)", connection);
-
-            cmd.Parameters.AddWithValue("@UserId", userId);
-
-            return Convert.ToInt32(await cmd.ExecuteScalarAsync());
-        }
 
         public async Task<int> GetOverdueCountAsync(int userId)
         {
